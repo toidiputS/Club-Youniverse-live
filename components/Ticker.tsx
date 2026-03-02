@@ -13,12 +13,8 @@ export const Ticker: React.FC = () => {
 
   return (
     <>
-      {/* 1. GRADIENT COVER TO FADE THE BOX CARDS */}
-      {/* This sits just above the ticker to softly fade out the bottom of the long scrolling lists in The Box */}
-      <div className="fixed bottom-12 left-0 w-full h-24 bg-gradient-to-t from-black via-black/80 to-transparent pointer-events-none z-[40]" />
-
       {/* 2. THE DUAL TICKER CONTAINER */}
-      <div className="fixed bottom-0 left-0 w-full flex flex-col z-[50]">
+      <div className="relative w-full flex flex-col z-[50]">
 
         {/* Top Ticker: DJ Banter (Fast, Colorful, Playful) */}
         <div className="w-full bg-purple-900/50 backdrop-blur-md border-t border-purple-500/20 h-6 flex items-center overflow-hidden">

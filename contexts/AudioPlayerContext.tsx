@@ -117,6 +117,11 @@ export const RadioProvider: React.FC<{
     broadcastManager.on("siteCommandReceived", (cmd: any) => {
       if (cmd?.type === "ticker") {
         setTickerText(cmd.payload?.text || "");
+      } else if (cmd?.type === "dj_banter") {
+        setDjBanter(cmd.payload?.text || "");
+      } else if (cmd?.type === "chat" && cmd.payload) {
+        // Assume payload is a ChatMessage object
+        setChatMessages(prev => [...prev, cmd.payload].slice(-50));
       }
     });
 
@@ -162,6 +167,7 @@ export const RadioProvider: React.FC<{
     downloadSong: (song: Song) => {
       const link = document.createElement('a');
       link.href = song.audioUrl;
+      link.target = '_blank';
       link.download = `${song.title} - ${song.artistName}.mp3`;
       document.body.appendChild(link);
       link.click();

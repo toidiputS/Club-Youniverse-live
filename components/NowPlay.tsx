@@ -2,14 +2,43 @@
  * @file NowPlay Component - Shows what's currently playing in the Club.
  */
 
-import React, { useContext } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { RadioContext } from "../contexts/AudioPlayerContext";
+import { supabase } from "../services/supabaseClient";
 
 export const NowPlay: React.FC = () => {
     const context = useContext(RadioContext);
     if (!context) return null;
 
-    const { nowPlaying, currentTime, isPlaying } = context;
+    const { nowPlaying, currentTime, isPlaying, profile } = context;
+    const [isFavorited, setIsFavorited] = useState(false);
+
+    useEffect(() => {
+        const checkFavorite = async () => {
+            if (!profile?.user_id || !nowPlaying?.id) return;
+            const { data } = await supabase
+                .from('user_favorites')
+                .select('song_id')
+                .eq('user_id', profile.user_id)
+                .eq('song_id', nowPlaying.id)
+                .single();
+
+            setIsFavorited(!!data);
+        };
+        checkFavorite();
+    }, [nowPlaying?.id, profile?.user_id]);
+
+    const toggleFavorite = async () => {
+        if (!profile?.user_id || !nowPlaying?.id) return;
+
+        if (isFavorited) {
+            setIsFavorited(false);
+            await supabase.from('user_favorites').delete().eq('user_id', profile.user_id).eq('song_id', nowPlaying.id);
+        } else {
+            setIsFavorited(true);
+            await supabase.from('user_favorites').insert({ user_id: profile.user_id, song_id: nowPlaying.id });
+        }
+    };
 
     if (!nowPlaying) {
         return (
@@ -54,8 +83,24 @@ export const NowPlay: React.FC = () => {
                         <span className="text-[9px] font-black uppercase tracking-widest text-purple-400">On Air</span>
                         {isPlaying && <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />}
                     </div>
-                    <h2 className="text-lg font-black text-white leading-none truncate tracking-tight">{nowPlaying.title}</h2>
-                    <p className="text-zinc-400 font-bold text-xs truncate uppercase tracking-tighter mt-1">{nowPlaying.artistName}</p>
+                    <div className="flex items-center gap-2">
+                        <h2 className="text-lg font-black text-white leading-none truncate tracking-tight">{nowPlaying.title}</h2>
+                        <button
+                            onClick={toggleFavorite}
+                            className={`text-sm transition-all transform hover:scale-110 ${isFavorited ? 'text-red-500 hover:text-red-400 drop-shadow-[0_0_8px_rgba(239,68,68,0.5)]' : 'text-zinc-600 hover:text-red-500/50'}`}
+                            title={isFavorited ? "Remove from Favorites" : "Add to Favorites"}
+                        >
+                            {isFavorited ? '❤️' : '🤍'}
+                        </button>
+                    </div>
+                    <div className="flex items-center gap-2 mt-1">
+                        <p className="text-zinc-400 font-bold text-xs truncate uppercase tracking-tighter">{nowPlaying.artistName}</p>
+                        {nowPlaying.genre && (
+                            <span className="text-[8px] font-black text-purple-400 bg-purple-500/10 px-1.5 py-0.5 rounded border border-purple-500/20 uppercase">
+                                {nowPlaying.genre}
+                            </span>
+                        )}
+                    </div>
                 </div>
 
                 {/* Status Indicator */}

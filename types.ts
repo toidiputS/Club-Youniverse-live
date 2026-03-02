@@ -39,6 +39,7 @@ export interface Song {
   source: "suno" | "producer.ai" | "mubert" | "upload";
   audioUrl: string;
   durationSec: number;
+  genre?: string;
   stars: number;
   liveStarsSum: number;
   liveStarsCount: number;
@@ -87,7 +88,8 @@ export interface SiteControlCommand {
 }
 
 // --- App State & Navigation ---
-export type View = "club" | "dj-booth";
+//export type AppState = 'HOME' | 'CLUB' | 'DJ_BOOTH' | 'PROFILE';
+export type View = 'home' | 'club' | 'dj-booth' | 'radio' | 'profile';
 
 export type RadioState =
   | "POOL"

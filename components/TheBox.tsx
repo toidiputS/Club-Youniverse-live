@@ -125,7 +125,7 @@ export const TheBox: React.FC = () => {
 
       <div className="grid grid-cols-3 gap-2">
         {/* On Air / Now Playing Info Box */}
-        <div className="group relative flex flex-col p-1.5 rounded-xl border border-green-500/20 bg-green-500/5 transition-all duration-700 overflow-hidden">
+        <div className="relative flex flex-col p-1.5 rounded-xl border border-purple-500/30 bg-zinc-950 shadow-[0_0_15px_rgba(168,85,247,0.15)] group">
           <div className="relative h-16 rounded-lg overflow-hidden mb-1.5 border border-white/5">
             {nowPlaying ? (
               nowPlaying.is_canvas && nowPlaying.coverArtUrl ? (
@@ -177,8 +177,8 @@ export const TheBox: React.FC = () => {
               onClick={() => handleVote(song.id)}
               disabled={!!votedId}
               className={`group relative flex flex-col p-1.5 rounded-xl border transition-all duration-500 overflow-hidden ${votedId === song.id
-                ? 'border-purple-600 bg-purple-600/10'
-                : 'border-white/[0.06] bg-zinc-950/60 hover:bg-zinc-900 hover:border-white/20'
+                ? 'border-purple-600 bg-zinc-900'
+                : 'border-white/[0.06] bg-zinc-950 hover:bg-zinc-900 hover:border-white/20'
                 }`}
             >
               {/* Compact Thumbnail */}

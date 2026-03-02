@@ -19,7 +19,7 @@ export const Radio: React.FC<RadioProps> = ({ onNavigate, onSignOut, profile }) 
     <div className="relative h-full w-full overflow-hidden flex flex-col pointer-events-none select-none">
 
       {/* 1. TOP HUB: Integrated Header */}
-      <div className="relative z-50 pointer-events-auto w-full max-w-7xl mx-auto animate-in fade-in slide-in-from-top-4 duration-1000 shrink-0">
+      <div className="relative z-50 pointer-events-auto w-full animate-in fade-in slide-in-from-top-4 duration-1000 shrink-0">
         <Header onNavigate={onNavigate} onSignOut={onSignOut} profile={profile} />
       </div>
 
@@ -46,13 +46,17 @@ export const Radio: React.FC<RadioProps> = ({ onNavigate, onSignOut, profile }) 
       </div>
 
       {/* 3. SIDE COLUMN: Chat & Voting Stack (Mobile First layout) */}
-      <div className="relative z-40 flex flex-col w-full flex-grow xl:flex-none xl:fixed xl:right-4 xl:bottom-6 xl:top-24 xl:w-80 pointer-events-auto animate-in fade-in slide-in-from-right-4 duration-1000 overflow-hidden xl:overflow-visible min-h-0">
-        <div className="flex-grow min-h-0 px-2 sm:px-4 flex flex-col">
+      <div className="relative z-[60] flex flex-col w-full flex-grow xl:flex-none xl:fixed xl:right-4 xl:bottom-0 xl:top-24 xl:w-80 pointer-events-auto animate-in fade-in slide-in-from-right-4 duration-1000 overflow-hidden xl:overflow-visible min-h-0 pb-0">
+        <div className="flex-grow min-h-0 px-2 sm:px-4 flex flex-col pt-4">
           <TheChat profile={profile} />
         </div>
-        <div className="flex-shrink-0 px-2 xl:px-0 pb-2 xl:pb-0 pt-2 shrink-0">
+        <div className="flex-shrink-0 px-2 xl:px-0 pb-4 pt-2 shrink-0">
           <TheBox />
         </div>
+
+        {/* 5. GRADIENT COVER TO FADE THE BOX CARDS */}
+        {/* Softly fades the bottom of the column before it hits the Ticker */}
+        <div className="absolute bottom-16 left-0 w-full h-32 bg-gradient-to-t from-black via-black/80 to-transparent pointer-events-none -z-10 xl:hidden" />
       </div>
     </div>
   );

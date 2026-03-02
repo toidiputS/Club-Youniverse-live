@@ -14,6 +14,7 @@ import { Ticker } from "./components/Ticker";
 import { TuneInOverlay } from "./components/TuneInOverlay";
 import { PresenceAlerts } from "./components/PresenceAlerts";
 import { ThemeProvider } from "./contexts/ThemeContext";
+import { UserProfileCard } from './components/UserProfileCard';
 import { RadioProvider } from "./contexts/AudioPlayerContext";
 import { supabase } from "./services/supabaseClient";
 import type { Session, Profile, View } from "./types";
@@ -164,17 +165,27 @@ const App: React.FC = () => {
           </div>
         )}
 
-        <div className="h-[100dvh] relative z-10 flex flex-col overflow-y-auto overflow-x-hidden text-white w-full">
-          <main className="flex-grow flex flex-col relative w-full">
+        <div className="h-[100dvh] relative z-10 flex flex-col overflow-y-auto overflow-x-hidden text-white w-full pb-14">
+          <main className="flex-grow flex flex-col relative w-full h-full">
             {currentView === "club" ? (
               <div className="h-full w-full overflow-hidden absolute inset-0">
                 <Club onNavigate={setCurrentView} onSignOut={handleSignOut} profile={profile} />
+              </div>
+            ) : currentView === "profile" ? (
+              <div className="h-full w-full overflow-hidden absolute inset-0">
+                <UserProfileCard
+                  userId={profile.user_id}
+                  onClose={() => setCurrentView("club")}
+                  isCurrentUser={true}
+                />
               </div>
             ) : (
               <DjBooth onNavigate={setCurrentView} />
             )}
           </main>
-          <div className="sticky bottom-0 z-50 w-full mt-auto">
+
+          {/* FULL WIDTH BOTTOM TICKERS */}
+          <div className="fixed bottom-0 left-0 w-full z-50">
             <Ticker />
           </div>
         </div>

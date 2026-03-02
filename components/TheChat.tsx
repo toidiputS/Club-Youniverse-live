@@ -81,28 +81,30 @@ export const TheChat: React.FC<TheChatProps> = ({ profile }) => {
             {/* Chat Messages */}
             <div
                 ref={scrollRef}
-                className="flex-grow overflow-y-auto pt-2 pb-4 px-3 space-y-2 scrollbar-hide min-h-0"
+                className="flex flex-col flex-grow overflow-y-auto px-3 scrollbar-hide min-h-0"
                 style={{ maskImage: 'linear-gradient(to bottom, transparent, black 20px)', WebkitMaskImage: 'linear-gradient(to bottom, transparent, black 20px)' }}
             >
-                {chatMessages.map((msg) => {
-                    const isMention = msg.text.toLowerCase().includes("@dj");
-                    return (
-                        <div key={msg.id} className="animate-in fade-in slide-in-from-bottom-1 duration-500">
-                            <div className="flex flex-col gap-0.5">
-                                <div className="flex items-center gap-2">
-                                    <span className={`text-[8px] font-black uppercase tracking-widest ${msg.user.isAdmin ? 'text-purple-400' : 'text-zinc-600'}`}>
-                                        {msg.user.name}
-                                    </span>
-                                </div>
-                                <div className={`text-[10px] font-medium leading-[1.3] ${isMention
-                                    ? 'text-purple-300 border-l border-purple-500/30 pl-2 bg-purple-500/5 py-0.5'
-                                    : 'text-zinc-400'}`}>
-                                    {msg.text}
+                <div className="mt-auto flex flex-col space-y-2 pt-2 pb-4">
+                    {chatMessages.map((msg) => {
+                        const isMention = msg.text.toLowerCase().includes("@dj");
+                        return (
+                            <div key={msg.id} className="animate-in fade-in slide-in-from-bottom-1 duration-500">
+                                <div className="flex flex-col gap-0.5">
+                                    <div className="flex items-center gap-2">
+                                        <span className={`text-[8px] font-black uppercase tracking-widest ${msg.user.isAdmin ? 'text-purple-400' : 'text-zinc-600'}`}>
+                                            {msg.user.name}
+                                        </span>
+                                    </div>
+                                    <div className={`text-[10px] font-medium leading-[1.3] ${isMention
+                                        ? 'text-purple-300 border-l border-purple-500/30 pl-2 bg-purple-500/5 py-0.5'
+                                        : 'text-zinc-400'}`}>
+                                        {msg.text}
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    );
-                })}
+                        );
+                    })}
+                </div>
             </div>
 
             {/* Tight Input Area */}

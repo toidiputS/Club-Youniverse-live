@@ -35,8 +35,11 @@ create table public.songs (
   cover_art_url text,
   lyrics text,
   duration_sec integer default 0,
+  is_dsw boolean default false,
+  dsw_announced boolean default false,
+  genre text default 'Other',
   stars integer default 5, -- Starts at 5, max 10, min 0
-  status text check (status in ('pool', 'in_box', 'now_playing', 'graveyard', 'debut')) default 'pool',
+  status text check (status in ('pool', 'in_box', 'now_playing', 'graveyard', 'debut', 'next_play')) default 'pool',
   box_rounds_seen integer default 0,
   box_rounds_lost integer default 0,
   box_appearance_count integer default 0, -- Tracks consecutive appearances in box
@@ -55,6 +58,15 @@ create table public.votes (
   song_id uuid references public.songs(id) not null,
   vote_type text check (vote_type in ('up', 'down', 'box_choice')),
   created_at timestamptz default now()
+);
+
+-- USER FAVORITES TABLE
+-- Tracks which songs a user has "Hearted".
+create table public.user_favorites (
+    user_id uuid references public.profiles(user_id) on delete cascade not null,
+    song_id uuid references public.songs(id) on delete cascade not null,
+    created_at timestamptz default timezone('utc'::text, now()) not null,
+    primary key (user_id, song_id)
 );
 
 -- GALLERY ITEMS TABLE
@@ -77,6 +89,7 @@ create table public.gallery_items (
 alter table public.profiles enable row level security;
 alter table public.songs enable row level security;
 alter table public.votes enable row level security;
+alter table public.user_favorites enable row level security;
 alter table public.gallery_items enable row level security;
 
 -- PROFILES POLICIES
@@ -103,6 +116,14 @@ create policy "Authenticated users can upload songs."
 
 create policy "Allow authenticated update (owner or admin)"
   on public.songs for update
+  using (
+    (select auth.uid()) = uploader_id 
+    or 
+    exists (select 1 from public.profiles where user_id = (select auth.uid()) and is_admin = true)
+  );
+
+create policy "Allow authenticated delete (owner or admin)"
+  on public.songs for delete
   using (
     (select auth.uid()) = uploader_id 
     or 
