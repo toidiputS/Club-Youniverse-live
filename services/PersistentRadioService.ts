@@ -1,4 +1,3 @@
-
 /**
  * @file PersistentRadioService - Handles the Core Radio Cycle: Pool -> Box -> Play
  */
@@ -39,9 +38,9 @@ export class PersistentRadioService {
             const now = Date.now();
             const elapsed = (now - startedAt) / 1000;
 
-            // Legacy uploads were all hardcoded to 180s. Give them a huge margin to avoid cutting them off early.
-            // Otherwise, standard 30s margin for clock drift or buffering pauses.
-            const margin = nowPlaying.durationSec === 180 ? 900 : 30;
+            // Legacy uploads were all hardcoded to 180s. Give them a 3 min margin to avoid cutting them off early.
+            // Otherwise, standard 45s margin for clock drift or buffering pauses.
+            const margin = nowPlaying.durationSec === 180 ? 180 : 45;
 
             if (elapsed > nowPlaying.durationSec + margin) {
                 console.log(`🧟 Watchdog: Zombie detected! (${elapsed.toFixed(1)}s elapsed for ${nowPlaying.durationSec}s song). Force transitioning...`);
@@ -76,6 +75,7 @@ export class PersistentRadioService {
                 .eq("id", currentSong.id);
         }
 
+
         // 2. Identify the winner from 'in_box'
         const { data: boxSongs } = await supabase
             .from("songs")
@@ -85,28 +85,36 @@ export class PersistentRadioService {
 
         if (boxSongs && boxSongs.length > 0) {
             const winner = boxSongs[0];
-            const losers = boxSongs.slice(1);
+            // Only include top 2 losers that have votes
+            const losers = boxSongs.slice(1, 3).filter(l => (l.upvotes || 0) > 0);
 
-            console.log(`🏆 Winner: ${winner.title} (${winner.upvotes} votes)`);
+            // Only announce if winner has votes or there's real competition
+            const hasVotes = (winner.upvotes || 0) > 0;
+            
+            if (hasVotes || losers.length > 0) {
+                console.log(`🏆 Winner: ${winner.title} (${winner.upvotes} votes)`);
 
-            // AI BANTER: Generate speech for the winner
-            try {
-                const banter = await LocalAiService.generateDJSpeech(winner, losers);
-                console.log("🎙️ DJ Banter:", banter);
+                // AI BANTER: Generate speech for the winner
+                try {
+                    const banter = await LocalAiService.generateDJSpeech(winner, losers);
+                    console.log("🎙️ DJ Banter:", banter);
 
-                // Broadcast banter to all clients via Supabase Realtime
-                await supabase.channel('club-chat').send({
-                    type: 'broadcast',
-                    event: 'new_message',
-                    payload: {
-                        id: `dj-${Date.now()}`,
-                        user: { name: "THE ARCHITECT", isAdmin: true },
-                        text: banter,
-                        timestamp: Date.now()
-                    } as ChatMessage
-                });
-            } catch (e) {
-                console.warn("AI Banter generation failed", e);
+                    // Broadcast banter to all clients via Supabase Realtime
+                    await supabase.channel('club-chat').send({
+                        type: 'broadcast',
+                        event: 'new_message',
+                        payload: {
+                            id: `dj-${Date.now()}`,
+                            user: { name: "THE ARCHITECT", isAdmin: true },
+                            text: banter,
+                            timestamp: Date.now()
+                        } as ChatMessage
+                    });
+                } catch (e) {
+                    console.warn("AI Banter generation failed", e);
+                }
+            } else {
+                console.log(`🏆 Winner: ${winner.title} (no votes - skipping banter)`);
             }
 
             // Process Winner
@@ -122,8 +130,9 @@ export class PersistentRadioService {
                 })
                 .eq("id", winner.id);
 
-            // Process Losers
-            for (const loser of losers) {
+            // Process Losers (only those with votes)
+            const losersToProcess = boxSongs.slice(1).filter(l => (l.upvotes || 0) > 0);
+            for (const loser of losersToProcess) {
                 console.log(`💀 Loser: ${loser.title} returning to pool.`);
                 let loserStars = Math.max(0, (loser.stars || 5) - 1);
                 let loserDsw = loser.is_dsw || (loserStars <= 0); // Becomes DSW if it hits 0
@@ -140,6 +149,7 @@ export class PersistentRadioService {
                     .eq("id", loser.id);
             }
         } else {
+
             console.log("⚠️ No songs in the box to pick from.");
         }
 
@@ -224,13 +234,17 @@ export class PersistentRadioService {
                 .order('last_played_at', { ascending: true })
                 .limit(stillNeeded);
 
+
             if (fallbackSongs) {
+
                 candidates = [...(candidates || []), ...fallbackSongs];
             }
         }
 
         if (candidates && candidates.length > 0) {
+
             for (const song of candidates) {
+
                 console.log(`📦 Adding ${song.title} to The Box.`);
                 await supabase
                     .from("songs")
@@ -245,6 +259,7 @@ export class PersistentRadioService {
     }
 
     static async cycleNextToNow(): Promise<Song | null> {
+
         // 1. Fetch current now_playing to calculate stars and retire it
         const { data: currentPlaying } = await supabase
             .from("songs")
@@ -255,11 +270,13 @@ export class PersistentRadioService {
         const currSong = currentPlaying && currentPlaying.length > 0 ? currentPlaying[0] : null;
 
         if (currSong) {
+
             let newStars = currSong.stars;
             let nextStatus = "pool";
             let isDsw = currSong.is_dsw;
 
             if (currSong.live_stars_count > 0) {
+
                 // If it's DSW, its base stars are 0, meaning any vote helps. But a song starts its rating scale at 1, technically.
                 // Actually the math `sum - count * stars` works beautifully: 
                 // A DSW has 0 stars. If it gets a 5 star vote, delta = 5 - (1 * 0) = +5. New Stars = 5! A pardon!
@@ -268,18 +285,24 @@ export class PersistentRadioService {
                 console.log(`⭐ Live Rating Math for ${currSong.title}: Old Stars: ${currSong.stars}, Delta: ${delta}, New Stars: ${newStars}`);
             }
 
+
             if (currSong.is_dsw) {
+
                 // It was a Dead Song Walking. Did it get pardoned?
                 if (newStars > 0) {
+
                     console.log(`🕊️ THE PARDON! ${currSong.title} survived its farewell play with ${newStars} stars!`);
                     isDsw = false;
                     nextStatus = "pool";
                 } else {
+
                     console.log(`🪦 Farewell, ${currSong.title}. Sending to Graveyard.`);
                     nextStatus = "graveyard";
                 }
             } else {
+
                 if (newStars <= 0) {
+
                     isDsw = true;
                     newStars = 0; // Lock at 0
                     console.log(`🧟 ${currSong.title} has become a Dead Song Walking.`);
@@ -299,6 +322,7 @@ export class PersistentRadioService {
                 .eq("id", currSong.id);
         }
 
+
         const { data: nextUp } = await supabase
             .from("songs")
             .select("*")
@@ -308,6 +332,7 @@ export class PersistentRadioService {
         const nextUpSong = nextUp && nextUp.length > 0 ? nextUp[0] : null;
 
         if (nextUpSong) {
+
             console.log(`🚀 Transitioning ${nextUpSong.title} from next_play to now_playing`);
             await supabase
                 .from("songs")
@@ -317,8 +342,10 @@ export class PersistentRadioService {
                 })
                 .eq("id", nextUpSong.id);
 
+
             return this.mapDbToApp({ ...nextUpSong, status: 'now_playing' });
         } else {
+
             console.log("🎲 No next_play. Picking random from pool...");
             // If no next_play, pick RANDOM from pool directly (failsafe)
             // We fetch a larger batch and pick one randomly locally to avoid complex PG random SQL
@@ -328,7 +355,8 @@ export class PersistentRadioService {
                 .eq("status", "pool")
                 .limit(20);
 
-            if (poolSongs && poolSongs.length > 0) {
+if (poolSongs && poolSongs.length > 0) {
+
                 const randomSong = poolSongs[Math.floor(Math.random() * poolSongs.length)];
                 await supabase
                     .from("songs")
@@ -338,8 +366,10 @@ export class PersistentRadioService {
                     })
                     .eq("id", randomSong.id);
 
+
                 return this.mapDbToApp({ ...randomSong, status: 'now_playing' });
             }
+
         }
         return null;
     }
@@ -348,6 +378,7 @@ export class PersistentRadioService {
      * Helper to map DB song to App song structure
      */
     public static mapDbToApp(dbSong: any): Song {
+
         return {
             id: dbSong.id,
             uploaderId: dbSong.uploader_id,
