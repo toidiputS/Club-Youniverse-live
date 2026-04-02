@@ -23,9 +23,10 @@ export const Radio: React.FC<RadioProps> = ({ onNavigate, onSignOut, profile }) 
         <Header onNavigate={onNavigate} onSignOut={onSignOut} profile={profile} />
       </div>
 
+
       {/* 2. CENTER: THE FLOOR (Open Space for Visuals) */}
       <div className="absolute inset-0 flex items-center justify-center -z-10 bg-black overflow-hidden">
-        <div className="absolute inset-x-0 bottom-0 h-[50vh] bg-gradient-to-t from-black via-black/80 to-transparent pointer-events-none z-10" />
+        <div className="absolute inset-x-0 bottom-0 h-[40vh] bg-gradient-to-t from-black via-black/80 to-transparent pointer-events-none z-10" />
 
         {context.nowPlaying?.coverArtUrl ? (
           context.nowPlaying.is_canvas ? (
@@ -39,24 +40,40 @@ export const Radio: React.FC<RadioProps> = ({ onNavigate, onSignOut, profile }) 
               <img src={context.nowPlaying.coverArtUrl} className="absolute inset-0 w-full h-full object-cover opacity-30 blur-3xl scale-125" alt="" />
               <img src={context.nowPlaying.coverArtUrl} className="z-20 w-11/12 max-w-2xl aspect-square object-cover opacity-80 shadow-[0_0_50px_rgba(0,0,0,0.8)] rounded-xl border border-white/10 animate-in zoom-in-95 fade-in duration-1000" alt="Album Cover" />
             </>
+
           )
         ) : (
           <div className="absolute inset-0 bg-zinc-950 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-purple-900/20 via-black to-black opacity-50 pulse" />
         )}
       </div>
 
-      {/* 3. SIDE COLUMN: Chat & Voting Stack (Mobile First layout) */}
-      <div className="relative z-[60] flex flex-col w-full flex-grow xl:flex-none xl:fixed xl:right-4 xl:bottom-0 xl:top-24 xl:w-80 pointer-events-auto animate-in fade-in slide-in-from-right-4 duration-1000 overflow-hidden xl:overflow-visible min-h-0 pb-0">
-        <div className="flex-grow min-h-0 px-2 sm:px-4 flex flex-col pt-4">
-          <TheChat profile={profile} />
-        </div>
-        <div className="flex-shrink-0 px-2 xl:px-0 pb-4 pt-2 shrink-0">
+
+      {/* 3. MOBILE SPLIT VIEW: Pool & Chat Side by Side */}
+      {/* Desktop: Fixed sidebar | Mobile: Bottom split panels */}
+      <div className="relative z-[60] flex flex-col flex-grow pointer-events-auto animate-in fade-in slide-in-from-bottom-4 duration-1000 min-h-0 overflow-hidden">
+        
+        {/* The Box - Voting Panel (Always visible on mobile) */}
+        <div className="shrink-0 px-2 sm:px-4 pt-2 pb-1">
           <TheBox />
         </div>
 
-        {/* 5. GRADIENT COVER TO FADE THE BOX CARDS */}
-        {/* Softly fades the bottom of the column before it hits the Ticker */}
-        <div className="absolute bottom-16 left-0 w-full h-32 bg-gradient-to-t from-black via-black/80 to-transparent pointer-events-none -z-10 xl:hidden" />
+        {/* Divider */}
+        <div className="w-full px-4">
+          <div className="h-px bg-gradient-to-r from-transparent via-zinc-700 to-transparent" />
+        </div>
+
+        {/* Chat Panel */}
+        <div className="flex-grow min-h-0 px-2 sm:px-4 py-2 overflow-hidden">
+          <TheChat profile={profile} />
+        </div>
+
+        {/* Desktop Side Panel - Fixed position */}
+        <div className="hidden xl:flex xl:fixed xl:right-4 xl:top-28 xl:bottom-20 xl:w-80 xl:flex-col xl:pointer-events-auto">
+          <div className="flex-grow min-h-0 flex flex-col bg-zinc-950/80 backdrop-blur-xl rounded-2xl border border-white/5 overflow-hidden">
+            <TheChat profile={profile} />
+          </div>
+        </div>
+
       </div>
     </div>
   );

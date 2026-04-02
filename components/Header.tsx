@@ -14,6 +14,8 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate, onSignOut, profile }
   const context = useContext(RadioContext);
   const broadcastManager = getBroadcastManager();
   const [pulse, setPulse] = useState(0);
+  const [userVote, setUserVote] = useState<number | null>(null);
+  const [isVoting, setIsVoting] = useState(false);
 
   useEffect(() => {
     let handle: number;
@@ -30,7 +32,7 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate, onSignOut, profile }
   if (!context) return null;
   const { nowPlaying, isPlaying } = context;
 
-  const [inviteText, setInviteText] = useState("Invite 🔗");
+  const [inviteText, setInviteText] = useState("Invite");
 
   const handleInvite = async () => {
     const shareData = {
@@ -46,25 +48,64 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate, onSignOut, profile }
         console.log("Error sharing", err);
       }
     } else {
-      // Fallback: Copy to clipboard
       try {
         await navigator.clipboard.writeText("https://clubyouniverse.live");
-        setInviteText("Copied! ✨");
-        setTimeout(() => setInviteText("Invite 🔗"), 2000);
+        setInviteText("Copied!");
+        setTimeout(() => setInviteText("Invite"), 2000);
       } catch (err) {
         console.error("Failed to copy", err);
       }
     }
   };
 
+  // Handle voting on the now playing song (1-10 scale)
+  const handleVote = async (rating: number) => {
+    if (!nowPlaying || isVoting) return;
+    
+    setIsVoting(true);
+    setUserVote(rating);
+
+    try {
+      // Get current song data
+      const { data: song } = await supabase
+        .from("songs")
+        .select("live_stars_sum, live_stars_count")
+        .eq("id", nowPlaying.id)
+        .single();
+
+      if (song) {
+        const newSum = (song.live_stars_sum || 0) + rating;
+        const newCount = (song.live_stars_count || 0) + 1;
+        const newAvg = newSum / newCount;
+        
+        // Update in database
+        await supabase
+          .from("songs")
+          .update({ 
+            live_stars_sum: newSum,
+            live_stars_count: newCount,
+            stars: Math.round(newAvg) // Update main star rating
+          })
+          .eq("id", nowPlaying.id);
+      }
+    } catch (err) {
+      console.error("Vote error:", err);
+    } finally {
+      setTimeout(() => setIsVoting(false), 500);
+    }
+  };
+
+  // Calculate current rating display (1-10)
+  const currentRating = nowPlaying ? Math.round(nowPlaying.stars || 5) : 5;
+
   return (
-    <header className="relative flex flex-col w-full pointer-events-none px-2 pt-2 sm:px-4 sm:pt-4 pb-0 gap-3">
+    <header className="relative flex flex-col w-full pointer-events-none px-2 pt-2 sm:px-4 sm:pt-4 pb-0 gap-2">
       {/* SINGLE TOP ROW */}
       <div className="flex justify-between items-center w-full gap-2 lg:gap-6 pointer-events-auto">
 
         {/* 1. Branding (Left) */}
         <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-          <div
+<div
             className="w-8 h-8 sm:w-10 sm:h-10 bg-zinc-950 rounded-xl flex items-center justify-center border border-white/5 cursor-pointer hover:border-purple-500/50 transition-all relative overflow-hidden group shadow-inner"
             onClick={() => onNavigate("club")}
             style={{ boxShadow: `0 0 ${pulse * 30}px rgba(168, 85, 247, 0.2)` }}
@@ -72,6 +113,7 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate, onSignOut, profile }
             <div className="absolute inset-0 bg-gradient-to-br from-purple-600/20 to-blue-600/20 opacity-40 group-hover:opacity-100 transition-opacity" />
             <img src="/icons/favicon.svg" alt="Youniverse" className="relative w-5 h-5 sm:w-6 sm:h-6 object-contain opacity-70 group-hover:opacity-100 transition-opacity" />
           </div>
+
           <div className="hidden sm:flex flex-col group cursor-default">
             <h1 className="text-[11px] font-black text-white/40 tracking-[0.4em] leading-none uppercase group-hover:text-white transition-colors">Club Youniverse</h1>
             <div className="flex items-center gap-1.5 mt-1.5">
@@ -79,39 +121,74 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate, onSignOut, profile }
               <span className="text-[8px] font-black text-zinc-600 uppercase tracking-[0.3em]">Live Active</span>
             </div>
           </div>
+
         </div>
 
-        {/* 2. Now Playing (Center-Left) */}
+
+        {/* 2. Now Playing (Center) - Mobile Optimized */}
         {nowPlaying && (
-          <div className="hidden md:flex flex-grow items-center gap-3 border-l border-white/5 pl-4 sm:pl-6 opacity-60 hover:opacity-100 transition-opacity cursor-default overflow-hidden">
-            <div className="relative w-8 h-8 rounded-lg overflow-hidden border border-white/5 shadow-inner shrink-0">
+          <div className="flex flex-grow items-center gap-2 sm:gap-3 border-l border-white/5 pl-3 sm:pl-6 opacity-80 hover:opacity-100 transition-opacity cursor-default overflow-hidden min-w-0">
+            {/* Album Art */}
+            <div className="relative w-10 h-10 sm:w-12 sm:h-12 rounded-lg overflow-hidden border border-white/5 shadow-inner shrink-0">
               <img
                 src={nowPlaying.coverArtUrl || `https://picsum.photos/seed/${nowPlaying.id}/100`}
                 className="w-full h-full object-cover grayscale opacity-50 transition-all duration-700 hover:grayscale-0 hover:opacity-100"
                 style={{ transform: `scale(${1 + pulse * 0.1})` }}
                 alt="Art"
               />
+              {isPlaying && (
+                <div className="absolute inset-0 flex items-end justify-center pb-0.5">
+                  <div className="flex gap-px">
+                    {[0.3, 0.5, 0.8, 0.4, 0.6].map((h, i) => (
+                      <div 
+                        key={i}
+                        className="w-0.5 bg-purple-400 rounded-full animate-pulse"
+                        style={{ height: `${h * 8}px`, animationDelay: `${i * 100}ms` }}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
-            <div className="flex flex-col min-w-0 pr-2">
+
+            {/* Song Info & 10-Star Voting */}
+            <div className="flex flex-col min-w-0 flex-grow">
+              {/* Status & Title */}
               <div className="flex items-center gap-1.5 mb-0.5">
-                {isPlaying && <div className="w-1 h-1 rounded-full bg-green-500/50 animate-pulse" />}
-                <span className="text-[8px] font-black uppercase tracking-widest text-purple-400/80">On Air</span>
+                {isPlaying && <div className="w-1.5 h-1.5 rounded-full bg-green-500/50 animate-pulse" />}
+                <span className="text-[7px] sm:text-[8px] font-black uppercase tracking-widest text-purple-400/80">On Air</span>
               </div>
-              <h2 className="text-[10px] sm:text-[11px] font-black text-white/80 leading-none uppercase tracking-tighter truncate">{nowPlaying.title}</h2>
-              <div className="flex items-center gap-2 mt-0.5">
-                <h3 className="text-[8px] font-bold text-zinc-500 uppercase tracking-tighter truncate">{nowPlaying.artistName}</h3>
-                <div className="flex items-center gap-0.5" title={`${nowPlaying.stars ?? 5}/10 Stars`}>
-                  {[1, 2, 3, 4, 5].map((star) => (
+              <h2 className="text-[9px] sm:text-[11px] font-black text-white/80 leading-none uppercase tracking-tighter truncate">{nowPlaying.title}</h2>
+              <h3 className="text-[7px] sm:text-[8px] font-bold text-zinc-500 uppercase tracking-tighter truncate mt-0.5">{nowPlaying.artistName}</h3>
+
+              {/* 10-Star Voting System */}
+              <div className="flex items-center gap-1 mt-1.5" title={`Current Rating: ${currentRating}/10 | Click to vote 1-10`}>
+                <span className="text-[8px] font-black text-zinc-600">★</span>
+                <div className="flex items-center gap-0.5">
+                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((star) => (
                     <button
                       key={star}
-                      onClick={async () => {
-                        const newStars = star * 2;
-                        await supabase.from('songs').update({ stars: newStars }).eq('id', nowPlaying.id);
-                      }}
-                      className="hover:scale-125 transition-transform"
+                      onClick={() => handleVote(star)}
+                      disabled={isVoting}
+                      className={`
+                        w-3 h-3 sm:w-3.5 sm:h-3.5 rounded-sm transition-all duration-200
+                        hover:scale-125 hover:-translate-y-0.5
+                        ${userVote === star ? 'scale-110' : ''}
+                        ${isVoting ? 'cursor-wait opacity-50' : 'cursor-pointer'}
+                      `}
+                      title={`Vote ${star}`}
                     >
                       <svg
-                        className={`w-2.5 h-2.5 ${(nowPlaying.stars ?? 5) >= star * 2 ? 'text-yellow-400' : 'text-zinc-700'}`}
+                        className={`
+                          w-full h-full transition-all
+                          ${star <= currentRating 
+                            ? 'text-yellow-400 drop-shadow-[0_0_3px_rgba(250,204,21,0.8)]' 
+                            : star === currentRating + 1
+                              ? 'text-yellow-400/40'
+                              : 'text-zinc-700'
+                          }
+                          ${userVote === star ? 'text-purple-400 scale-110' : ''}
+                        `}
                         fill="currentColor"
                         viewBox="0 0 20 20"
                       >
@@ -120,10 +197,14 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate, onSignOut, profile }
                     </button>
                   ))}
                 </div>
+                <span className="text-[8px] font-black text-yellow-400/70 ml-1">
+                  {currentRating}
+                </span>
               </div>
             </div>
           </div>
         )}
+
 
         {/* 3. Controls & Profile (Right) */}
         <div className="flex items-center gap-2 lg:gap-4 shrink-0 justify-end flex-grow md:flex-grow-0 ml-auto border-l border-white/5 pl-2 lg:pl-4">
@@ -143,25 +224,27 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate, onSignOut, profile }
             </div>
           </div>
 
+
           {/* Action Buttons */}
           <div className="flex items-center gap-2 shrink-0">
             <button
               onClick={() => onNavigate("dj-booth")}
-              className="px-3 py-1.5 sm:px-4 sm:py-2 bg-white text-black rounded-full text-[8px] sm:text-[9px] font-black uppercase tracking-[0.1em] sm:tracking-[0.2em] hover:bg-purple-500 hover:text-white transition-all cursor-pointer shadow-[0_0_20px_rgba(255,255,255,0.2)] hover:shadow-[0_0_20px_rgba(168,85,247,0.4)] whitespace-nowrap"
+              className="px-2 py-1.5 sm:px-4 sm:py-2 bg-white text-black rounded-full text-[7px] sm:text-[9px] font-black uppercase tracking-[0.1em] hover:bg-purple-500 hover:text-white transition-all cursor-pointer shadow-[0_0_20px_rgba(255,255,255,0.2)] hover:shadow-[0_0_20px_rgba(168,85,247,0.4)] whitespace-nowrap"
             >
-              Song Pool ⚡
+              Pool ⚡
             </button>
             <button
               onClick={handleInvite}
-              className="relative px-3 py-1.5 sm:px-4 sm:py-2 bg-gradient-to-r from-purple-600 via-fuchsia-500 to-pink-600 text-white rounded-full text-[8px] sm:text-[9px] font-black uppercase tracking-[0.1em] sm:tracking-[0.2em] transition-all cursor-pointer border border-white/20 whitespace-nowrap overflow-hidden group shadow-[0_0_15px_rgba(217,70,239,0.5)] hover:shadow-[0_0_25px_rgba(217,70,239,0.8)] hover:scale-105"
+              className="relative px-2 py-1.5 sm:px-4 sm:py-2 bg-gradient-to-r from-purple-600 via-fuchsia-500 to-pink-600 text-white rounded-full text-[7px] sm:text-[9px] font-black uppercase tracking-[0.1em] transition-all cursor-pointer border border-white/20 whitespace-nowrap overflow-hidden group shadow-[0_0_15px_rgba(217,70,239,0.5)] hover:shadow-[0_0_25px_rgba(217,70,239,0.8)] hover:scale-105"
             >
               <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/40 to-transparent group-hover:animate-[shimmer_1.5s_infinite]" />
-              <span className="relative z-10 flex items-center justify-center gap-1.5 mix-blend-overlay">
+              <span className="relative z-10 flex items-center justify-center gap-1 mix-blend-overlay">
                 {inviteText}
-                {inviteText === "Invite 🔗" && <span className="animate-pulse">✨</span>}
+                {inviteText === "Invite" && <span className="animate-pulse">✨</span>}
               </span>
             </button>
           </div>
+
 
           {/* User Profile */}
           <div
@@ -176,8 +259,10 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate, onSignOut, profile }
               <img src={profile.avatar_url || `https://api.dicebear.com/7.x/pixel-art/svg?seed=${profile.user_id}`} alt="Avatar" className="w-full h-full object-cover grayscale opacity-50 group-hover:grayscale-0 group-hover:opacity-100 transition-all" />
             </div>
           </div>
+
         </div>
       </div>
+
     </header>
   );
 };
