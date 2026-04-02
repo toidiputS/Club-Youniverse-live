@@ -1,10 +1,13 @@
 /**
- * @file TheChat Component - Simplified Live Chat for Club Youniverse.
+ * @file TheChat Component - Emotion-reactive Live Chat for Club Youniverse
+ * Integrated with UNI's CGEI (Conversational Generative Emotion Interface)
  */
 
 import React, { useContext, useState, useEffect, useRef } from "react";
 import { RadioContext } from "../contexts/AudioPlayerContext";
 import { supabase } from "../services/supabaseClient";
+import { ChatMoodBubble, SystemMessage } from "./ChatMoodBubble";
+import { ChatAtmosphere } from "./ChatAtmosphere";
 import type { ChatMessage, Profile } from "../types";
 
 interface TheChatProps {
@@ -19,12 +22,14 @@ export const TheChat: React.FC<TheChatProps> = ({ profile }) => {
     const [input, setInput] = useState("");
     const scrollRef = useRef<HTMLDivElement>(null);
 
+    // Auto-scroll to bottom when new messages arrive
     useEffect(() => {
         if (scrollRef.current) {
             scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
         }
     }, [chatMessages]);
 
+    // Subscribe to live chat messages
     useEffect(() => {
         const channel = supabase.channel('club-chat')
             .on('broadcast', { event: 'new_message' }, ({ payload }) => {
@@ -35,11 +40,10 @@ export const TheChat: React.FC<TheChatProps> = ({ profile }) => {
         return () => { supabase.removeChannel(channel); };
     }, [addChatMessage]);
 
+    // Handle sending a message
     const handleSend = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!input.trim()) return;
-
-        // Detect mention if needed for future logic, but currently unused
 
         const message: ChatMessage = {
             id: Date.now().toString(),
@@ -51,12 +55,14 @@ export const TheChat: React.FC<TheChatProps> = ({ profile }) => {
             timestamp: Date.now()
         };
 
+        // Broadcast to all listeners
         await supabase.channel('club-chat').send({
             type: 'broadcast',
             event: 'new_message',
             payload: message
         });
 
+        // Also add locally
         addChatMessage(message);
         setInput("");
     };
@@ -68,55 +74,119 @@ export const TheChat: React.FC<TheChatProps> = ({ profile }) => {
             if (!hasAlert) {
                 addChatMessage({
                     id: 'system-alert',
-                    user: { name: "SYSTEM PROTOCOL", isAdmin: true },
-                    text: "⚠️ RADIO POOL DEPLETED. RESURRECT STORAGE NODES IN DJ BOOTH.",
+                    user: { name: "SYSTEM PROTOCOL", isDj: true },
+                    text: "RADIO POOL DEPLETED. RESURRECT STORAGE NODES IN DJ BOOTH.",
                     timestamp: Date.now()
                 });
             }
         }
-    }, [context.radioState, profile.is_admin]);
+    }, [context.radioState, profile.is_admin, context.chatMessages.length, addChatMessage]);
+
+    // Determine if message is from current user
+    const isCurrentUser = (msg: ChatMessage) => {
+        return msg.user.name === profile.name;
+    };
+
+    // Check if message is a system message
+    const isSystemMessage = (msg: ChatMessage) => {
+        return msg.user.name === "SYSTEM PROTOCOL" || msg.user.name === "DJ Python" || msg.id === 'system-alert';
+    };
 
     return (
-        <div className="flex flex-col h-full overflow-hidden transition-all select-none">
-            {/* Chat Messages */}
-            <div
-                ref={scrollRef}
-                className="flex flex-col flex-grow overflow-y-auto px-3 scrollbar-hide min-h-0"
-                style={{ maskImage: 'linear-gradient(to bottom, transparent, black 20px)', WebkitMaskImage: 'linear-gradient(to bottom, transparent, black 20px)' }}
-            >
-                <div className="mt-auto flex flex-col space-y-2 pt-2 pb-4">
-                    {chatMessages.map((msg) => {
-                        const isMention = msg.text.toLowerCase().includes("@dj");
-                        return (
-                            <div key={msg.id} className="animate-in fade-in slide-in-from-bottom-1 duration-500">
-                                <div className="flex flex-col gap-0.5">
-                                    <div className="flex items-center gap-2">
-                                        <span className={`text-[8px] font-black uppercase tracking-widest ${msg.user.isAdmin ? 'text-purple-400' : 'text-zinc-600'}`}>
-                                            {msg.user.name}
-                                        </span>
-                                    </div>
-                                    <div className={`text-[10px] font-medium leading-[1.3] ${isMention
-                                        ? 'text-purple-300 border-l border-purple-500/30 pl-2 bg-purple-500/5 py-0.5'
-                                        : 'text-zinc-400'}`}>
-                                        {msg.text}
-                                    </div>
-                                </div>
+        <ChatAtmosphere 
+            messages={chatMessages.map(m => ({ text: m.text }))}
+            showMoodBadge={true}
+            showParticles={true}
+        >
+            <div className="flex flex-col h-full overflow-hidden transition-all select-none">
+                {/* Chat Messages */}
+                <div
+                    ref={scrollRef}
+                    className="flex flex-col flex-grow overflow-y-auto px-3 scrollbar-hide min-h-0"
+                    style={{ maskImage: 'linear-gradient(to bottom, transparent, black 20px)', WebkitMaskImage: 'linear-gradient(to bottom, transparent, black 20px)' }}
+                >
+                    <div className="mt-auto flex flex-col space-y-2 pt-2 pb-4">
+                        {chatMessages.length === 0 && (
+                            <div className="flex flex-col items-center justify-center py-8 text-zinc-600">
+                                <span className="text-lg mb-2">🎵</span>
+                                <span className="text-[10px] font-medium uppercase tracking-wider">
+                                    The chat is quiet...
+                                </span>
+                                <span className="text-[8px] text-zinc-700 mt-1">
+                                    Be the first to drop a vibe
+                                </span>
                             </div>
-                        );
-                    })}
-                </div>
-            </div>
+                        )}
+                        
+                        {chatMessages.map((msg) => {
+                            if (isSystemMessage(msg)) {
+                                return (
+                                    <SystemMessage 
+                                        key={msg.id} 
+                                        message={msg.text} 
+                                        timestamp={msg.timestamp}
+                                    />
+                                );
+                            }
 
-            {/* Tight Input Area */}
-            <form onSubmit={handleSend} className="p-2 border-t border-white/[0.03]">
-                <input
-                    type="text"
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    placeholder="@dj..."
-                    className="w-full bg-black/40 border-none rounded-lg py-2 px-3 text-[10px] text-white/80 placeholder-zinc-800 focus:outline-none focus:ring-1 focus:ring-purple-500/20 transition-all"
-                />
-            </form>
-        </div>
+                            return (
+                                <ChatMoodBubble
+                                    key={msg.id}
+                                    message={msg.text}
+                                    username={msg.user.name}
+                                    isAdmin={msg.user.isAdmin || msg.user.isDj}
+isCurrentUser={isCurrentUser(msg)}
+                                    timestamp={msg.timestamp}
+                                />
+                            );
+                        })}
+                    </div>
+                </div>
+
+                {/* Input Area */}
+                <form onSubmit={handleSend} className="p-2 border-t border-white/[0.03] bg-black/30 backdrop-blur-sm">
+                    <div className="relative flex items-center gap-2">
+                        <input
+                            type="text"
+                            value={input}
+                            onChange={(e) => setInput(e.target.value)}
+                            placeholder="@dj..."
+                            className="flex-grow bg-zinc-900/60 border border-zinc-700/30 rounded-lg py-2 px-3 pr-10 text-[10px] text-white/80 placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-purple-500/40 focus:border-purple-500/40 transition-all"
+                        />
+                        <button
+                            type="submit"
+                            disabled={!input.trim()}
+                            className={`
+                                absolute right-2 p-1.5 rounded-md transition-all
+                                ${input.trim() 
+                                    ? 'bg-purple-600/80 hover:bg-purple-500 text-white' 
+                                    : 'bg-zinc-800/50 text-zinc-600 cursor-not-allowed'
+                                }
+                            `}
+                        >
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                            </svg>
+                        </button>
+                    </div>
+                    
+                    {/* Quick mood hints */}
+                    <div className="flex gap-1 mt-1.5 overflow-x-auto scrollbar-hide pb-0.5">
+                        {['❤️', '🔥', '😂', '😮', '✨', '🎵'].map((emoji) => (
+                            <button
+                                key={emoji}
+                                type="button"
+                                onClick={() => setInput(prev => prev + emoji)}
+                                className="text-[10px] px-1.5 py-0.5 rounded bg-zinc-800/40 hover:bg-zinc-700/50 transition-colors"
+                            >
+                                {emoji}
+                            </button>
+                        ))}
+                    </div>
+                </form>
+            </div>
+        </ChatAtmosphere>
     );
 };
+
+export default TheChat;
