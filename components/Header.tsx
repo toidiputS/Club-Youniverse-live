@@ -7,9 +7,11 @@ interface HeaderProps {
   onNavigate: (view: View) => void;
   onSignOut: () => void;
   profile: Profile;
+  onProfileClick?: () => void;
+  onVoteClick?: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ onNavigate, onSignOut, profile }) => {
+export const Header: React.FC<HeaderProps> = ({ onNavigate, onSignOut, profile, onProfileClick, onVoteClick }) => {
   const context = useContext(RadioContext);
 
   const broadcastManager = getBroadcastManager();
@@ -70,6 +72,12 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate, onSignOut, profile }
           <img src="/icons/favicon.svg" alt="Youniverse" className="w-5 h-5 sm:w-6 sm:h-6 object-contain opacity-70" />
         </button>
 
+        {/* Center Title - Mobile Club Youniverse */}
+        <div className="flex flex-col items-center">
+          <span className="text-[10px] sm:text-[11px] font-black text-white/60 tracking-[0.3em] uppercase hidden sm:block">Club Youniverse</span>
+          <span className="text-[9px] font-black text-white/40 tracking-widest sm:hidden">CLUB YOUNIVERSE</span>
+        </div>
+
         {/* Mobile: Only VJ toggle, Desktop: Volume too */}
         <div className="flex items-center gap-2">
           <button
@@ -101,6 +109,13 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate, onSignOut, profile }
         {/* Action Buttons (Right) */}
         <div className="flex items-center gap-2 shrink-0">
           <button
+            onClick={onVoteClick}
+            className="px-2 py-1.5 sm:px-3 sm:py-2 bg-purple-600/30 border border-purple-500/30 text-purple-400 rounded-full text-[7px] sm:text-[9px] font-black uppercase tracking-wider hover:bg-purple-500/50 transition-all"
+          >
+            Vote
+          </button>
+
+          <button
             onClick={() => onNavigate("dj-booth")}
             className="px-2 py-1.5 sm:px-3 sm:py-2 bg-white text-black rounded-full text-[7px] sm:text-[9px] font-black uppercase tracking-wider hover:bg-purple-500 hover:text-white transition-all"
           >
@@ -123,6 +138,14 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate, onSignOut, profile }
             <div className="w-8 h-8 rounded-xl bg-zinc-950 border border-white/5 overflow-hidden">
               <img src={profile.avatar_url || `https://api.dicebear.com/7.x/pixel-art/svg?seed=${profile.user_id}`} alt="Avatar" className="w-full h-full object-cover grayscale opacity-50 group-hover:grayscale-0 group-hover:opacity-100" />
             </div>
+          </button>
+
+          {/* Mobile Profile Button */}
+          <button
+            onClick={onProfileClick}
+            className="sm:hidden w-8 h-8 rounded-xl bg-zinc-900 border border-white/5 overflow-hidden"
+          >
+            <img src={profile.avatar_url || `https://api.dicebear.com/7.x/pixel-art/svg?seed=${profile.user_id}`} alt="Avatar" className="w-full h-full object-cover opacity-60" />
           </button>
         </div>
       </div>

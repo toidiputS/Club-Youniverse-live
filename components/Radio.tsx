@@ -1,9 +1,10 @@
-import React, { useContext, useMemo } from "react";
+import React, { useContext, useMemo, useState } from "react";
 import { RadioContext } from "../contexts/AudioPlayerContext";
 import { TheBox } from "./TheBox";
 import { NowPlay } from "./NowPlay";
 import { Header } from "./Header";
 import { TheChat } from "./TheChat";
+import { UserProfileCard } from "./UserProfileCard";
 import { motion, AnimatePresence } from "framer-motion";
 import { AudioVisualizer } from "./AudioVisualizer";
 import { LyricVisualizer } from "./LyricVisualizer";
@@ -11,6 +12,7 @@ import CosmicCanvas from "./Youniversal/CosmicCanvas";
 import { YouniversalLeaderboard } from "./Youniversal/Leaderboard";
 import { useGameStore } from "./Youniversal/useGameStore";
 import type { Profile, ChoreographedLine, View } from "../types";
+import { X } from "lucide-react";
 
 interface RadioProps {
   onNavigate: (view: View) => void;
@@ -21,6 +23,8 @@ interface RadioProps {
 
 export const Radio: React.FC<RadioProps> = ({ onNavigate, onSignOut, profile, minimal = false }) => {
   const context = useContext(RadioContext);
+  const [showProfile, setShowProfile] = useState(false);
+  const [showVote, setShowVote] = useState(false);
 
   const parsedLyrics = useMemo((): Partial<ChoreographedLine>[] => {
     if (!context?.nowPlaying?.lyrics) return [];
@@ -99,7 +103,7 @@ export const Radio: React.FC<RadioProps> = ({ onNavigate, onSignOut, profile, mi
                     
                     {/* Vignette */}
                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(0,0,0,0.8)_100%)] pointer-events-none z-[5]" />
-                    <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black to-transparent pointer-events-none z-[10]" />
+                    <div className="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-black to-transparent pointer-events-none z-[10]" />
 
                     {/* YOUNIVERSAL DANCE FLOOR */}
                     <AnimatePresence>
@@ -119,7 +123,13 @@ export const Radio: React.FC<RadioProps> = ({ onNavigate, onSignOut, profile, mi
                 {/* HEADER */}
                 {!minimal && (
                     <div className="flex-none z-30">
-                        <Header onNavigate={onNavigate} onSignOut={onSignOut} profile={profile} />
+                        <Header 
+                            onNavigate={onNavigate} 
+                            onSignOut={onSignOut} 
+                            profile={profile} 
+                            onProfileClick={() => setShowProfile(true)}
+                            onVoteClick={() => setShowVote(true)}
+                        />
                     </div>
                 )}
 
@@ -139,10 +149,10 @@ export const Radio: React.FC<RadioProps> = ({ onNavigate, onSignOut, profile, mi
                 </div>
             </div>
 
-            {/* RIGHT SIDEBAR: CHAT */}
+            {/* DESKTOP SIDEBAR: CHAT + VOTE */}
             {!minimal && (
                 <div className="hidden lg:flex flex-none w-[340px] h-full flex-col pointer-events-auto bg-black/70 backdrop-blur-3xl border-l border-white/5">
-                    {/* LEADERBOARD - TOP OF SIDEBAR */}
+                    {/* LEADERBOARD - TOP */}
                     <AnimatePresence>
                         {context.danceFloorEnabled && (
                             <motion.div 
@@ -152,12 +162,6 @@ export const Radio: React.FC<RadioProps> = ({ onNavigate, onSignOut, profile, mi
                                 className="overflow-hidden"
                             >
                                 <div className="p-3 border-b border-white/5">
-                                    <div className="flex items-center justify-between mb-2">
-                                        <span className="text-[9px] font-black uppercase tracking-widest text-white/40">Leaderboard</span>
-                                        <div className="flex gap-1">
-                                            <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                                        </div>
-                                    </div>
                                     <YouniversalLeaderboard />
                                 </div>
                             </motion.div>
@@ -171,15 +175,93 @@ export const Radio: React.FC<RadioProps> = ({ onNavigate, onSignOut, profile, mi
 
                     {/* THE BOX */}
                     <div className="flex-none p-3 border-t border-white/5 bg-black/40">
-                        <div className="mb-2 flex items-center justify-between">
-                            <span className="text-[9px] font-black uppercase tracking-widest text-white/30">Up Next</span>
-                            <div className="flex gap-1">
-                                <div className="w-1 h-1 rounded-full bg-purple-500 animate-pulse" />
-                            </div>
-                        </div>
                         <TheBox />
                     </div>
                 </div>
+            )}
+
+            {/* MOBILE SIDE DRAWS */}
+            {!minimal && (
+                <>
+                    {/* MOBILE PROFILE DRAWER - Right Side */}
+                    <AnimatePresence>
+                        {showProfile && (
+                            <>
+                                <motion.div
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    exit={{ opacity: 0 }}
+                                    className="lg:hidden fixed inset-0 bg-black/60 z-[60]"
+                                    onClick={() => setShowProfile(false)}
+                                />
+                                <motion.div
+                                    initial={{ x: "100%" }}
+                                    animate={{ x: 0 }}
+                                    exit={{ x: "100%" }}
+                                    transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                                    className="lg:hidden fixed right-0 top-0 bottom-0 w-[85%] max-w-[360px] bg-black/95 backdrop-blur-xl z-[70] border-l border-white/10"
+                                >
+                                    <div className="flex flex-col h-full">
+<div className="flex items-center justify-between p-4 border-b border-white/5">
+                                            <span className="text-[11px] font-black uppercase tracking-widest text-white/50">Profile</span>
+                                            <button onClick={() => setShowProfile(false)} className="p-2 text-white/40 hover:text-white">
+                                                <X size={20} />
+                                            </button>
+                                        </div>
+                                        <div className="flex-grow overflow-y-auto p-4">
+                                            <UserProfileCard 
+                                                profile={profile} 
+                                                onNavigate={onNavigate}
+                                                onSignOut={onSignOut}
+                                            />
+                                        </div>
+                                    </div>
+                                </motion.div>
+                            </>
+                        )}
+                    </AnimatePresence>
+
+                    {/* MOBILE VOTE DRAWER - Left Side */}
+                    <AnimatePresence>
+                        {showVote && (
+                            <>
+                                <motion.div
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    exit={{ opacity: 0 }}
+                                    className="lg:hidden fixed inset-0 bg-black/60 z-[60]"
+                                    onClick={() => setShowVote(false)}
+                                />
+                                <motion.div
+                                    initial={{ x: "-100%" }}
+                                    animate={{ x: 0 }}
+                                    exit={{ x: "-100%" }}
+                                    transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                                    className="lg:hidden fixed left-0 top-0 bottom-0 w-[85%] max-w-[360px] bg-black/95 backdrop-blur-xl z-[70] border-r border-white/10"
+                                >
+                                    <div className="flex flex-col h-full">
+                                        <div className="flex items-center justify-between p-4 border-b border-white/5">
+                                            <span className="text-[11px] font-black uppercase tracking-widest text-white/50">Vote for Next</span>
+                                            <button onClick={() => setShowVote(false)} className="p-2 text-white/40 hover:text-white">
+                                                <X size={20} />
+                                            </button>
+                                        </div>
+                                        <div className="flex-grow overflow-y-auto p-4">
+                                            <TheBox />
+                                        </div>
+                                    </div>
+                                </motion.div>
+                            </>
+                        )}
+                    </AnimatePresence>
+
+                    {/* MOBILE BOTTOM BAR - Chat */}
+                    <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-black/95 backdrop-blur-xl border-t border-white/10">
+                        <div className="h-[60vh] max-h-[400px]">
+                            <TheChat profile={profile} transparent={true} />
+                        </div>
+                    </div>
+                </>
             )}
         </div>
     </div>
