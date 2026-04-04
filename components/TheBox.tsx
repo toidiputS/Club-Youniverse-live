@@ -11,7 +11,7 @@ export const TheBox: React.FC = () => {
   const context = useContext(RadioContext);
   if (!context) return null;
 
-  const { radioState, nowPlaying } = context;
+  const { radioState } = context;
   const [candidates, setCandidates] = useState<Song[]>([]);
   const [votedId, setVotedId] = useState<string | null>(null);
 
@@ -90,56 +90,14 @@ export const TheBox: React.FC = () => {
 
     const { data: song } = await supabase.from("songs").select("upvotes").eq("id", songId).single();
     if (song) {
-      await supabase.from("songs").update({ upvotes: (song.upvotes || 0) + 10 }).eq("id", songId);
+      await supabase.from("songs").update({ upvotes: (song.upvotes || 0) + 1 }).eq("id", songId);
     }
   };
 
   return (
     <div className="flex flex-col w-full">
-      {/* Box Header */}
-      <div className="w-full flex justify-between items-center mb-2">
-        <div className="flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full bg-purple-500 animate-pulse" />
-          <h2 className="text-[10px] font-black tracking-[0.2em] uppercase text-zinc-400">
-            The <span className="text-purple-400">Box</span>
-          </h2>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)] animate-pulse" />
-          <span className="text-[8px] font-black text-zinc-400 uppercase tracking-widest">Live Vote</span>
-        </div>
-      </div>
-
-      {/* Voting Grid - Mobile Optimized */}
-      <div className="grid grid-cols-3 gap-2">
-        {/* Now Playing Mini Card */}
-        <div className="relative flex flex-col p-1.5 rounded-xl border border-purple-500/30 bg-zinc-950/80 shadow-[0_0_15px_rgba(168,85,247,0.15)]">
-          <div className="relative h-12 sm:h-14 rounded-lg overflow-hidden mb-1 border border-white/5">
-            {nowPlaying ? (
-              <img
-                src={nowPlaying.coverArtUrl || `https://picsum.photos/seed/${nowPlaying.id}/100`}
-                className="w-full h-full object-cover grayscale opacity-50"
-                alt={nowPlaying.title}
-              />
-            ) : (
-              <div className="w-full h-full bg-zinc-900 flex items-center justify-center">
-                <div className="w-1 h-1 rounded-full bg-green-500 animate-ping" />
-              </div>
-            )}
-            <div className="absolute top-1 right-1 bg-black/60 backdrop-blur-md px-1 py-0.5 rounded-full flex items-center border border-white/10">
-              <span className="text-[6px] font-black text-green-400 tracking-wider">ON AIR</span>
-            </div>
-          </div>
-          <div className="w-full text-left px-0.5">
-            <h4 className="text-[9px] font-black text-white/70 leading-tight truncate uppercase">
-              {nowPlaying?.title || "Silence"}
-            </h4>
-            <p className="text-zinc-600 text-[7px] font-bold truncate uppercase">
-              {nowPlaying?.artistName || "Unknown"}
-            </p>
-          </div>
-        </div>
-
+      {/* Voting Grid - Mobile Optimized (2 candidates only) */}
+      <div className="grid grid-cols-2 gap-3">
         {/* Voting Candidates */}
         {[0, 1].map((idx) => {
           const song = candidates[idx];

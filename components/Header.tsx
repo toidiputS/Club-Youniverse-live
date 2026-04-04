@@ -2,7 +2,6 @@ import React, { useContext, useEffect, useState } from "react";
 import type { View, Profile } from "../types";
 import { RadioContext } from "../contexts/AudioPlayerContext";
 import { getBroadcastManager } from "../services/globalBroadcastManager";
-import { supabase } from "../services/supabaseClient";
 
 interface HeaderProps {
   onNavigate: (view: View) => void;
@@ -14,8 +13,6 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate, onSignOut, profile }
   const context = useContext(RadioContext);
   const broadcastManager = getBroadcastManager();
   const [pulse, setPulse] = useState(0);
-  const [userVote, setUserVote] = useState<number | null>(null);
-  const [isVoting, setIsVoting] = useState(false);
 
   useEffect(() => {
     let handle: number;
@@ -30,7 +27,7 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate, onSignOut, profile }
   }, []);
 
   if (!context) return null;
-  const { nowPlaying, isPlaying } = context;
+  const { vjEnabled, setVjEnabled } = context;
 
   const [inviteText, setInviteText] = useState("Invite");
 
@@ -57,46 +54,6 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate, onSignOut, profile }
       }
     }
   };
-
-  // Handle voting on the now playing song (1-10 scale)
-  const handleVote = async (rating: number) => {
-    if (!nowPlaying || isVoting) return;
-    
-    setIsVoting(true);
-    setUserVote(rating);
-
-    try {
-      // Get current song data
-      const { data: song } = await supabase
-        .from("songs")
-        .select("live_stars_sum, live_stars_count")
-        .eq("id", nowPlaying.id)
-        .single();
-
-      if (song) {
-        const newSum = (song.live_stars_sum || 0) + rating;
-        const newCount = (song.live_stars_count || 0) + 1;
-        const newAvg = newSum / newCount;
-        
-        // Update in database
-        await supabase
-          .from("songs")
-          .update({ 
-            live_stars_sum: newSum,
-            live_stars_count: newCount,
-            stars: Math.round(newAvg) // Update main star rating
-          })
-          .eq("id", nowPlaying.id);
-      }
-    } catch (err) {
-      console.error("Vote error:", err);
-    } finally {
-      setTimeout(() => setIsVoting(false), 500);
-    }
-  };
-
-  // Calculate current rating display (1-10)
-  const currentRating = nowPlaying ? Math.round(nowPlaying.stars || 5) : 5;
 
   return (
     <header className="relative flex flex-col w-full pointer-events-none px-2 pt-2 sm:px-4 sm:pt-4 pb-0 gap-2">
@@ -125,91 +82,31 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate, onSignOut, profile }
         </div>
 
 
-        {/* 2. Now Playing (Center) - Mobile Optimized */}
-        {nowPlaying && (
-          <div className="flex flex-grow items-center gap-2 sm:gap-3 border-l border-white/5 pl-3 sm:pl-6 opacity-80 hover:opacity-100 transition-opacity cursor-default overflow-hidden min-w-0">
-            {/* Album Art */}
-            <div className="relative w-10 h-10 sm:w-12 sm:h-12 rounded-lg overflow-hidden border border-white/5 shadow-inner shrink-0">
-              <img
-                src={nowPlaying.coverArtUrl || `https://picsum.photos/seed/${nowPlaying.id}/100`}
-                className="w-full h-full object-cover grayscale opacity-50 transition-all duration-700 hover:grayscale-0 hover:opacity-100"
-                style={{ transform: `scale(${1 + pulse * 0.1})` }}
-                alt="Art"
-              />
-              {isPlaying && (
-                <div className="absolute inset-0 flex items-end justify-center pb-0.5">
-                  <div className="flex gap-px">
-                    {[0.3, 0.5, 0.8, 0.4, 0.6].map((h, i) => (
-                      <div 
-                        key={i}
-                        className="w-0.5 bg-purple-400 rounded-full animate-pulse"
-                        style={{ height: `${h * 8}px`, animationDelay: `${i * 100}ms` }}
-                      />
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
 
-            {/* Song Info & 10-Star Voting */}
-            <div className="flex flex-col min-w-0 flex-grow">
-              {/* Status & Title */}
-              <div className="flex items-center gap-1.5 mb-0.5">
-                {isPlaying && <div className="w-1.5 h-1.5 rounded-full bg-green-500/50 animate-pulse" />}
-                <span className="text-[7px] sm:text-[8px] font-black uppercase tracking-widest text-purple-400/80">On Air</span>
-              </div>
-              <h2 className="text-[9px] sm:text-[11px] font-black text-white/80 leading-none uppercase tracking-tighter truncate">{nowPlaying.title}</h2>
-              <h3 className="text-[7px] sm:text-[8px] font-bold text-zinc-500 uppercase tracking-tighter truncate mt-0.5">{nowPlaying.artistName}</h3>
+        {/* 2. HUD Space Control (Center) - Placeholder for visual balance */}
+        <div className="flex-grow flex justify-center items-center pointer-events-none">
+          {/* Main HUD (NowPlay / TheBox) is positioned here in Radio.tsx layout */}
+        </div>
 
-              {/* 10-Star Voting System */}
-              <div className="flex items-center gap-1 mt-1.5" title={`Current Rating: ${currentRating}/10 | Click to vote 1-10`}>
-                <span className="text-[8px] font-black text-zinc-600">★</span>
-                <div className="flex items-center gap-0.5">
-                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((star) => (
-                    <button
-                      key={star}
-                      onClick={() => handleVote(star)}
-                      disabled={isVoting}
-                      className={`
-                        w-3 h-3 sm:w-3.5 sm:h-3.5 rounded-sm transition-all duration-200
-                        hover:scale-125 hover:-translate-y-0.5
-                        ${userVote === star ? 'scale-110' : ''}
-                        ${isVoting ? 'cursor-wait opacity-50' : 'cursor-pointer'}
-                      `}
-                      title={`Vote ${star}`}
-                    >
-                      <svg
-                        className={`
-                          w-full h-full transition-all
-                          ${star <= currentRating 
-                            ? 'text-yellow-400 drop-shadow-[0_0_3px_rgba(250,204,21,0.8)]' 
-                            : star === currentRating + 1
-                              ? 'text-yellow-400/40'
-                              : 'text-zinc-700'
-                          }
-                          ${userVote === star ? 'text-purple-400 scale-110' : ''}
-                        `}
-                        fill="currentColor"
-                        viewBox="0 0 20 20"
-                      >
-                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                      </svg>
-                    </button>
-                  ))}
-                </div>
-                <span className="text-[8px] font-black text-yellow-400/70 ml-1">
-                  {currentRating}
-                </span>
-              </div>
-            </div>
-          </div>
-        )}
 
 
         {/* 3. Controls & Profile (Right) */}
         <div className="flex items-center gap-2 lg:gap-4 shrink-0 justify-end flex-grow md:flex-grow-0 ml-auto border-l border-white/5 pl-2 lg:pl-4">
 
+          {/* Lyrical VJ Toggle */}
+          <button
+            onClick={() => setVjEnabled(!vjEnabled)}
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-full border transition-all shrink-0 ${vjEnabled 
+              ? 'bg-purple-600/20 border-purple-500/40 text-purple-400 shadow-[0_0_15px_rgba(168,85,247,0.2)]' 
+              : 'bg-black/40 border-white/5 text-zinc-600'}`}
+            title="Toggle Lyrical VJ Visuals"
+          >
+            <div className={`w-1.5 h-1.5 rounded-full ${vjEnabled ? 'bg-purple-400 animate-pulse' : 'bg-zinc-800'}`} />
+            <span className="text-[8px] font-black uppercase tracking-widest hidden sm:inline">VJ</span>
+          </button>
+
           {/* Volume Controls (Hidden on mobile) */}
+
           <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 bg-black/40 rounded-full border border-white/5 transition-all w-28 shrink-0">
             <button onClick={() => context.setMuted(!context.isMuted)} className="text-zinc-500 hover:text-white transition-colors">
               {context.isMuted || context.volume === 0 ? (
@@ -229,18 +126,19 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate, onSignOut, profile }
           <div className="flex items-center gap-2 shrink-0">
             <button
               onClick={() => onNavigate("dj-booth")}
-              className="px-2 py-1.5 sm:px-4 sm:py-2 bg-white text-black rounded-full text-[7px] sm:text-[9px] font-black uppercase tracking-[0.1em] hover:bg-purple-500 hover:text-white transition-all cursor-pointer shadow-[0_0_20px_rgba(255,255,255,0.2)] hover:shadow-[0_0_20px_rgba(168,85,247,0.4)] whitespace-nowrap"
+              className="px-2 py-1.5 sm:px-4 sm:py-2 bg-white text-black rounded-full text-[7px] sm:text-[9px] font-black uppercase tracking-[0.1em] hover:bg-purple-500 hover:text-white transition-all cursor-pointer shadow-[0_0_10px_rgba(255,255,255,0.1)] hover:shadow-[0_0_20px_rgba(168,85,247,0.4)] whitespace-nowrap"
             >
-              Pool ⚡
+              DJ Booth ⚡
             </button>
+
             <button
               onClick={handleInvite}
-              className="relative px-2 py-1.5 sm:px-4 sm:py-2 bg-gradient-to-r from-purple-600 via-fuchsia-500 to-pink-600 text-white rounded-full text-[7px] sm:text-[9px] font-black uppercase tracking-[0.1em] transition-all cursor-pointer border border-white/20 whitespace-nowrap overflow-hidden group shadow-[0_0_15px_rgba(217,70,239,0.5)] hover:shadow-[0_0_25px_rgba(217,70,239,0.8)] hover:scale-105"
+              className="relative px-4 py-2.5 sm:px-6 sm:py-3 bg-gradient-to-r from-purple-600 via-fuchsia-500 to-pink-600 text-white rounded-full text-[11px] font-black uppercase tracking-[0.2em] transition-all cursor-pointer border border-white/50 whitespace-nowrap overflow-hidden group shadow-[0_0_20px_rgba(217,70,239,0.4)] hover:shadow-[0_0_30px_rgba(217,70,239,0.7)] hover:scale-105 active:scale-95"
             >
               <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/40 to-transparent group-hover:animate-[shimmer_1.5s_infinite]" />
-              <span className="relative z-10 flex items-center justify-center gap-1 mix-blend-overlay">
-                {inviteText}
-                {inviteText === "Invite" && <span className="animate-pulse">✨</span>}
+              <span className="relative z-10 flex items-center justify-center gap-2 drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">
+                {inviteText.toUpperCase()}
+                {inviteText.toLowerCase() === "invite" && <span className="animate-bounce">✨</span>}
               </span>
             </button>
           </div>

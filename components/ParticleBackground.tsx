@@ -16,8 +16,20 @@ interface Particle {
   iy: number; // Interactive Velocity Y
 }
 
-export const ParticleBackground: React.FC<{ intensity: number }> = ({
+export interface AudioData {
+  bass: number;
+  mid: number;
+  treble: number;
+}
+
+interface ParticleBackgroundProps {
+  intensity: number;
+  audioRef?: React.MutableRefObject<AudioData>;
+}
+
+export const ParticleBackground: React.FC<ParticleBackgroundProps> = ({
   intensity,
+  audioRef,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const mouseRef = useRef({ x: -1000, y: -1000 }); // Initialize off-screen
@@ -87,23 +99,35 @@ export const ParticleBackground: React.FC<{ intensity: number }> = ({
     canvas.addEventListener("mouseleave", onLeave);
     canvas.addEventListener("touchend", onLeave);
 
+    let globalHue = 200; // Shared hue state
+
     const updateSimulatedSpectrum = () => {
       timeStep += 0.05;
-      // Simulate frequency data based on intensity and sine waves for "rhythm"
+
+      // Use external audio data if available (synchronized with lyrics)
+      const extBass = audioRef?.current?.bass || 0;
+      const extMid = audioRef?.current?.mid || 0;
+      const extTreble = audioRef?.current?.treble || 0;
+      const hasExternal = extBass + extMid + extTreble > 0;
+
+      // Shift global hue based on music intensity and time
+      globalHue = (globalHue + 0.2 + extBass * 2) % 360;
+
       for (let i = 0; i < spectrumSize; i++) {
-        // Create a wave-like pattern that moves
         const wave = Math.sin(i * 0.2 + timeStep) * 0.5 + 0.5;
         const noise = Math.random() * 0.3;
-
-        // Base value varies by index (simulate EQ curve)
         const eq = 1 - Math.abs((i - spectrumSize / 2) / (spectrumSize / 2));
 
-        // Final value 0-255 derived from intensity
-        let val = wave * 50 + noise * 50 + intensity * 200 * eq;
+        let val = 0;
 
-        // Random "beat" spikes if intensity is high
-        if (intensity > 0.6 && Math.random() > 0.9) {
-          val += 100;
+        if (hasExternal) {
+          if (i < 10) val = extBass * 255;
+          else if (i < 40) val = extMid * 200 * wave;
+          else val = extTreble * 255 * (noise + 0.5);
+          val = val * 0.8 + wave * 50;
+        } else {
+          val = wave * 50 + noise * 50 + intensity * 200 * eq;
+          if (intensity > 0.6 && Math.random() > 0.9) val += 100;
         }
 
         spectrumData[i] = Math.min(255, Math.max(0, val));
@@ -113,15 +137,20 @@ export const ParticleBackground: React.FC<{ intensity: number }> = ({
     const animate = () => {
       updateSimulatedSpectrum();
 
-      // Clear with trail effect
-      ctx.fillStyle = `rgba(5, 5, 8, ${0.25 - intensity * 0.1})`;
-      ctx.fillRect(0, 0, w, h);
+      const extBass = audioRef?.current?.bass || 0;
+      const extTreble = audioRef?.current?.treble || 0;
 
-      // Analyze "bass" (low index) and "treble" (high index)
-      const bass =
-        spectrumData.slice(0, 10).reduce((a, b) => a + b, 0) / 10 / 255;
-      const treble =
-        spectrumData.slice(40, 60).reduce((a, b) => a + b, 0) / 20 / 255;
+      const spectrumBass = spectrumData.slice(0, 10).reduce((a, b) => a + b, 0) / 10 / 255;
+      const spectrumTreble = spectrumData.slice(40, 60).reduce((a, b) => a + b, 0) / 20 / 255;
+
+      const bass = Math.max(spectrumBass, extBass);
+      const treble = Math.max(spectrumTreble, extTreble);
+
+      // Clear with trail effect
+      const bgHue = (globalHue + 180) % 360;
+      const bgAlpha = 0.25 - intensity * 0.1 + bass * 0.05;
+      ctx.fillStyle = `hsla(${bgHue}, 30%, 5%, ${bgAlpha})`;
+      ctx.fillRect(0, 0, w, h);
 
       // Draw Particles
       particles.forEach((p, i) => {
@@ -161,12 +190,9 @@ export const ParticleBackground: React.FC<{ intensity: number }> = ({
         // Pulse radius with bass
         p.radius = p.baseRadius + bass * 15 * intensity;
 
-        // Color shift based on intensity
-        // Low: Blue (200), High: Pink/Red (340)
-        const targetHue = 200 + intensity * 140;
-        p.hue += (targetHue - p.hue) * 0.05;
-
-        const brightness = 50 + freqValue * 50;
+        // Color shift based on global hue and frequency
+        p.hue = (globalHue + i * (360 / 120)) % 360;
+        const brightness = 50 + freqValue * 40 + bass * 10;
         p.color = `hsla(${p.hue}, 80%, ${brightness}%, ${0.6 + freqValue * 0.4})`;
 
         // Screen wrap
@@ -182,8 +208,6 @@ export const ParticleBackground: React.FC<{ intensity: number }> = ({
         ctx.fill();
 
         // Draw connections - Neuro-web effect
-        // Connect nearby particles with dynamic opacity based on distance and intensity
-        // Base connection distance of 80px, expanding up to 230px with intensity
         const connectDist = 80 + intensity * 150;
 
         for (let j = i + 1; j < particles.length; j++) {
@@ -194,11 +218,7 @@ export const ParticleBackground: React.FC<{ intensity: number }> = ({
 
           if (dist < connectDist) {
             ctx.beginPath();
-            // Calculate opacity:
-            // (1 - dist/connectDist) -> 1 at 0 distance, 0 at max distance
-            // Scale by intensity so lines are brighter when music is loud
             const alpha = (1 - dist / connectDist) * (0.15 + intensity * 0.35);
-
             ctx.strokeStyle = `hsla(${p.hue}, 80%, 50%, ${alpha})`;
             ctx.lineWidth = 1; // Keep lines fine for elegance
             ctx.moveTo(p.x, p.y);

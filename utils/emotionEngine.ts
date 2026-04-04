@@ -14,10 +14,10 @@ export interface MoodState {
 // Mood detection keywords from UNI sentiment analysis
 const MOOD_KEYWORDS: Record<MoodType, string[]> = {
   happy: [
-    'love', 'loved', 'loving', 'yay', 'joy', 'happy', 'happiness', 'great', 'awesome',
-    'wonderful', 'amazing', 'sweet', 'kiss', 'hugs', 'hug', 'sunshine', 'grateful', 'smile', 'smiling',
+    'yay', 'joy', 'happy', 'happiness', 'great', 'awesome',
+    'wonderful', 'amazing', 'sweet', 'sunshine', 'grateful', 'smile', 'smiling',
     'laughter', 'lol', 'haha', 'hehe', 'xoxo', 'proud', 'blessed', 'excited', 'stoked',
-    ':)', ':-)', '❤️', '😊', '😍', 'fire', '🔥', 'lit', 'banging', 'slaps', 'vibes'
+    ':)', ':-)', '😊', 'fire', '🔥', 'lit', 'banging', 'slaps', 'vibes'
   ],
   sad: [
     'sad', 'sorrow', 'cry', 'crying', 'tears', 'tearful', 'lonely', 'miss', 'missing', 'broken',
@@ -68,7 +68,7 @@ export function detectMood(text: string): MoodState {
 
   for (const [mood, keywords] of Object.entries(MOOD_KEYWORDS)) {
     if (mood === 'neutral') continue;
-    
+
     const score = keywords.filter(keyword => lowerText.includes(keyword)).length;
     if (score > bestScore) {
       bestScore = score;
@@ -111,7 +111,7 @@ export function getChatMood(messages: { text: string }[]): MoodState {
   // Find dominant mood
   let dominantMood: MoodType = 'neutral';
   let maxScore = 0;
-  
+
   for (const [mood, score] of Object.entries(moodScores)) {
     if (score > maxScore) {
       maxScore = score;
@@ -133,54 +133,14 @@ export function getChatMood(messages: { text: string }[]): MoodState {
  */
 export function getMoodColors(mood: MoodType): { bg: string; border: string; glow: string; text: string } {
   const colorMap: Record<MoodType, { bg: string; border: string; glow: string; text: string }> = {
-    happy: {
-      bg: 'from-amber-500/20 to-yellow-400/10',
-      border: 'border-amber-400/50',
-      glow: 'shadow-amber-500/30',
-      text: 'text-amber-100'
-    },
-    sad: {
-      bg: 'from-blue-600/20 to-indigo-500/10',
-      border: 'border-blue-400/50',
-      glow: 'shadow-blue-500/30',
-      text: 'text-blue-100'
-    },
-    angry: {
-      bg: 'from-red-600/25 to-orange-500/10',
-      border: 'border-red-400/60',
-      glow: 'shadow-red-500/40',
-      text: 'text-red-100'
-    },
-    excited: {
-      bg: 'from-pink-500/25 to-purple-400/15',
-      border: 'border-pink-400/60',
-      glow: 'shadow-pink-500/40',
-      text: 'text-pink-100'
-    },
-    love: {
-      bg: 'from-rose-500/25 to-pink-400/15',
-      border: 'border-rose-400/60',
-      glow: 'shadow-rose-500/40',
-      text: 'text-rose-100'
-    },
-    playful: {
-      bg: 'from-green-500/20 to-teal-400/10',
-      border: 'border-green-400/50',
-      glow: 'shadow-green-500/30',
-      text: 'text-green-100'
-    },
-    cosmic: {
-      bg: 'from-violet-600/25 to-purple-500/15',
-      border: 'border-violet-400/60',
-      glow: 'shadow-violet-500/40',
-      text: 'text-violet-100'
-    },
-    neutral: {
-      bg: 'from-zinc-600/20 to-zinc-500/10',
-      border: 'border-zinc-500/40',
-      glow: 'shadow-zinc-500/20',
-      text: 'text-zinc-200'
-    }
+    happy: { bg: 'from-amber-500/40 to-yellow-400/20', border: 'border-amber-400/50', glow: 'shadow-amber-400/60', text: 'text-[#FFD700]' },
+    sad: { bg: 'from-blue-600/40 to-indigo-500/20', border: 'border-blue-400/50', glow: 'shadow-blue-400/60', text: 'text-[#818CF8]' },
+    angry: { bg: 'from-red-600/50 to-orange-500/20', border: 'border-red-500/60', glow: 'shadow-red-500/70', text: 'text-[#F87171]' },
+    excited: { bg: 'from-pink-500/50 to-purple-400/30', border: 'border-pink-400/60', glow: 'shadow-pink-400/70', text: 'text-[#F472B6]' },
+    love: { bg: 'from-rose-500/50 to-pink-400/30', border: 'border-rose-400/60', glow: 'shadow-rose-400/70', text: 'text-[#FB7185]' },
+    playful: { bg: 'from-green-500/40 to-teal-400/20', border: 'border-green-400/50', glow: 'shadow-green-400/60', text: 'text-[#34D399]' },
+    cosmic: { bg: 'from-violet-600/50 to-purple-500/30', border: 'border-violet-400/60', glow: 'shadow-violet-400/70', text: 'text-[#A78BFA]' },
+    neutral: { bg: 'from-zinc-800/30 to-zinc-700/10', border: 'border-zinc-500/30', glow: 'shadow-zinc-500/40', text: 'text-[#E5E7EB]' }
   };
 
   return colorMap[mood] || colorMap.neutral;

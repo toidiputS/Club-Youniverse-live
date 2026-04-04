@@ -26,8 +26,7 @@ export const ChatMoodBubble: React.FC<ChatMoodBubbleProps> = ({
   message,
   username,
   isAdmin = false,
-  isCurrentUser = false,
-  timestamp
+  isCurrentUser = false
 }) => {
   const [currentMood, setCurrentMood] = useState<MoodType>('neutral');
   
@@ -42,7 +41,7 @@ export const ChatMoodBubble: React.FC<ChatMoodBubbleProps> = ({
 
   return (
     <div className="animate-in fade-in slide-in-from-bottom-1 duration-300">
-      <div className="flex flex-col gap-0.5 max-w-[85%]">
+      <div className="flex flex-col gap-0.5 w-fit max-w-[85%]">
         {/* Username */}
         <div className="flex items-center gap-2 px-1">
           <span className={`text-[7px] font-bold uppercase tracking-wider ${isAdmin ? 'text-purple-400/80' : 'text-zinc-500'}`}>
@@ -53,27 +52,44 @@ export const ChatMoodBubble: React.FC<ChatMoodBubbleProps> = ({
                style={{ color: colors.text.replace('text-', '') }} />
         </div>
 
-        {/* Message - Borderless, gradient background */}
+        {/* Message - Frosted Mood Shard Style */}
         <div
           className={`
-            relative px-3 py-2 max-w-full transition-all duration-500 ease-out
+            relative px-3 py-1.5 w-fit min-w-[24px] transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)]
+            bg-white/[0.08] backdrop-blur-md shadow-[0_4px_15px_rgba(0,0,0,0.3)]
             ${isCurrentUser 
-              ? 'bg-gradient-to-r from-purple-600/40 to-pink-500/30' 
+              ? 'border-r-2 border-white/20' 
               : isMention
-                ? 'bg-gradient-to-r from-purple-900/40 to-indigo-900/30'
-                : `bg-gradient-to-r ${colors.bg}`
+                ? 'border-l-2 border-purple-500/50 shadow-[0_0_50px_rgba(168,85,247,0.3)]'
+                : `border-l-2 border-white/5`
             }
-            ${currentMood !== 'neutral' ? 'shadow-lg' : ''}
+            group hover:scale-[1.04] active:scale-95
           `}
           style={{
             boxShadow: currentMood !== 'neutral' 
-              ? `0 0 20px ${getMoodColorHex(currentMood)}30` 
-              : 'none',
-            borderRadius: '12px 12px 12px 4px' // Rounded except bottom-left
+              ? `0 0 50px ${getMoodColorHex(currentMood)}40` 
+              : '0 4px 20px rgba(0,0,0,0.4)',
+            borderRadius: isCurrentUser ? '12px 12px 2px 12px' : '12px 12px 12px 2px',
+            background: currentMood !== 'neutral' 
+              ? `linear-gradient(135deg, rgba(255,255,255,0.08) 0%, ${getMoodColorHex(currentMood)}15 100%)`
+              : 'rgba(255,255,255,0.08)',
+            transform: 'scale(calc(1 + var(--audio-bass, 0) * 0.02))',
+            transition: 'transform 0.1s ease-out'
           }}
         >
+          {/* THE COLOR SHADOW / AURA - INTENSIFIED */}
+          {currentMood !== 'neutral' && (
+            <div 
+              className="absolute inset-0 rounded-[inherit] opacity-60 animate-pulse pointer-events-none blur-xl"
+              style={{ 
+                background: `radial-gradient(circle at center, ${getMoodColorHex(currentMood)}50, transparent 80%)`,
+                boxShadow: `0 0 35px ${getMoodColorHex(currentMood)}40`
+              }}
+            />
+          )}
+
           {/* Message Text */}
-          <div className={`text-[10px] font-medium leading-[1.4] ${isCurrentUser ? 'text-white/90' : isMention ? 'text-purple-200' : colors.text}`}>
+          <div className={`relative z-10 text-[11px] font-black leading-snug tracking-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)] ${isCurrentUser ? 'text-white' : isMention ? 'text-purple-200' : 'text-zinc-100'}`}>
             {message}
           </div>
         </div>
@@ -85,9 +101,8 @@ export const ChatMoodBubble: React.FC<ChatMoodBubbleProps> = ({
 /**
  * SystemMessage - Minimal divider style
  */
-export const SystemMessage: React.FC<{ message: string; timestamp?: number }> = ({
-  message,
-  timestamp
+export const SystemMessage: React.FC<{ message: string }> = ({
+  message
 }) => {
   return (
     <div className="flex items-center justify-center gap-3 py-2 animate-in fade-in duration-300 opacity-60">

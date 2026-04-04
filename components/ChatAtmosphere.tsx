@@ -64,7 +64,7 @@ export const ChatAtmosphere: React.FC<ChatAtmosphereProps> = ({
 
     let animationFrameId: number;
     const particles: Particle[] = [];
-    const particleCount = 15;
+    const particleCount = 45; // Increased significantly for 'CGEI intensity'
     
     // Initialize particles
     const initParticles = () => {
@@ -104,7 +104,7 @@ export const ChatAtmosphere: React.FC<ChatAtmosphereProps> = ({
     const animate = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       
-      particles.forEach((p, i) => {
+      particles.forEach((p) => {
         // Move particle
         p.y -= p.speedY * (1 + moodState.intensity * 2);
         p.x += p.speedX;

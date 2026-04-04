@@ -5,6 +5,7 @@
 import { supabase } from "./supabaseClient";
 import type { Song, ChatMessage } from "../types";
 import { LocalAiService } from "./LocalAiService";
+import { LyricService } from "./LyricService";
 
 export class PersistentRadioService {
     private static lastCheck: number = 0;
@@ -254,6 +255,11 @@ export class PersistentRadioService {
                         box_appearance_count: (song.box_appearance_count || 0) + 1
                     })
                     .eq("id", song.id);
+
+                // PREDICTIVE VJ: Pre-generate lyrics for Box candidates
+                if (!song.lyrics) {
+                    this.prepareLyricsInBg(song.id, song.title, song.artist_name, song.duration_sec);
+                }
             }
         }
     }
@@ -343,6 +349,11 @@ export class PersistentRadioService {
                 .eq("id", nextUpSong.id);
 
 
+            // AI VJ: Pre-generate lyrics if missing
+            if (!nextUpSong.lyrics) {
+               this.prepareLyricsInBg(nextUpSong.id, nextUpSong.title, nextUpSong.artist_name, nextUpSong.duration_sec);
+            }
+
             return this.mapDbToApp({ ...nextUpSong, status: 'now_playing' });
         } else {
 
@@ -367,11 +378,27 @@ if (poolSongs && poolSongs.length > 0) {
                     .eq("id", randomSong.id);
 
 
+                // AI VJ: Pre-generate lyrics if missing
+                if (!randomSong.lyrics) {
+                   this.prepareLyricsInBg(randomSong.id, randomSong.title, randomSong.artist_name, randomSong.duration_sec);
+                }
+
                 return this.mapDbToApp({ ...randomSong, status: 'now_playing' });
             }
 
         }
         return null;
+    }
+
+    /**
+     * AI-LYRIC VJ PREPARATION:
+     * Generates and choreographs lyrics in the background to avoid blocking the radio transition.
+     */
+    static async prepareLyricsInBg(songId: string, title: string, artist: string, duration: number) {
+        // We wrap the modern LyricService method to maintain compatibility with existing calls
+        // but use the robust unified pipeline.
+        const mockSong: any = { id: songId, title, artistName: artist, durationSec: duration };
+        await LyricService.processMissingLyrics(mockSong);
     }
 
     /**
@@ -396,6 +423,7 @@ if (poolSongs && poolSongs.length > 0) {
             boxRoundsLost: dbSong.box_rounds_lost,
             boxAppearanceCount: dbSong.box_appearance_count,
             status: dbSong.status,
+            lyrics: dbSong.lyrics,
             playCount: dbSong.play_count,
             upvotes: dbSong.upvotes,
             downvotes: dbSong.downvotes,

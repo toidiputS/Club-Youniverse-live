@@ -56,8 +56,22 @@
             "glitch-snap": "glitchSnap 0.3s linear forwards",
             "scanline-wipe": "scanlineWipe 0.4s linear forwards",
             "slide-in-up": "slideInUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards",
+            "flash-fade": "flashFade 0.4s ease-out forwards",
+            "glitch": "glitch 0.3s ease-in-out infinite alternate-reverse",
           },
           keyframes: {
+            flashFade: {
+              "0%": { opacity: "1" },
+              "100%": { opacity: "0" },
+            },
+            glitch: {
+              "0%": { transform: "translate(0)" },
+              "20%": { transform: "translate(-2px, 2px)" },
+              "40%": { transform: "translate(-2px, -2px)" },
+              "60%": { transform: "translate(2px, 2px)" },
+              "80%": { transform: "translate(2px, -2px)" },
+              "100%": { transform: "translate(0)" },
+            },
             pulse: {
               "0%, 100%": { opacity: "1" },
               "50%": { opacity: "0.5" },
@@ -260,7 +274,9 @@
           "types": "https://aistudiocdn.com/types@^0.1.1",
           "three": "https://aistudiocdn.com/three@^0.181.0",
           "vite": "https://aistudiocdn.com/vite@^7.1.12",
-          "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^5.1.0"
+          "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^5.1.0",
+          "framer-motion": "https://aistudiocdn.com/framer-motion@^12.4.7"
+
         }
       }
     </script>

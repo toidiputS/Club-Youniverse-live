@@ -6,8 +6,9 @@
  */
 
 import { supabase } from "./supabaseClient";
-import type { Song, RadioState } from "../types";
+import { Song, RadioState } from "../types";
 import { PersistentRadioService } from "./PersistentRadioService";
+import { LyricService } from "./LyricService";
 
 type EventCallback = (...args: any[]) => void;
 
@@ -37,6 +38,14 @@ export class GlobalBroadcastManager {
   private audioContext: AudioContext | null = null;
   private analyser: AnalyserNode | null = null;
   private dataArray: Uint8Array | null = null;
+
+  public getAnalyser(): AnalyserNode | null {
+    return this.analyser;
+  }
+
+  public getDataArray(): Uint8Array | null {
+    return this.dataArray;
+  }
 
   // Leader Election
   private userId: string | null = null;
@@ -369,6 +378,12 @@ export class GlobalBroadcastManager {
         if (cmd && cmd.id && cmd.id !== this.lastCommandId) {
           this.lastCommandId = cmd.id;
           this.emit("siteCommandReceived", cmd);
+          
+          // LEADER ACTION: Handle global commands
+          if (this.isLeaderLocal && cmd.type === "skip") {
+              console.log("👑 Leader: Direct Skip Received via command.");
+              this.handleStateTrigger('POOL');
+          }
         }
       })
       .subscribe((status: string) => {
@@ -694,6 +709,15 @@ export class GlobalBroadcastManager {
         this.emit("radioStateChanged", 'NOW_PLAYING');
       }
       await this.persistBroadcastState(!hasCorrectSrc || !isSameId);
+      
+      // TRIGGER LYRIC GENERATION:
+      // If we are leader, and this song has no lyrics, start processing them async.
+      // This ensures all users see lyrics eventually without blocking the start of the song.
+      const hasLyrics = song.lyrics && (Array.isArray(song.lyrics) ? song.lyrics.length > 0 : String(song.lyrics).trim().length > 0);
+      if (!hasLyrics) {
+          console.log(`🎤 Leader: Song "${song.title}" missing lyrics. Initializing VJ Engine...`);
+          LyricService.processMissingLyrics(song).catch(e => console.error("VJ Init Error:", e));
+      }
     }
   }
 
@@ -727,9 +751,15 @@ export class GlobalBroadcastManager {
   }
 
   public async setRadioState(state: RadioState) {
-    if (this.state.radioState !== state) {
+    const actionStates: RadioState[] = ['POOL', 'THE_BOX', 'BOX_WIN', 'REBOOT'];
+    const isActionState = actionStates.includes(state);
+
+    if (this.state.radioState !== state || isActionState) {
       this.state.radioState = state;
       this.emit("radioStateChanged", state);
+      if (this.isLeaderLocal && isActionState) {
+          this.handleStateTrigger(state);
+      }
       await this.persistBroadcastState();
     }
   }
@@ -802,7 +832,7 @@ export class GlobalBroadcastManager {
           const source = this.audioContext.createMediaElementSource(this.audioElement);
           source.connect(this.analyser);
           this.analyser.connect(this.audioContext.destination);
-          this.analyser.fftSize = 64; // Small for performance
+          this.analyser.fftSize = 256; // Increased from 64 for smoother high-fidelity data
           this.dataArray = new Uint8Array(this.analyser.frequencyBinCount);
         } catch (e) {
           console.warn("AudioContext initialization failed (cross-origin or blocked):", e);

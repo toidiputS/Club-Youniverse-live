@@ -289,7 +289,9 @@ export const updateSong = async (
 
   const dbUpdates: any = {};
   if (updates.status) dbUpdates.status = updates.status;
-  if (updates.stars !== undefined) dbUpdates.stars = updates.stars;
+  if (updates.stars !== undefined) {
+    dbUpdates.stars = Math.max(0, Math.min(10, updates.stars));
+  }
   if (updates.playCount !== undefined) dbUpdates.play_count = updates.playCount;
   if (updates.boxAppearanceCount !== undefined)
     dbUpdates.box_appearance_count = updates.boxAppearanceCount;

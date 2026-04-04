@@ -12,6 +12,7 @@ export const EditSongModal: React.FC<EditSongModalProps> = ({ song, onClose, onS
     const [title, setTitle] = useState(song.title);
     const [artistName, setArtistName] = useState(song.artistName || '');
     const [genre, setGenre] = useState(song.genre || 'Other');
+    const [lyrics, setLyrics] = useState(song.lyrics as string || '');
     const [coverArtFile, setCoverArtFile] = useState<File | null>(null);
     const [isSaving, setIsSaving] = useState(false);
 
@@ -55,6 +56,7 @@ export const EditSongModal: React.FC<EditSongModalProps> = ({ song, onClose, onS
                 title,
                 artist_name: artistName,
                 genre,
+                lyrics,
                 cover_art_url: finalCoverArtUrl,
             };
 
@@ -66,7 +68,7 @@ export const EditSongModal: React.FC<EditSongModalProps> = ({ song, onClose, onS
             if (error) throw error;
 
             // 3. Notify Parent Component
-            onSave({ title, artistName, genre, coverArtUrl: finalCoverArtUrl });
+            onSave({ title, artistName, genre, lyrics, coverArtUrl: finalCoverArtUrl });
             onClose();
 
         } catch (error: any) {
@@ -88,7 +90,7 @@ export const EditSongModal: React.FC<EditSongModalProps> = ({ song, onClose, onS
                     <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mt-1">Configure metadata and visual assets</p>
                 </div>
 
-                <form onSubmit={handleSave} className="p-6 space-y-5">
+                <form onSubmit={handleSave} className="p-6 space-y-5 max-h-[70vh] overflow-y-auto custom-scrollbar">
                     {/* Cover Art Preview & Upload */}
                     <div className="flex items-center gap-6">
                         <div className="w-24 h-24 shrink-0 rounded-2xl bg-zinc-900 border border-white/10 overflow-hidden relative group">
@@ -168,9 +170,19 @@ export const EditSongModal: React.FC<EditSongModalProps> = ({ song, onClose, onS
                                 <option value="Other">Other</option>
                             </select>
                         </div>
+
+                        <div>
+                            <label className="block text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 ml-1">Lyrical VJ Protocol (JSON/Text)</label>
+                            <textarea
+                                value={lyrics}
+                                onChange={(e) => setLyrics(e.target.value)}
+                                placeholder="Paste lyrics for visual synchronization..."
+                                className="w-full h-40 bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white text-[11px] font-bold focus:outline-none focus:border-purple-500/50 transition-all placeholder-white/20 resize-none custom-scrollbar"
+                            />
+                        </div>
                     </div>
 
-                    <div className="flex gap-3 pt-4 border-t border-white/5 mt-6">
+                    <div className="flex gap-3 pt-4 border-t border-white/5 mt-6 pb-2">
                         <button
                             type="button"
                             onClick={onClose}

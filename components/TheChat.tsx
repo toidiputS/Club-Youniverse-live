@@ -12,9 +12,10 @@ import type { ChatMessage, Profile } from "../types";
 
 interface TheChatProps {
     profile: Profile;
+    transparent?: boolean;
 }
 
-export const TheChat: React.FC<TheChatProps> = ({ profile }) => {
+export const TheChat: React.FC<TheChatProps> = ({ profile, transparent }) => {
     const context = useContext(RadioContext);
     if (!context) return null;
 
@@ -44,6 +45,22 @@ export const TheChat: React.FC<TheChatProps> = ({ profile }) => {
     const handleSend = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!input.trim()) return;
+
+        // Slash command handling
+        if (input.trim().toLowerCase() === "/youniversal") {
+            if (profile.is_admin) {
+                // Administrators can toggle the game directly
+                context.setDanceFloorEnabled(!context.danceFloorEnabled);
+                setInput("");
+                return;
+            } else {
+                // Users can "vibe" to request it or just have it trigger if already enabled
+                // But for now, let's treat it as a trigger for everyone if specified
+                context.setDanceFloorEnabled(true);
+                setInput("");
+                return;
+            }
+        }
 
         const message: ChatMessage = {
             id: Date.now().toString(),
@@ -144,7 +161,7 @@ isCurrentUser={isCurrentUser(msg)}
                 </div>
 
                 {/* Input Area */}
-                <form onSubmit={handleSend} className="p-2 border-t border-white/[0.03] bg-black/30 backdrop-blur-sm">
+                <form onSubmit={handleSend} className={`p-2 border-t border-white/[0.03] ${transparent ? 'bg-transparent' : 'bg-black/30 backdrop-blur-sm'}`}>
                     <div className="relative flex items-center gap-2">
                         <input
                             type="text"

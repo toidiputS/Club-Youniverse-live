@@ -50,7 +50,7 @@ export interface Song {
   status: "pool" | "in_box" | "next_play" | "now_playing" | "graveyard" | "debut";
   coverArtUrl?: string;
   is_canvas?: boolean;
-  lyrics?: string;
+  lyrics?: string | ChoreographedLine[];
   playCount: number;
   upvotes: number;
   downvotes: number;
@@ -113,4 +113,30 @@ export interface DjProfile {
   name: string;
   personality: string;
   voiceName: string;
+}
+
+export enum AnimationType {
+  FADE = 'fade',
+  SLIDE = 'slide',
+  BOUNCE = 'bounce',
+  TYPEWRITER = 'typewriter',
+  EXPOSE = 'expose',
+  GLITCH = 'glitch',
+  EXPLODE = 'explode',
+  SHAKE = 'shake'
+}
+
+export interface ChoreographedLine {
+  id: string;
+  time: number;
+  text: string;
+  meta: {
+    color: string;
+    animation: AnimationType;
+    scale: number;
+    rotation: number;
+    fontFamily?: 'sans' | 'marker' | 'tech';
+    sentiment?: 'bright' | 'energetic' | 'calm' | 'dark';
+    secondaryText?: string;
+  };
 }

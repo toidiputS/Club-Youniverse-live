@@ -32,6 +32,9 @@ interface RadioContextType {
   profile: Profile | null;
   tickerText: string;
   djBanter: string;
+  vjEnabled: boolean;
+  danceFloorEnabled: boolean;
+
 
   // Actions
   setVolume: (vol: number) => void;
@@ -41,6 +44,9 @@ interface RadioContextType {
   setProfile: React.Dispatch<React.SetStateAction<Profile | null>>;
   setTickerText: (text: string) => void;
   setDjBanter: (text: string) => void;
+  setVjEnabled: (enabled: boolean) => void;
+  setDanceFloorEnabled: (enabled: boolean) => void;
+
 
   // Admin/System Actions (Leader only)
   setRadioState: (state: RadioState) => void;
@@ -72,6 +78,9 @@ export const RadioProvider: React.FC<{
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [tickerText, setTickerText] = useState("Welcome to Club Youniverse. Vote in The Box to help shape the station.");
   const [djBanter, setDjBanter] = useState("DJ Python is loading up the decks... Please stand by.");
+  const [vjEnabled, setVjEnabled] = useState(true);
+  const [danceFloorEnabled, setDanceFloorEnabled] = useState(false);
+
   const [leaderId, setLeaderId] = useState<string | null>(broadcastManager.getLeaderId());
 
   const togglePlay = useCallback(() => {
@@ -119,9 +128,17 @@ export const RadioProvider: React.FC<{
         setTickerText(cmd.payload?.text || "");
       } else if (cmd?.type === "dj_banter") {
         setDjBanter(cmd.payload?.text || "");
+      } else if (cmd?.type === "tts" && cmd.payload?.text) {
+        // High fidelity TTS broadcast
+        const utterance = new SpeechSynthesisUtterance(cmd.payload.text);
+        utterance.rate = 0.9;
+        utterance.pitch = 0.8; // Cyberpunk/Fenrir vibe
+        window.speechSynthesis.speak(utterance);
       } else if (cmd?.type === "chat" && cmd.payload) {
         // Assume payload is a ChatMessage object
         setChatMessages(prev => [...prev, cmd.payload].slice(-50));
+      } else if (cmd?.type === "dance_floor") {
+        setDanceFloorEnabled(!!cmd.payload?.enabled);
       }
     });
 
@@ -179,14 +196,22 @@ export const RadioProvider: React.FC<{
     setNowPlaying,
     setNextSong,
     leaderId,
+    vjEnabled,
+    setVjEnabled,
+    danceFloorEnabled,
+    setDanceFloorEnabled,
     claimLeadership: () => broadcastManager.claimLeadership(),
+
     releaseLeadership: () => broadcastManager.releaseLeadership(),
   }), [
     nowPlaying, nextSong, radioState, isLeader, isPlaying,
     currentTime, volume, isMuted, chatMessages, profile, tickerText, djBanter,
     setVolume, setMuted, togglePlay, addChatMessage, setProfile, setTickerText, setDjBanter,
-    setTickerText, setRadioState, setNowPlaying, setNextSong, leaderId
+    setTickerText, setRadioState, setNowPlaying, setNextSong, leaderId,
+    vjEnabled, setVjEnabled,
+    danceFloorEnabled, setDanceFloorEnabled
   ]);
+
 
   return (
     <RadioContext.Provider value={value}>

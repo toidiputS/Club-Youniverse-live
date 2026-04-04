@@ -15,6 +15,8 @@ const vertexShader = `
 const fragmentShader = `
   uniform float iTime;
   uniform vec2 iResolution;
+  uniform float iIntensity;
+  uniform float iVolume;
 
   #define NUM_OCTAVES 3
 
@@ -69,11 +71,23 @@ const fragmentShader = `
     }
 
     o = tanh(pow(o / 100.0, vec4(1.6)));
-    gl_FragColor = o * 1.5;
+    gl_FragColor = o * 1.5 * iIntensity * (1.0 + iVolume * 0.5);
   }
 `;
 
-export const AudioVisualizer: React.FC = () => {
+interface AudioVisualizerProps {
+  isBackground?: boolean;
+  intensity?: number;
+  volume?: number;
+  className?: string;
+}
+
+export const AudioVisualizer: React.FC<AudioVisualizerProps> = ({
+  isBackground = true,
+  intensity = 1.0,
+  volume = 0.5,
+  className = ""
+}) => {
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -116,6 +130,8 @@ export const AudioVisualizer: React.FC = () => {
           iResolution: {
             value: new THREE.Vector2(window.innerWidth, window.innerHeight),
           },
+          iIntensity: { value: intensity },
+          iVolume: { value: volume },
         },
         vertexShader: vertexShader,
         fragmentShader: fragmentShader,
@@ -127,7 +143,9 @@ export const AudioVisualizer: React.FC = () => {
 
       const animate = () => {
         if (material && renderer && scene && camera) {
-          material.uniforms.iTime.value += 0.016;
+          material.uniforms.iTime.value += 0.016 * (1.0 + volume * 0.5);
+          material.uniforms.iIntensity.value = intensity;
+          material.uniforms.iVolume.value = volume;
           renderer.render(scene, camera);
         }
         frameId = requestAnimationFrame(animate);
@@ -164,7 +182,7 @@ export const AudioVisualizer: React.FC = () => {
   }, []);
 
   return (
-    <div ref={containerRef} className="fixed top-0 left-0 w-full h-full -z-10">
+    <div ref={containerRef} className={`${isBackground ? "fixed" : "relative"} top-0 left-0 w-full h-full -z-10 ${className}`}>
       <div className="relative z-10 divider" />
     </div>
   );
