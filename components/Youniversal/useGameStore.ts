@@ -218,7 +218,7 @@ export const useGameStore = create<GameState>((set, get) => ({
         });
       } else if (data.type === 'force_added') {
         set((state) => {
-          const newForces = { ...state.forceFields, [data.force.id]: data.force };
+          const newForces: Record<string, ForceField> = { ...state.forceFields, [data.force.id]: data.force };
           
           if (data.removedForces) {
             data.removedForces.forEach((id: string) => delete newForces[id]);

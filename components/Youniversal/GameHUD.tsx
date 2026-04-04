@@ -1,6 +1,6 @@
-import React, { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useGameStore } from './useGameStore';
-import { HelpCircle, MousePointer2, Zap, Settings2, Circle, Activity, X } from 'lucide-react';
+import { HelpCircle, MousePointer2, Zap, Settings2, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export function GameHUD() {
@@ -12,8 +12,6 @@ export function GameHUD() {
   const timerRunning = useGameStore((state) => state.timerRunning);
   const isWaiting = useGameStore((state) => state.isWaiting);
   const waitingEndTime = useGameStore((state) => state.waitingEndTime);
-  const selectedForceType = useGameStore((state) => state.selectedForceType);
-  const setSelectedForceType = useGameStore((state) => state.setSelectedForceType);
 
   const [showHelp, setShowHelp] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
