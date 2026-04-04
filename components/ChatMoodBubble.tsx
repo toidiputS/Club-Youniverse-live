@@ -26,7 +26,8 @@ export const ChatMoodBubble: React.FC<ChatMoodBubbleProps> = ({
   message,
   username,
   isAdmin = false,
-  isCurrentUser = false
+  isCurrentUser = false,
+  timestamp
 }) => {
   const [currentMood, setCurrentMood] = useState<MoodType>('neutral');
   
@@ -47,6 +48,11 @@ export const ChatMoodBubble: React.FC<ChatMoodBubbleProps> = ({
           <span className={`text-[7px] font-bold uppercase tracking-wider ${isAdmin ? 'text-purple-400/80' : 'text-zinc-500'}`}>
             {username}
           </span>
+          {timestamp && (
+            <span className="text-[6px] text-white/20 font-mono">
+              {new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            </span>
+          )}
           {/* Mood indicator dot - subtle */}
           <div className={`w-1 h-1 rounded-full ${currentMood === 'neutral' ? 'bg-zinc-600' : 'bg-current'}`} 
                style={{ color: colors.text.replace('text-', '') }} />
@@ -101,14 +107,20 @@ export const ChatMoodBubble: React.FC<ChatMoodBubbleProps> = ({
 /**
  * SystemMessage - Minimal divider style
  */
-export const SystemMessage: React.FC<{ message: string }> = ({
-  message
+export const SystemMessage: React.FC<{ message: string; timestamp?: number }> = ({
+  message,
+  timestamp
 }) => {
   return (
     <div className="flex items-center justify-center gap-3 py-2 animate-in fade-in duration-300 opacity-60">
       <div className="h-px flex-1 bg-gradient-to-r from-transparent via-zinc-600 to-transparent" />
-      <span className="text-[8px] font-bold text-zinc-500 uppercase tracking-widest px-2">
+      <span className="text-[8px] font-bold text-zinc-500 uppercase tracking-widest px-2 flex flex-col items-center">
         {message}
+        {timestamp && (
+          <span className="text-[6px] text-zinc-600 mt-1 font-mono tracking-normal">
+            {new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+          </span>
+        )}
       </span>
       <div className="h-px flex-1 bg-gradient-to-r from-transparent via-zinc-600 to-transparent" />
     </div>
