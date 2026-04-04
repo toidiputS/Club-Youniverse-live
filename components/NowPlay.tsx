@@ -118,7 +118,7 @@ export const NowPlay: React.FC = () => {
                             {nowPlaying.artistName}
                         </span>
                         <span className="text-[8px] font-bold text-purple-400">
-                            {(liveRating.count > 0 ? liveRating.sum / liveRating.count : nowPlaying.stars).toFixed(1)}⭐
+                            {(liveRating.count > 0 ? (liveRating.sum / liveRating.count).toFixed(1) : (nowPlaying.stars || 0).toString())}/10⭐
                         </span>
                     </div>
                 </div>
@@ -135,13 +135,13 @@ export const NowPlay: React.FC = () => {
             {/* Stars & Progress */}
             <div className="flex items-center gap-2 px-1">
                 <div className="flex gap-0.5">
-                    {[1, 2, 3, 4, 5].map((star) => (
+                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((star) => (
                         <button
                             key={star}
-                            onClick={() => handleStarVote(star * 2)}
+                            onClick={() => handleStarVote(star)}
                             className="text-[10px] transition-colors hover:scale-110"
                         >
-                            <span className={votedStar >= star * 2 ? 'text-yellow-400' : 'text-zinc-700'}>⭐</span>
+                            <span className={votedStar >= star ? 'text-yellow-400' : 'text-zinc-700'}>⭐</span>
                         </button>
                     ))}
                 </div>
