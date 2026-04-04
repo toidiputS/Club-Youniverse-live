@@ -36,12 +36,10 @@ const SAMPLE_CHAT = [
 
 export const Sidewalk: React.FC = () => {
   const context = React.useContext(RadioContext);
-  const [isMuted, setIsMuted] = useState(true);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [chatInput, setChatInput] = useState("");
   const [listenerCount] = useState(Math.floor(Math.random() * 200) + 150);
   const chatRef = useRef<HTMLDivElement>(null);
-  const audioRef = useRef<HTMLAudioElement>(null);
 
   // Generate anonymous username
   const [myUsername] = useState(() => {
@@ -95,18 +93,6 @@ export const Sidewalk: React.FC = () => {
       chatRef.current.scrollTop = chatRef.current.scrollHeight;
     }
   }, [chatMessages]);
-
-  const toggleAudio = () => {
-    if (audioRef.current) {
-      if (isMuted) {
-        audioRef.current.play().catch(() => {});
-        setIsMuted(false);
-      } else {
-        audioRef.current.pause();
-        setIsMuted(true);
-      }
-    }
-  };
 
   const sendChat = (e: React.FormEvent) => {
     e.preventDefault();
@@ -249,42 +235,66 @@ style={{
                 </span>
               </div>
               
-              {/* Album Art */}
+              {/* Album Art - REAL from context */}
               <div className="relative mb-4">
-                <div 
-                  className="aspect-square rounded-xl overflow-hidden"
-                  style={{
-                    background: "linear-gradient(135deg, #FF2D55 0%, #00F5FF 100%)"
-                  }}
-                >
-                  <div className="w-full h-full flex items-center justify-center">
-                    <Music className="w-20 h-20 opacity-30 text-white" />
+                {context?.nowPlaying?.coverArtUrl ? (
+                  <img 
+                    src={context.nowPlaying.coverArtUrl} 
+                    alt={context.nowPlaying.title}
+                    className="aspect-square rounded-xl object-cover w-full"
+                  />
+                ) : (
+                  <div 
+                    className="aspect-square rounded-xl overflow-hidden"
+                    style={{
+                      background: "linear-gradient(135deg, #FF2D55 0%, #00F5FF 100%)"
+                    }}
+                  >
+                    <div className="w-full h-full flex items-center justify-center">
+                      <Music className="w-20 h-20 opacity-30 text-white" />
+                    </div>
                   </div>
-                </div>
+                )}
                 {/* Glow effect */}
                 <div 
                   className="absolute inset-0 rounded-xl -z-10 blur-xl opacity-50"
-                  style={{ background: "linear-gradient(135deg, #FF2D55 0%, #00F5FF 100%)" }}
+                  style={{ 
+                    background: context?.nowPlaying?.coverArtUrl 
+                      ? `url(${context.nowPlaying.coverArtUrl})`
+                      : "linear-gradient(135deg, #FF2D55 0%, #00F5FF 100%)"
+                  }}
                 />
               </div>
               
-              {/* Track Info */}
+              {/* Track Info - REAL */}
               <div className="text-center mb-4">
                 <h3 
                   className="text-xl font-bold mb-1"
                   style={{ color: "#FFFFFF" }}
                 >
-                  {context?.nowPlaying?.title || "Midnight Protocol"}
+                  {context?.nowPlaying?.title || "Tuning In..."}
                 </h3>
                 <p 
                   className="text-sm"
                   style={{ color: "#8888AA" }}
                 >
-                  {context?.nowPlaying?.artistName || "Neon Dreamers"}
+                  {context?.nowPlaying?.artistName || "Club Youniverse"}
                 </p>
+                {context?.nowPlaying && (
+                  <div className="flex justify-center gap-2 mt-2">
+                    {context.nowPlaying.genre && (
+                      <span className="text-[10px] font-black px-2 py-0.5 bg-purple-500/20 text-purple-400 rounded-full uppercase">
+                        {context.nowPlaying.genre}
+                      </span>
+                    )}
+                    <span className="text-[10px] font-black px-2 py-0.5 bg-white/10 text-white/60 rounded-full uppercase">
+                      {context.nowPlaying.upvotes || 0} votes
+                    </span>
+                  </div>
+                )}
               </div>
               
-              {/* Progress Bar */}
+              {/* Progress Bar - REAL DATA */}
               <div className="mb-4">
                 <div 
                   className="h-1 rounded-full overflow-hidden"
@@ -293,43 +303,46 @@ style={{
                   <div 
                     className="h-full rounded-full transition-all duration-1000"
                     style={{ 
-                      width: context?.nowPlaying ? `${(context.currentTime / context.duration) * 100}%` : "45%",
+                      width: context?.nowPlaying && context.duration > 0 
+                        ? `${(context.currentTime / context.duration) * 100}%` 
+                        : "0%",
                       background: "linear-gradient(90deg, #FF2D55, #00F5FF)"
                     }}
                   />
                 </div>
                 <div className="flex justify-between mt-1 text-xs" style={{ color: "#8888AA" }}>
-                  <span>{context?.nowPlaying ? formatTime(context.currentTime) : "1:52"}</span>
-                  <span>{context?.nowPlaying ? formatTime(context.duration) : "4:12"}</span>
+                  <span>{formatTime(context?.currentTime || 0)}</span>
+                  <span>{formatTime(context?.duration || 0)}</span>
                 </div>
               </div>
               
-              {/* Play Button */}
-              <button
-                onClick={toggleAudio}
-                className="w-full py-4 rounded-xl font-bold text-lg tracking-wider uppercase transition-all duration-300 flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-[0.98]"
-                style={{
-                  background: isMuted 
-                    ? "linear-gradient(135deg, #FF2D55 0%, #CC0033 100%)"
-                    : "linear-gradient(135deg, #00F5FF 0%, #00CCDD 100%)",
-                  color: "#FFFFFF",
-                  boxShadow: isMuted
-                    ? "0 0 30px rgba(255, 45, 85, 0.4)"
-                    : "0 0 30px rgba(0, 245, 255, 0.4)"
-                }}
-              >
-                {isMuted ? (
-                  <>
-                    <VolumeX className="w-5 h-5" />
-                    JOIN THE FREQUENCY
-                  </>
-                ) : (
-                  <>
-                    <Volume2 className="w-5 h-5" />
-                    LISTENING...
-                  </>
-                )}
-              </button>
+              {/* Play Button - USE REAL PLAYER */}
+              {context?.nowPlaying ? (
+                <a
+                  href="/club"
+                  className="block w-full py-4 rounded-xl font-bold text-lg tracking-wider uppercase transition-all duration-300 flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-[0.98]"
+                  style={{
+                    background: "linear-gradient(135deg, #00F5FF 0%, #00CCDD 100%)",
+                    color: "#0A0A0F",
+                    boxShadow: "0 0 30px rgba(0, 245, 255, 0.4)"
+                  }}
+                >
+                  <Volume2 className="w-5 h-5" />
+                  TUNE IN TO CLUB
+                </a>
+              ) : (
+                <button
+                  disabled
+                  className="w-full py-4 rounded-xl font-bold text-lg tracking-wider uppercase opacity-50 flex items-center justify-center gap-3"
+                  style={{
+                    background: "#1A1A24",
+                    color: "#8888AA"
+                  }}
+                >
+                  <Music className="w-5 h-5" />
+                  WAITING FOR DJ...
+                </button>
+              )}
               
               {/* Listener Count */}
               <div className="flex items-center justify-center gap-2 mt-4">
@@ -343,7 +356,7 @@ style={{
               </div>
             </div>
 
-            {/* Up Next */}
+            {/* Up Next - REAL DATA */}
             <div 
               className="rounded-2xl p-4 border"
               style={{
@@ -355,34 +368,32 @@ style={{
                 className="text-xs font-bold tracking-widest uppercase mb-3"
                 style={{ color: "#00F5FF" }}
               >
-                Tonight's Rotation
+                {context?.nextSong ? "Up Next" : "The Pool"}
               </h4>
               <div className="space-y-2">
-                {[
-                  { title: "Cyber Heart", artist: "Void Walker", status: "next" },
-                  { title: "Synthwave Rebellion", artist: "Digital Ghost", status: "queue" },
-                  { title: "Binary Sunset", artist: "Chrome Dreams", status: "queue" },
-                ].map((track, i) => (
+                {context?.nextSong ? (
                   <div 
-                    key={i}
-                    className="flex items-center gap-3 p-2 rounded-lg transition-colors"
+                    className="flex items-center gap-3 p-2 rounded-lg"
                     style={{ background: "#0F0F18" }}
                   >
-                    <div className="w-8 h-8 rounded flex items-center justify-center text-xs font-bold" style={{ background: track.status === "next" ? "#00F5FF" : "#1A1A24", color: track.status === "next" ? "#0A0A0F" : "#8888AA" }}>
-                      {i + 2}
+                    <div className="w-8 h-8 rounded flex items-center justify-center text-xs font-bold bg-cyan-500 text-black">
+                      ▶
                     </div>
                     <div className="flex-grow min-w-0">
-                      <p className="text-sm font-medium truncate" style={{ color: "#FFFFFF" }}>{track.title}</p>
-                      <p className="text-xs truncate" style={{ color: "#8888AA" }}>{track.artist}</p>
+                      <p className="text-sm font-medium truncate" style={{ color: "#FFFFFF" }}>{context.nextSong.title}</p>
+                      <p className="text-xs truncate" style={{ color: "#8888AA" }}>{context.nextSong.artistName}</p>
                     </div>
-                    {track.status === "next" && (
-                      <span className="text-xs font-bold uppercase" style={{ color: "#00F5FF" }}>Up Next</span>
-                    )}
+                    <span className="text-xs font-bold uppercase" style={{ color: "#00F5FF" }}>Up Next</span>
                   </div>
-                ))}
+                ) : (
+                  <div className="text-center py-4" style={{ color: "#8888AA" }}>
+                    <Music className="w-8 h-8 mx-auto mb-2 opacity-30" />
+                    <p className="text-xs">Queue is loading...</p>
+                  </div>
+                )}
               </div>
               <p className="text-center text-xs mt-3" style={{ color: "#8888AA" }}>
-                +847 more songs in the box
+                <a href="/club" style={{ color: "#00F5FF" }} className="underline">Join the club</a> to vote for what's next
               </p>
             </div>
           </motion.div>
@@ -581,10 +592,6 @@ style={{
         </motion.div>
       </div>
 
-      {/* Hidden audio element */}
-      <audio ref={audioRef} loop>
-        <source src={context?.nowPlaying?.audioUrl || ""} type="audio/mp3" />
-      </audio>
     </div>
   );
 };

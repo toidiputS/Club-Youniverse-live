@@ -14,28 +14,53 @@ export const SongCardPopOut: React.FC<SongCardPopOutProps> = ({ song, isOpen, on
     const [downloading, setDownloading] = useState(false);
     const [downloaded, setDownloaded] = useState(false);
 
-    const handleDownload = async () => {
-        if (!song.audioUrl || downloaded) return;
-        setDownloading(true);
-        
+    const downloadFile = async (url: string, filename: string) => {
         try {
-            const response = await fetch(song.audioUrl);
+            const response = await fetch(url);
             const blob = await response.blob();
-            const url = window.URL.createObjectURL(blob);
+            const blobUrl = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
-            a.href = url;
-            a.download = `${song.artistName} - ${song.title}.mp3`;
+            a.href = blobUrl;
+            a.download = filename;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
-            window.URL.revokeObjectURL(url);
-            setDownloaded(true);
-            setTimeout(() => setDownloaded(false), 3000);
+            window.URL.revokeObjectURL(blobUrl);
+            return true;
         } catch (err) {
             console.error('Download failed:', err);
-        } finally {
-            setDownloading(false);
+            return false;
         }
+    };
+
+    const handleDownloadAudio = async () => {
+        if (!song.audioUrl) return;
+        setDownloading(true);
+        await downloadFile(song.audioUrl, `${song.artistName} - ${song.title}.mp3`);
+        setDownloading(false);
+        setDownloaded(true);
+        setTimeout(() => setDownloaded(false), 3000);
+    };
+
+    const handleDownloadCover = async () => {
+        const coverUrl = song.coverArtUrl || `https://picsum.photos/seed/${song.id}/600`;
+        await downloadFile(coverUrl, `${song.artistName} - ${song.title} [Cover].jpg`);
+    };
+
+    const handleDownloadLyrics = () => {
+        if (!song.lyrics) return;
+        const lyricsText = typeof song.lyrics === 'string' 
+            ? song.lyrics 
+            : JSON.stringify(song.lyrics, null, 2);
+        const blob = new Blob([lyricsText], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${song.artistName} - ${song.title} [Lyrics].txt`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
     };
 
     if (!song) return null;
@@ -88,9 +113,9 @@ export const SongCardPopOut: React.FC<SongCardPopOutProps> = ({ song, isOpen, on
 
                                 {/* Actions */}
                                 <div className="flex flex-col gap-2 w-full">
-                                    {/* Download Button */}
+                                    {/* Download Audio */}
                                     <button 
-                                        onClick={handleDownload}
+                                        onClick={handleDownloadAudio}
                                         disabled={!song.audioUrl || downloading}
                                         className={`flex items-center justify-center gap-2 py-4 rounded-2xl font-black text-[11px] uppercase tracking-wider transition-all shadow-xl active:scale-95 ${
                                             downloaded 
@@ -100,15 +125,32 @@ export const SongCardPopOut: React.FC<SongCardPopOutProps> = ({ song, isOpen, on
                                     >
                                         {downloading ? (
                                             'Downloading...'
-                                        ) : downloaded ? (
-                                            'Downloaded!'
                                         ) : (
                                             <>
                                                 <Download size={16} />
-                                                Download Track
+                                                Download Audio
                                             </>
                                         )}
                                     </button>
+
+                                    {/* Download Options Row */}
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <button 
+                                            onClick={handleDownloadCover}
+                                            className="flex items-center justify-center gap-1.5 py-3 bg-white/5 border border-white/10 rounded-xl font-black text-[9px] uppercase tracking-wider text-white/70 hover:bg-white/10 transition-all"
+                                        >
+                                            <Download size={12} />
+                                            Cover Image
+                                        </button>
+                                        <button 
+                                            onClick={handleDownloadLyrics}
+                                            disabled={!song.lyrics}
+                                            className="flex items-center justify-center gap-1.5 py-3 bg-white/5 border border-white/10 rounded-xl font-black text-[9px] uppercase tracking-wider text-white/70 hover:bg-white/10 transition-all disabled:opacity-30"
+                                        >
+                                            <Download size={12} />
+                                            Lyrics (.txt)
+                                        </button>
+                                    </div>
 
                                     {/* Edit Button */}
                                     {onEdit && (

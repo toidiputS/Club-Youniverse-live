@@ -203,9 +203,9 @@ export const Radio: React.FC<RadioProps> = ({ onNavigate, onSignOut, profile, mi
                                         </div>
                                         <div className="flex-grow overflow-y-auto p-4">
                                             <UserProfileCard 
-                                                profile={profile} 
-                                                onNavigate={onNavigate}
-                                                onSignOut={onSignOut}
+                                                userId={profile.id}
+                                                onClose={() => setShowProfile(false)}
+                                                isCurrentUser={true}
                                             />
                                         </div>
                                     </div>

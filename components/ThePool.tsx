@@ -14,7 +14,7 @@ export const ThePool: React.FC = () => {
                 .select("*")
                 .eq("status", "pool")
                 .order("created_at", { ascending: false })
-                .limit(20);
+                .limit(100);
 
             if (data) {
                 setSongs(data.map(PersistentRadioService.mapDbToApp));
