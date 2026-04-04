@@ -7,6 +7,7 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
 import { registerServiceWorker } from "./sw-register";
+import "./index.css";
 
 // Get the root element from the HTML where the React app will be mounted.
 const rootElement = document.getElementById("root");
@@ -33,8 +34,6 @@ if (typeof window !== 'undefined') {
       leakedAudio.src = "";
     }
   };
-  // We don't call it immediately because we might kill the legitimate one on a soft reload
-  // But if this is the main entry point re-running, it's safer to be aggressive.
 }
 
 // Create a React root and render the main App component.
