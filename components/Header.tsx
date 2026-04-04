@@ -8,10 +8,10 @@ interface HeaderProps {
   onSignOut: () => void;
   profile: Profile;
   onProfileClick?: () => void;
-  onVoteClick?: () => void;
+  onPoolClick?: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ onNavigate, onSignOut, profile, onProfileClick, onVoteClick }) => {
+export const Header: React.FC<HeaderProps> = ({ onNavigate, onSignOut, profile, onProfileClick, onPoolClick }) => {
   const context = useContext(RadioContext);
 
   const broadcastManager = getBroadcastManager();
@@ -109,10 +109,10 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate, onSignOut, profile, 
         {/* Action Buttons (Right) */}
         <div className="flex items-center gap-2 shrink-0">
           <button
-            onClick={onVoteClick}
+            onClick={onPoolClick}
             className="px-2 py-1.5 sm:px-3 sm:py-2 bg-purple-600/30 border border-purple-500/30 text-purple-400 rounded-full text-[7px] sm:text-[9px] font-black uppercase tracking-wider hover:bg-purple-500/50 transition-all"
           >
-            Vote
+            Pool
           </button>
 
           <button

@@ -162,7 +162,7 @@ isCurrentUser={isCurrentUser(msg)}
                 </div>
 
                 {/* Input Area */}
-                <form onSubmit={handleSend} className={`p-2 border-t border-white/[0.03] ${transparent ? 'bg-transparent' : 'bg-black/30 backdrop-blur-sm'}`}>
+                <form onSubmit={handleSend} className={`p-2 border-t border-white/[0.03] ${transparent ? 'bg-black/10 backdrop-blur-md' : 'bg-black/30 backdrop-blur-sm'}`}>
                     <div className="relative flex items-center gap-2">
                         <input
                             type="text"
@@ -208,3 +208,4 @@ isCurrentUser={isCurrentUser(msg)}
 };
 
 export default TheChat;
+

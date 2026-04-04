@@ -1,6 +1,7 @@
 import React, { useContext, useMemo, useState } from "react";
 import { RadioContext } from "../contexts/AudioPlayerContext";
 import { TheBox } from "./TheBox";
+import { ThePool } from "./ThePool";
 import { NowPlay } from "./NowPlay";
 import { Header } from "./Header";
 import { TheChat } from "./TheChat";
@@ -12,7 +13,7 @@ import CosmicCanvas from "./Youniversal/CosmicCanvas";
 import { YouniversalLeaderboard } from "./Youniversal/Leaderboard";
 import { useGameStore } from "./Youniversal/useGameStore";
 import type { Profile, ChoreographedLine, View } from "../types";
-import { X } from "lucide-react";
+import { X, Music } from "lucide-react";
 
 interface RadioProps {
   onNavigate: (view: View) => void;
@@ -24,7 +25,7 @@ interface RadioProps {
 export const Radio: React.FC<RadioProps> = ({ onNavigate, onSignOut, profile, minimal = false }) => {
   const context = useContext(RadioContext);
   const [showProfile, setShowProfile] = useState(false);
-  const [showVote, setShowVote] = useState(false);
+  const [showPool, setShowPool] = useState(false);
 
   const parsedLyrics = useMemo((): Partial<ChoreographedLine>[] => {
     if (!context?.nowPlaying?.lyrics) return [];
@@ -36,7 +37,7 @@ export const Radio: React.FC<RadioProps> = ({ onNavigate, onSignOut, profile, mi
         try {
             return JSON.parse(raw);
         } catch (e) {
-            console.warn("Failed to parse lyrics as JSON");
+            console.warn("Failed to parse lyrics");
         }
     }
 
@@ -128,12 +129,12 @@ export const Radio: React.FC<RadioProps> = ({ onNavigate, onSignOut, profile, mi
                             onSignOut={onSignOut} 
                             profile={profile} 
                             onProfileClick={() => setShowProfile(true)}
-                            onVoteClick={() => setShowVote(true)}
+                            onPoolClick={() => setShowPool(true)}
                         />
                     </div>
                 )}
 
-                {/* DANCE FLOOR CLEAR AREA */}
+                {/* DANCE FLOOR AREA */}
                 <div className="flex-grow relative flex flex-col">
                     {/* Status */}
                     <div className="flex justify-center pt-2">
@@ -142,14 +143,14 @@ export const Radio: React.FC<RadioProps> = ({ onNavigate, onSignOut, profile, mi
                         </span>
                     </div>
 
-                    {/* Now Playing - Bottom Left, Compact */}
-                    <div className="mt-auto mb-4 mx-3 sm:mx-6 z-40 pointer-events-auto">
+                    {/* Now Playing - Bottom, Compact */}
+                    <div className="mt-auto mb-20 sm:mb-4 mx-3 sm:mx-6 z-40 pointer-events-auto">
                         <NowPlay />
                     </div>
                 </div>
             </div>
 
-            {/* DESKTOP SIDEBAR: CHAT + VOTE */}
+            {/* DESKTOP SIDEBAR: CHAT + POOL */}
             {!minimal && (
                 <div className="hidden lg:flex flex-none w-[340px] h-full flex-col pointer-events-auto bg-black/70 backdrop-blur-3xl border-l border-white/5">
                     {/* LEADERBOARD - TOP */}
@@ -168,7 +169,7 @@ export const Radio: React.FC<RadioProps> = ({ onNavigate, onSignOut, profile, mi
                         )}
                     </AnimatePresence>
 
-                    {/* CHAT FEED */}
+                    {/* CHAT FEED - transparent on dance floor */}
                     <div className="flex-grow overflow-hidden">
                         <TheChat profile={profile} transparent={true} />
                     </div>
@@ -183,7 +184,7 @@ export const Radio: React.FC<RadioProps> = ({ onNavigate, onSignOut, profile, mi
             {/* MOBILE SIDE DRAWS */}
             {!minimal && (
                 <>
-                    {/* MOBILE PROFILE DRAWER - Right Side */}
+                    {/* MOBILE PROFILE DRAWER - Right */}
                     <AnimatePresence>
                         {showProfile && (
                             <>
@@ -202,7 +203,7 @@ export const Radio: React.FC<RadioProps> = ({ onNavigate, onSignOut, profile, mi
                                     className="lg:hidden fixed right-0 top-0 bottom-0 w-[85%] max-w-[360px] bg-black/95 backdrop-blur-xl z-[70] border-l border-white/10"
                                 >
                                     <div className="flex flex-col h-full">
-<div className="flex items-center justify-between p-4 border-b border-white/5">
+                                        <div className="flex items-center justify-between p-4 border-b border-white/5">
                                             <span className="text-[11px] font-black uppercase tracking-widest text-white/50">Profile</span>
                                             <button onClick={() => setShowProfile(false)} className="p-2 text-white/40 hover:text-white">
                                                 <X size={20} />
@@ -221,43 +222,53 @@ export const Radio: React.FC<RadioProps> = ({ onNavigate, onSignOut, profile, mi
                         )}
                     </AnimatePresence>
 
-                    {/* MOBILE VOTE DRAWER - Left Side */}
+                    {/* MOBILE POOL DRAWER - Left (Vote + Pool) */}
                     <AnimatePresence>
-                        {showVote && (
+                        {showPool && (
                             <>
                                 <motion.div
                                     initial={{ opacity: 0 }}
                                     animate={{ opacity: 1 }}
                                     exit={{ opacity: 0 }}
                                     className="lg:hidden fixed inset-0 bg-black/60 z-[60]"
-                                    onClick={() => setShowVote(false)}
+                                    onClick={() => setShowPool(false)}
                                 />
                                 <motion.div
-                                    initial={{ x: "-100%" }}
+initial={{ x: "-100%" }}
                                     animate={{ x: 0 }}
                                     exit={{ x: "-100%" }}
                                     transition={{ type: "spring", damping: 25, stiffness: 200 }}
-                                    className="lg:hidden fixed left-0 top-0 bottom-0 w-[85%] max-w-[360px] bg-black/95 backdrop-blur-xl z-[70] border-r border-white/10"
+                                    className="lg:hidden fixed left-0 top-0 bottom-0 w-[90%] max-w-[400px] bg-black/95 backdrop-blur-xl z-[70] border-r border-white/10 flex flex-col"
                                 >
-                                    <div className="flex flex-col h-full">
-                                        <div className="flex items-center justify-between p-4 border-b border-white/5">
-                                            <span className="text-[11px] font-black uppercase tracking-widest text-white/50">Vote for Next</span>
-                                            <button onClick={() => setShowVote(false)} className="p-2 text-white/40 hover:text-white">
-                                                <X size={20} />
-                                            </button>
+                                    {/* Header */}
+                                    <div className="flex items-center justify-between p-4 border-b border-white/5 shrink-0">
+                                        <div className="flex items-center gap-2">
+                                            <Music size={16} className="text-purple-400" />
+                                            <span className="text-[11px] font-black uppercase tracking-widest text-white/50">Song Pool</span>
                                         </div>
-                                        <div className="flex-grow overflow-y-auto p-4">
-                                            <TheBox />
-                                        </div>
+                                        <button onClick={() => setShowPool(false)} className="p-2 text-white/40 hover:text-white">
+                                            <X size={20} />
+                                        </button>
+                                    </div>
+                                    
+                                    {/* Vote Section */}
+                                    <div className="p-3 border-b border-white/5 shrink-0">
+                                        <span className="text-[9px] font-black uppercase tracking-widest text-white/30 mb-2 block">Vote for Next</span>
+                                        <TheBox />
+                                    </div>
+                                    
+                                    {/* Scrollable Pool */}
+                                    <div className="flex-grow overflow-y-auto">
+                                        <ThePool />
                                     </div>
                                 </motion.div>
                             </>
                         )}
                     </AnimatePresence>
 
-                    {/* MOBILE BOTTOM BAR - Chat */}
+                    {/* MOBILE BOTTOM CHAT */}
                     <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-black/95 backdrop-blur-xl border-t border-white/10">
-                        <div className="h-[60vh] max-h-[400px]">
+                        <div className="h-[50vh] max-h-[350px]">
                             <TheChat profile={profile} transparent={true} />
                         </div>
                     </div>
