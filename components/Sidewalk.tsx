@@ -39,7 +39,35 @@ export const Sidewalk: React.FC = () => {
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [chatInput, setChatInput] = useState("");
   const [listenerCount] = useState(Math.floor(Math.random() * 200) + 150);
+  const [isPlaying, setIsPlaying] = useState(false);
   const chatRef = useRef<HTMLDivElement>(null);
+  const audioRef = useRef<HTMLAudioElement>(null);
+
+  // Handle audio playback
+  useEffect(() => {
+    if (!audioRef.current || !context?.nowPlaying?.audioUrl) return;
+    
+    audioRef.current.src = context.nowPlaying.audioUrl;
+    if (isPlaying) {
+      audioRef.current.play().catch(console.error);
+    }
+  }, [context?.nowPlaying?.audioUrl]);
+
+  useEffect(() => {
+    if (!audioRef.current) return;
+    if (isPlaying) {
+      audioRef.current.play().catch(console.error);
+    } else {
+      audioRef.current.pause();
+    }
+  }, [isPlaying]);
+
+  // Sync with global player when context changes
+  useEffect(() => {
+    if (context?.isPlaying !== undefined) {
+      setIsPlaying(context.isPlaying);
+    }
+  }, [context?.isPlaying]);
 
   // Generate anonymous username
   const [myUsername] = useState(() => {
@@ -316,20 +344,33 @@ style={{
                 </div>
               </div>
               
-              {/* Play Button - USE REAL PLAYER */}
+              {/* Play Button - ACTUAL AUDIO PLAYBACK */}
               {context?.nowPlaying ? (
-                <a
-                  href="/club"
-                  className="block w-full py-4 rounded-xl font-bold text-lg tracking-wider uppercase transition-all duration-300 flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-[0.98]"
+                <button
+                  onClick={() => setIsPlaying(!isPlaying)}
+                  className="w-full py-4 rounded-xl font-bold text-lg tracking-wider uppercase transition-all duration-300 flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-[0.98]"
                   style={{
-                    background: "linear-gradient(135deg, #00F5FF 0%, #00CCDD 100%)",
-                    color: "#0A0A0F",
-                    boxShadow: "0 0 30px rgba(0, 245, 255, 0.4)"
+                    background: isPlaying 
+                      ? "linear-gradient(135deg, #FF2D55 0%, #CC0033 100%)"
+                      : "linear-gradient(135deg, #00F5FF 0%, #00CCDD 100%)",
+                    color: "#FFFFFF",
+                    boxShadow: isPlaying
+                      ? "0 0 30px rgba(255, 45, 85, 0.4)"
+                      : "0 0 30px rgba(0, 245, 255, 0.4)"
                   }}
                 >
-                  <Volume2 className="w-5 h-5" />
-                  TUNE IN TO CLUB
-                </a>
+                  {isPlaying ? (
+                    <>
+                      <Pause className="w-5 h-5" />
+                      LISTENING... (TAP TO PAUSE)
+                    </>
+                  ) : (
+                    <>
+                      <Play className="w-5 h-5" />
+                      PLAY MUSIC OUTSIDE
+                    </>
+                  )}
+                </button>
               ) : (
                 <button
                   disabled
@@ -592,6 +633,11 @@ style={{
         </motion.div>
       </div>
 
+      {/* Hidden audio element for outside playback */}
+      <audio 
+        ref={audioRef}
+        loop
+      />
     </div>
   );
 };
