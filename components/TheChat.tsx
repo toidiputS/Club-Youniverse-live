@@ -47,7 +47,8 @@ export const TheChat: React.FC<TheChatProps> = ({ profile, transparent }) => {
         if (!input.trim()) return;
 
         // Slash command handling
-        if (input.trim().toLowerCase() === "/youniversal") {
+        const cmd = input.trim().toLowerCase();
+        if (cmd === "/youniversal" || cmd === "/youniverse") {
             if (profile.is_admin) {
                 // Administrators can toggle the game directly
                 context.setDanceFloorEnabled(!context.danceFloorEnabled);
