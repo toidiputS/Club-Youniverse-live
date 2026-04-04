@@ -5,7 +5,15 @@
     },
     "rewrites": [
         {
-            "source": "/(.*)",
+            "source": "/",
+            "destination": "/index.html"
+        },
+        {
+            "source": "/club",
+            "destination": "/index.html"
+        },
+        {
+            "source": "/club/:path*",
             "destination": "/index.html"
         }
     ]

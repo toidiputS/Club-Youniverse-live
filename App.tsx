@@ -16,6 +16,7 @@ import { PresenceAlerts } from "./components/PresenceAlerts";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { UserProfileCard } from './components/UserProfileCard';
 import { RadioProvider } from "./contexts/AudioPlayerContext";
+import { Sidewalk } from "./components/Sidewalk";
 import { supabase } from "./services/supabaseClient";
 import type { Session, Profile, View } from "./types";
 import { Analytics } from "@vercel/analytics/react";
@@ -27,6 +28,22 @@ const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<View>("club");
   const [updateAvailable, setUpdateAvailable] = useState(false);
   const [updateSWFn, setUpdateSWFn] = useState<((reloadPage?: boolean) => Promise<void>) | null>(null);
+  
+  // Route state - determine if we're on sidewalk (public) or inside club
+  const [isClubRoute, setIsClubRoute] = useState(false);
+  
+  // Check route on mount and hash change
+  useEffect(() => {
+    const checkRoute = () => {
+      const hash = window.location.hash;
+      setIsClubRoute(hash === "#/club" || hash === "#/club/" || window.location.pathname === "/club");
+    };
+    
+    checkRoute();
+    window.addEventListener("hashchange", checkRoute);
+    
+    return () => window.removeEventListener("hashchange", checkRoute);
+  }, []);
 
   useEffect(() => {
     const fetchProfile = async (userId: string) => {
@@ -55,6 +72,7 @@ const App: React.FC = () => {
 
           if (createError) throw createError;
           setProfile(newProfile);
+
         } else {
           setProfile(data);
         }
@@ -119,6 +137,7 @@ const App: React.FC = () => {
     setSession({ user: { id: "god-mode-admin" } } as Session);
   };
 
+  // Show loading state
   if (loading) {
     return (
       <div className="h-screen w-screen flex items-center justify-center bg-black">
@@ -127,14 +146,43 @@ const App: React.FC = () => {
     );
   }
 
-  if (!session || !profile) {
+  // SIDWALK VIEW - Public landing page (no auth required)
+  // Show sidewalk if: on root path OR explicitly on sidewalk route OR not logged in (but can still view)
+  if (!isClubRoute || !session) {
+    // Show the sidewalk landing page for everyone
     return (
       <ThemeProvider>
-        <LoginScreen onShowPrivacy={() => { }} onAdminLogin={handleAdminLogin} />
+        <Sidewalk />
+        <Analytics />
       </ThemeProvider>
     );
   }
 
+  // CLUB VIEW - Premium members only
+  // If on /club route but not logged in, redirect to sidewalk which has login
+  if (isClubRoute && (!session || !profile)) {
+    window.location.hash = "#/";
+    return (
+      <div className="h-screen w-screen flex items-center justify-center bg-black">
+        <Loader message="Redirecting..." />
+      </div>
+    );
+  }
+
+  // Check if user can access the club (premium or admin)
+  const canAccessClub = profile?.is_premium || profile?.is_admin;
+
+  if (!canAccessClub) {
+    // User is logged in but not premium - show message or redirect
+    return (
+      <ThemeProvider>
+        <Sidewalk />
+        <Analytics />
+      </ThemeProvider>
+    );
+  }
+
+  // CLUB VIEW - Premium experience
   return (
     <ThemeProvider>
       <RadioProvider profile={profile} setProfile={setProfile}>
@@ -151,16 +199,19 @@ const App: React.FC = () => {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                 </svg>
               </div>
+
               <div className="flex-grow">
                 <h3 className="text-white text-[12px] font-black uppercase tracking-wider mb-0.5">Club Update Ready</h3>
                 <p className="text-zinc-400 text-[10px] font-medium leading-tight">A new version of Youniverse is available. Update now to fix issues and load fresh code.</p>
               </div>
+
               <button
                 onClick={handleUpdateApp}
                 className="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white text-[10px] font-black uppercase tracking-widest rounded-lg transition-colors shrink-0"
               >
                 Reload
               </button>
+
             </div>
           </div>
         )}
@@ -171,6 +222,7 @@ const App: React.FC = () => {
               <div className="h-full w-full overflow-hidden absolute inset-0">
                 <Club onNavigate={setCurrentView} onSignOut={handleSignOut} profile={profile} />
               </div>
+
             ) : currentView === "profile" ? (
               <div className="h-full w-full overflow-hidden absolute inset-0">
                 <UserProfileCard
@@ -179,15 +231,18 @@ const App: React.FC = () => {
                   isCurrentUser={true}
                 />
               </div>
+
             ) : (
               <DjBooth onNavigate={setCurrentView} />
             )}
+
           </main>
 
           {/* FULL WIDTH BOTTOM TICKERS */}
           <div className="fixed bottom-0 left-0 w-full z-50">
             <Ticker />
           </div>
+
         </div>
 
         <PresenceAlerts profile={profile} />
