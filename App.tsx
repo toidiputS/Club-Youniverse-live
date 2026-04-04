@@ -149,10 +149,25 @@ const App: React.FC = () => {
   // SIDWALK VIEW - Public landing page (no auth required)
   // Show sidewalk if: on root path OR explicitly on sidewalk route OR not logged in (but can still view)
   if (!isClubRoute || !session) {
-    // Show the sidewalk landing page for everyone
+    // Create a guest profile for the sidewalk
+    const guestProfile: Profile = {
+      user_id: "guest-" + Date.now(),
+      name: "Guest Listener",
+      is_premium: false,
+      is_artist: false,
+      is_admin: false,
+      roast_consent: false,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      stats: { plays: 0, uploads: 0, votes_cast: 0, graveyard_count: 0 }
+    };
+    
+    // Show the sidewalk landing page for everyone with RadioProvider
     return (
       <ThemeProvider>
-        <Sidewalk />
+        <RadioProvider profile={guestProfile} setProfile={setProfile}>
+          <Sidewalk />
+        </RadioProvider>
         <Analytics />
       </ThemeProvider>
     );

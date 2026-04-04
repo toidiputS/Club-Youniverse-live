@@ -29,6 +29,8 @@ export const DjBooth: React.FC<DjBoothProps> = ({ onNavigate }) => {
   const [editingSong, setEditingSong] = useState<any>(null);
   const [editFormData, setEditFormData] = useState({ title: '', artist_name: '', lyrics: '', coverArtUrl: '' });
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadingSong, setUploadingSong] = useState<{ title: string; artist: string; file: File | null }>({ title: '', artist: '', file: null });
+  const [showUploadModal, setShowUploadModal] = useState(false);
   
   const isAdmin = profile.is_admin;
   const isCurrentDJ = leaderId === profile.user_id;
@@ -59,6 +61,66 @@ export const DjBooth: React.FC<DjBoothProps> = ({ onNavigate }) => {
         alert("Upload failed: " + error.message);
     } finally {
         setIsUploading(false);
+    }
+  };
+
+  // Upload NEW song
+  const handleUploadNewSong = async () => {
+    if (!uploadingSong.file || !uploadingSong.title.trim()) {
+      alert("Please select an audio file and enter a title");
+      return;
+    }
+    setIsUploading(true);
+    try {
+      const file = uploadingSong.file;
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}_${Math.random()}.${fileExt}`;
+      const audioPath = `audio/${fileName}`;
+
+      // Upload audio
+      const { error: uploadError } = await supabase.storage
+        .from('songs')
+        .upload(audioPath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl: audioUrl } } = supabase.storage
+        .from('songs')
+        .getPublicUrl(audioPath);
+
+      // Create song record
+      const { data: newSong, error: insertError } = await supabase
+        .from('songs')
+        .insert([{
+          title: uploadingSong.title,
+          artist_name: uploadingSong.artist || profile.name,
+          audio_url: audioUrl,
+          uploader_id: profile.user_id,
+          status: 'pool',
+          stars: 0,
+          upvotes: 0,
+          play_count: 0
+        }])
+        .select()
+        .single();
+
+      if (insertError) throw insertError;
+
+      // Get duration using audio element
+      const audio = new Audio(audioUrl);
+      await new Promise(resolve => { audio.onloadedmetadata = resolve; });
+      const durationSec = audio.duration;
+
+      await supabase.from('songs').update({ duration_sec: durationSec }).eq('id', newSong.id);
+
+      setShowUploadModal(false);
+      setUploadingSong({ title: '', artist: '', file: null });
+      await fetchLibrary();
+      alert("Song uploaded successfully!");
+    } catch (error: any) {
+      alert("Upload failed: " + error.message);
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -403,7 +465,7 @@ export const DjBooth: React.FC<DjBoothProps> = ({ onNavigate }) => {
                             className="flex-grow sm:w-48 bg-white/5 border border-white/5 rounded-lg px-3 py-2 text-[11px] focus:outline-none focus:border-purple-500/50"
                         />
                         <button 
-                            onClick={() => document.getElementById('node-upload')?.click()}
+                            onClick={() => setShowUploadModal(true)}
                             className="px-4 py-2 bg-white text-black rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-purple-500 hover:text-white transition-all shadow-lg shrink-0"
                         >
                             + Node
