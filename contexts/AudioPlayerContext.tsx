@@ -79,7 +79,7 @@ export const RadioProvider: React.FC<{
   const [tickerText, setTickerText] = useState("Welcome to Club Youniverse. Vote in The Box to help shape the station.");
   const [djBanter, setDjBanter] = useState("DJ Python is loading up the decks... Please stand by.");
   const [vjEnabled, setVjEnabled] = useState(true);
-  const [danceFloorEnabled, setDanceFloorEnabled] = useState(false);
+  const [danceFloorEnabled, setDanceFloorEnabledLocal] = useState(false);
 
   const [leaderId, setLeaderId] = useState<string | null>(broadcastManager.getLeaderId());
 
@@ -103,6 +103,11 @@ export const RadioProvider: React.FC<{
 
   const setRadioState = useCallback((state: RadioState) => {
     broadcastManager.setRadioState(state);
+  }, [broadcastManager]);
+
+  const setDanceFloorEnabled = useCallback((enabled: boolean) => {
+    setDanceFloorEnabledLocal(enabled);
+    broadcastManager.sendSiteCommand("dance_floor", { enabled });
   }, [broadcastManager]);
 
   const setNowPlaying = useCallback((song: Song | null) => {
@@ -138,7 +143,7 @@ export const RadioProvider: React.FC<{
         // Assume payload is a ChatMessage object
         setChatMessages(prev => [...prev, cmd.payload].slice(-50));
       } else if (cmd?.type === "dance_floor") {
-        setDanceFloorEnabled(!!cmd.payload?.enabled);
+        setDanceFloorEnabledLocal(!!cmd.payload?.enabled);
       }
     });
 
