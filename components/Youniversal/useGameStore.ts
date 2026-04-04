@@ -46,22 +46,26 @@ interface GameState {
   timerRunning: boolean;
   isWaiting: boolean;
   waitingEndTime: number | null;
-  gameStatus: 'IDLE' | 'PLAYING' | 'ENDED';
-  winnerId: string | null;
   leaderboard: { name: string; wins: number }[];
+  
+  // Actions
   connect: () => void;
   disconnect: () => void;
   claimSlot: (slotId: string) => void;
-  resetGame: () => void;
   sendCursor: (position: Vector3) => void;
   addForce: (position: Vector3, type: 'attractor' | 'repulsor') => void;
   transferEnergy: (targetSlotId: string, amount: number) => void;
+  resetGame: () => void;
+  
+  // HUD/Settings
   selectedForceType: 'attractor' | 'repulsor';
   setSelectedForceType: (type: 'attractor' | 'repulsor') => void;
   trailLength: number;
   trailWidth: number;
   setTrailLength: (length: number) => void;
   setTrailWidth: (width: number) => void;
+  
+  // Replay Actions
   startReplay: () => void;
   stopReplay: () => void;
   setReplayTime: (time: number) => void;
@@ -82,8 +86,6 @@ export const useGameStore = create<GameState>((set, get) => ({
   timerRunning: false,
   isWaiting: false,
   waitingEndTime: null,
-  gameStatus: 'IDLE',
-  winnerId: null,
   leaderboard: [
     { name: "CYL_ELITE", wins: 42 },
     { name: "NEO_PUNK", wins: 28 },
@@ -98,6 +100,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   isPlayingReplay: false,
   snapshots: [],
   replayTime: 0,
+
   setSelectedForceType: (type) => set({ selectedForceType: type }),
   setTrailLength: (length) => set({ trailLength: length }),
   setTrailWidth: (width) => set({ trailWidth: width }),
@@ -121,7 +124,13 @@ export const useGameStore = create<GameState>((set, get) => ({
   startReplay: () => {
     const { snapshots } = get();
     if (snapshots.length > 0) {
-      set({ isReplaying: true, isPlayingReplay: true, replayTime: 0, replayPlayers: snapshots[0].players, replayForceFields: snapshots[0].forceFields });
+      set({ 
+        isReplaying: true, 
+        isPlayingReplay: true, 
+        replayTime: 0, 
+        replayPlayers: snapshots[0].players, 
+        replayForceFields: snapshots[0].forceFields 
+      });
     }
   },
   stopReplay: () => set({ isReplaying: false, isPlayingReplay: false, replayPlayers: null, replayForceFields: null }),
@@ -134,8 +143,9 @@ export const useGameStore = create<GameState>((set, get) => ({
   },
   setIsPlayingReplay: (playing) => set({ isPlayingReplay: playing }),
   recordSnapshot: () => {
-    const { players, forceFields, snapshots } = get();
-    const newSnapshots = [...snapshots, { time: Date.now(), players, forceFields }];
+    const { players, forceFields, snapshots, isReplaying } = get();
+    if (isReplaying) return;
+    const newSnapshots = [...snapshots, { time: Date.now(), players: { ...players }, forceFields: { ...forceFields } }];
     if (newSnapshots.length > 600) {
       newSnapshots.shift();
     }
@@ -148,8 +158,8 @@ export const useGameStore = create<GameState>((set, get) => ({
       return;
     }
 
-    // Default to localhost:3000 for standard YOUNIVERSAL server
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    // Use port 3000 to match the YOUNIVERSAL server.ts
     const wsUrl = `${protocol}//${window.location.hostname}:3000`;
     const ws = new WebSocket(wsUrl);
 
@@ -175,10 +185,12 @@ export const useGameStore = create<GameState>((set, get) => ({
           waitingEndTime: data.waitingEndTime || null
         });
         const playersMap: Record<string, Player> = {};
+        let mySlotId = null;
+
         data.players.forEach((p: Player) => {
           playersMap[p.id] = p;
           if (p.controllerId === data.id) {
-            set({ mySlotId: p.id });
+            mySlotId = p.id;
           }
         });
         
@@ -187,19 +199,7 @@ export const useGameStore = create<GameState>((set, get) => ({
           forcesMap[f.id] = f;
         });
         
-        set({ players: playersMap, forceFields: forcesMap });
-      } else if (data.type === 'game_full') {
-        set({ joinError: 'Game is full.' });
-      } else if (data.type === 'timer_update') {
-        set({ 
-          gameEndTime: data.gameEndTime !== undefined ? data.gameEndTime : get().gameEndTime,
-          timerRunning: data.running !== undefined ? data.running : get().timerRunning
-        });
-      } else if (data.type === 'waiting_update') {
-        set({
-          isWaiting: data.waiting,
-          waitingEndTime: data.waitingEndTime || null
-        });
+        set({ players: playersMap, forceFields: forcesMap, mySlotId });
       } else if (data.type === 'player_update') {
         set((state) => {
           const p = data.player;
@@ -216,9 +216,24 @@ export const useGameStore = create<GameState>((set, get) => ({
             mySlotId: newMySlotId
           };
         });
+      } else if (data.type === 'force_added') {
+        set((state) => {
+          const newForces = { ...state.forceFields, [data.force.id]: data.force };
+          
+          if (data.removedForces) {
+            data.removedForces.forEach((id: string) => delete newForces[id]);
+          }
+          
+          const updates: any = { forceFields: newForces };
+          if (data.player) {
+            updates.players = { ...state.players, [data.player.id]: data.player };
+          }
+          
+          return updates;
+        });
       } else if (data.type === 'sync') {
         set((state) => {
-          const newPlayers = { ...state.players };
+          const newPlayers: Record<string, Player> = { ...state.players };
           let newMySlotId = state.mySlotId;
           
           data.players.forEach((p: Player) => {
@@ -230,15 +245,13 @@ export const useGameStore = create<GameState>((set, get) => ({
             }
           });
           
-          let newForces = state.forceFields;
+          let newForces: Record<string, ForceField> = { ...state.forceFields };
           if (data.forceFields) {
-            newForces = { ...state.forceFields };
             data.forceFields.forEach((f: ForceField) => {
               newForces[f.id] = f;
             });
           }
           if (data.removedForces) {
-             if (newForces === state.forceFields) newForces = { ...state.forceFields };
              data.removedForces.forEach((id: string) => {
                delete newForces[id];
              });
@@ -246,33 +259,21 @@ export const useGameStore = create<GameState>((set, get) => ({
           
           return { players: newPlayers, forceFields: newForces, mySlotId: newMySlotId };
         });
-      } else if (data.type === 'force_added') {
-        set((state) => {
-          const updates: Partial<GameState> = {
-            forceFields: { ...state.forceFields, [data.force.id]: data.force }
-          };
-          
-          if (data.removedForces) {
-            const newForces = { ...updates.forceFields! };
-            data.removedForces.forEach((id: string) => delete newForces[id]);
-            updates.forceFields = newForces;
-          }
-          
-          if (data.player) {
-             updates.players = { ...state.players, [data.player.id]: data.player };
-          }
-          
-          return updates;
+      } else if (data.type === 'timer_update') {
+        set({ 
+          gameEndTime: data.gameEndTime !== undefined ? data.gameEndTime : get().gameEndTime,
+          timerRunning: data.running !== undefined ? data.running : get().timerRunning
+        });
+      } else if (data.type === 'waiting_update') {
+        set({
+          isWaiting: data.waiting,
+          waitingEndTime: data.waitingEndTime || null
         });
       }
     };
 
     ws.onclose = () => {
       set({ isConnected: false, mySlotId: null });
-      const { ws: currentWs } = get();
-      if (currentWs === ws) {
-        setTimeout(() => get().connect(), 1000);
-      }
     };
 
     set({ ws });
@@ -291,13 +292,6 @@ export const useGameStore = create<GameState>((set, get) => ({
     if (ws && ws.readyState === WebSocket.OPEN) {
       set({ joinError: null });
       ws.send(JSON.stringify({ type: 'claim_slot', slotId }));
-    }
-  },
-
-  resetGame: () => {
-    const { ws } = get();
-    if (ws && ws.readyState === WebSocket.OPEN) {
-      ws.send(JSON.stringify({ type: 'reset_game' }));
     }
   },
 
@@ -323,5 +317,12 @@ export const useGameStore = create<GameState>((set, get) => ({
     if (ws && ws.readyState === WebSocket.OPEN && mySlotId) {
       ws.send(JSON.stringify({ type: 'transfer_energy', targetSlotId, amount }));
     }
-  }
+  },
+
+  resetGame: () => {
+    const { ws } = get();
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({ type: 'reset_game' }));
+    }
+  },
 }));

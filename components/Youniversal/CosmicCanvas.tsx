@@ -1,5 +1,5 @@
 import React, { useRef, Suspense } from 'react';
-import { Canvas } from '@react-three/fiber';
+import { Canvas, useFrame } from '@react-three/fiber';
 import { PerspectiveCamera } from '@react-three/drei';
 import { EffectComposer, Bloom, Noise, Vignette, ChromaticAberration } from '@react-three/postprocessing';
 import * as THREE from 'three';
@@ -8,24 +8,31 @@ import { OtherPlayers, LocalCursor } from './OtherPlayers';
 import { ForceFields } from './ForceFields';
 import { useGameStore } from './useGameStore';
 import { useIsMobile } from '../../hooks/useIsMobile';
+import { GameHUD } from './GameHUD';
 
 function InteractionLayer({ mousePosRef }: { mousePosRef: React.MutableRefObject<THREE.Vector3 | null> }) {
   const addForce = useGameStore((state) => state.addForce);
-  const selectedForceType = useGameStore((state) => state.selectedForceType);
   const sendCursor = useGameStore((state) => state.sendCursor);
+  const mySlotId = useGameStore((state) => state.mySlotId);
   const isReplaying = useGameStore((state) => state.isReplaying);
+  const selectedForceType = useGameStore((state) => state.selectedForceType);
+
+  useFrame(() => {
+    if (mousePosRef.current && !isReplaying) {
+        sendCursor({ x: mousePosRef.current.x, y: mousePosRef.current.y, z: mousePosRef.current.z });
+    }
+  });
 
   const handlePointerMove = (e: any) => {
-    if (isReplaying) return;
-    const { point } = e;
-    mousePosRef.current = point;
-    sendCursor({ x: point.x, y: point.y, z: point.z });
+    mousePosRef.current = e.point;
   };
 
   const handlePointerDown = (e: any) => {
-    if (isReplaying) return;
-    const { point } = e;
-    addForce({ x: point.x, y: point.y, z: point.z }, selectedForceType);
+    if (!mySlotId || isReplaying) return;
+    const type = e.button === 2 ? (selectedForceType === 'repulsor' ? 'attractor' : 'repulsor') : selectedForceType;
+    if (mousePosRef.current) {
+        addForce({ x: mousePosRef.current.x, y: mousePosRef.current.y, z: mousePosRef.current.z }, type as any);
+    }
   };
 
   return (
@@ -87,7 +94,8 @@ export default function CosmicCanvas() {
           <pointLight position={[10, 10, 10]} intensity={1.0} />
         </Suspense>
       </Canvas>
-      <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-black/20 via-transparent to-black/40" />
+      <GameHUD />
+      <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-black/20 via-transparent to-black/40 z-[9]" />
     </div>
   );
 }
