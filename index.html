@@ -1,11 +1,9 @@
 <!doctype html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8" />
   <link rel="icon" type="image/svg+xml" href="/icons/favicon.svg" />
-  <meta name="viewport"
-    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <meta name="theme-color" content="#000000" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -13,293 +11,30 @@
   <meta name="apple-mobile-web-app-title" content="Youniverse" />
   <link rel="apple-touch-icon" href="/icons/icon-192.svg" />
 
-  <!-- Primary Meta Tags - Enhanced SEO -->
   <title>Club Youniverse Live | 24/7 AI-Powered Collaborative Radio</title>
   <meta name="title" content="Club Youniverse Live | 24/7 AI-Powered Collaborative Radio" />
-  <meta name="description" content="Experience the future of music. Club Youniverse Live is a real-time, 24/7 collaborative radio where you vote on what plays, interact with the crowd, and play Youniversal - a cosmic multiplayer game. AI-curated playlists, live DJ banter, and VJ visualizations." />
-  <meta name="keywords" content="collaborative radio, AI music, 24/7 radio, music voting, crowd sourced playlist, interactive radio, live music, DJ booth, Youniversal game, cosmic music experience" />
-  <meta name="author" content="Club Youniverse" />
+  <meta name="description" content="Experience the future of music. Club Youniverse Live is a real-time, 24/7 collaborative radio where you vote on what plays, interact with the crowd, and play Youniversal - a cosmic multiplayer game." />
+  <meta name="keywords" content="collaborative radio, AI music, 24/7 radio, music voting" />
   <meta name="robots" content="index, follow" />
-  <meta name="canonical" content="https://clubyouniverse.live" />
 
-  <!-- Open Graph / Facebook -->
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://clubyouniverse.live" />
-  <meta property="og:title" content="Club Youniverse Live | 24/7 AI-Powered Collaborative Radio" />
-  <meta property="og:description" content="Experience the future of music. Vote on what plays, interact with the crowd, and play Youniversal - a cosmic multiplayer game on the dance floor." />
-  <meta property="og:image" content="https://clubyouniverse.live/social-cover.png" />
+  <meta property="og:title" content="Club Youniverse Live | 24/7 AI-Powered Radio" />
+  <meta property="og:description" content="Vote on what plays, play Youniversal multiplayer game." />
   <meta property="og:site_name" content="Club Youniverse Live" />
-  <meta property="og:locale" content="en_US" />
 
-  <!-- Twitter -->
   <meta property="twitter:card" content="summary_large_image" />
-  <meta property="twitter:url" content="https://clubyouniverse.live" />
-  <meta property="twitter:title" content="Club Youniverse Live | 24/7 AI-Powered Collaborative Radio" />
-  <meta property="twitter:description" content="Experience the future of music. Vote on what plays, interact with the crowd, and play Youniversal - a cosmic multiplayer game." />
-  <meta property="twitter:image" content="https://clubyouniverse.live/social-cover.png" />
-  <meta name="twitter:creator" content="@clubyouniverse" />
+  <meta property="twitter:title" content="Club Youniverse Live" />
+  <meta property="twitter:description" content="24/7 AI-Powered Collaborative Radio" />
 
-  <!-- Schema.org Structured Data -->
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "MusicPlaylist",
-    "name": "Club Youniverse Live",
-    "description": "A real-time, 24/7 collaborative radio experience with AI-curated music, live voting, and interactive Youniversal multiplayer game.",
-    "url": "https://clubyouniverse.live",
-    "keywords": ["collaborative radio", "AI music", "interactive music", "live radio", "music voting"],
-    "hasPart": {
-      "@type": "WebApplication",
-      "name": "Youniversal",
-      "description": "Multiplayer cosmic particle physics game on the dance floor",
-      "applicationCategory": "Game"
-    },
-    "provider": {
-      "@type": "Organization",
-      "name": "Club Youniverse",
-      "url": "https://clubyouniverse.live"
-    }
-  }
-  </script>
-  <!-- Tailwind CSS is bundled via PostCSS in production -->
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          fontFamily: {
-            sans: ["Montserrat", "Inter", "sans-serif"],
-            marker: ["Permanent Marker", "cursive"],
-            tech: ["Orbitron", "sans-serif"],
-          },
-          animation: {
-            "pulse-slow": "pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite",
-            "pulse-fast": "pulse 0.5s cubic-bezier(0.4, 0, 0.6, 1) infinite",
-            float: "float 3s ease-in-out infinite",
-            shake: "shake 0.5s cubic-bezier(.36,.07,.19,.97) both",
-            "pop-in":
-              "popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards",
-            "fade-out-up": "fadeOutUp 1.2s ease-out forwards",
-            "glitch-snap": "glitchSnap 0.3s linear forwards",
-            "scanline-wipe": "scanlineWipe 0.4s linear forwards",
-            "slide-in-up": "slideInUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards",
-            "flash-fade": "flashFade 0.4s ease-out forwards",
-            "glitch": "glitch 0.3s ease-in-out infinite alternate-reverse",
-          },
-          keyframes: {
-            flashFade: {
-              "0%": { opacity: "1" },
-              "100%": { opacity: "0" },
-            },
-            glitch: {
-              "0%": { transform: "translate(0)" },
-              "20%": { transform: "translate(-2px, 2px)" },
-              "40%": { transform: "translate(-2px, -2px)" },
-              "60%": { transform: "translate(2px, 2px)" },
-              "80%": { transform: "translate(2px, -2px)" },
-              "100%": { transform: "translate(0)" },
-            },
-            pulse: {
-"0%, 100%": { opacity: "1" },
-              "50%": { opacity: "0.5" },
-            },
-            float: {
-              "0%, 100%": { transform: "translateY(0)" },
-              "50%": { transform: "translateY(-10px)" },
-            },
-            shake: {
-              "10%, 90%": { transform: "translate3d(-1px, 0, 0)" },
-              "20%, 80%": { transform: "translate3d(2px, 0, 0)" },
-              "30%, 50%, 70%": { transform: "translate3d(-4px, 0, 0)" },
-              "40%, 60%": { transform: "translate3d(4px, 0, 0)" },
-            },
-            popIn: {
-              "0%": { opacity: "0", transform: "scale(0.5)" },
-              "70%": { opacity: "1", transform: "scale(1.1)" },
-              "100%": { opacity: "1", transform: "scale(1)" },
-            },
-            fadeOutUp: {
-              "0%": {
-                opacity: "0.6",
-                transform: "translateY(0) scale(0.9)",
-                filter: "blur(0px)",
-              },
-              "100%": {
-                opacity: "0",
-                transform: "translateY(-50px) scale(0.6)",
-                filter: "blur(8px)",
-              },
-            },
-            glitchSnap: {
-              "0%": { transform: "translateX(0) skew(0)" },
-              "20%": { transform: "translateX(-10px) skew(20deg)" },
-              "40%": { transform: "translateX(10px) skew(-20deg)" },
-              "60%": { transform: "translateX(-5px) skew(5deg)" },
-              "100%": { transform: "translateX(0) skew(0)" },
-            },
-            scanlineWipe: {
-              "0%": { top: "-20%", opacity: "0" },
-              "10%": { opacity: "1" },
-              "100%": { top: "120%", opacity: "0" },
-            },
-            slideInUp: {
-              "0%": { transform: "translateY(20px)", opacity: "0" },
-              "100%": { transform: "translateY(0)", opacity: "1" },
-            },
-          },
-        },
-      },
-    };
-  </script>
-  <!-- Google Fonts for custom typography -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link
-    href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=Inter:wght@400;500;600&family=Montserrat:wght@400;500;600;700;800;900&family=Permanent+Marker&family=Orbitron:wght@400;500;600;700;800;900&display=swap"
-    rel="stylesheet" />
-  <style>
-    /* Global box-sizing for mobile-safe layouts */
-    *,
-    *::before,
-    *::after {
-      box-sizing: border-box;
-    }
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Permanent+Marker&family=Orbitron:wght@400;500;600;700&display=swap" rel="stylesheet" />
 
-    /* Basic setup to ensure the app takes full height and never overflows horizontally */
-    html,
-    body,
-    #root {
-      height: 100%;
-      margin: 0;
-      max-width: 100vw;
-      overflow-x: hidden;
-    }
-
-    /* 
-        CSS Custom Properties (Variables) for theming.
-        This allows for easy theme switching by just changing these variables.
-        The default theme is 'dark'.
-      */
-    :root {
-      --bg-gradient: linear-gradient(135deg, #020617 0%, #000000 100%);
-      --text-primary: #f8fafc;
-      --text-secondary: #94a3b8;
-      --accent-primary: #facc15;
-      --accent-secondary: #eab308;
-      --card-bg: rgba(15, 23, 42, 0.3);
-      --card-border: rgba(250, 204, 21, 0.2);
-      --input-bg: rgba(30, 41, 59, 0.5);
-      --input-border: #475569;
-    }
-
-    /* Light theme overrides */
-    .theme-light {
-      --bg-gradient: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
-      --text-primary: #0f172a;
-      --text-secondary: #475569;
-      --accent-primary: #ca8a04;
-      --accent-secondary: #a16207;
-      --card-bg: rgba(255, 255, 255, 0.3);
-      --card-border: rgba(161, 98, 7, 0.3);
-      --input-bg: rgba(226, 232, 240, 0.5);
-      --input-border: #94a3b8;
-    }
-
-    /* Gradient theme 1 overrides */
-    .theme-gradient1 {
-      --bg-gradient: linear-gradient(135deg, #1e3a8a 0%, #020617 100%);
-      --text-primary: #f8fafc;
-      --text-secondary: #94a3b8;
-      --accent-primary: #60a5fa;
-      --accent-secondary: #3b82f6;
-      --card-bg: rgba(30, 58, 138, 0.2);
-      --card-border: rgba(96, 165, 250, 0.3);
-      --input-bg: rgba(30, 58, 138, 0.4);
-      --input-border: #3b82f6;
-    }
-
-    /* Gradient theme 2 overrides */
-    .theme-gradient2 {
-      --bg-gradient: linear-gradient(135deg, #581c87 0%, #020617 100%);
-      --text-primary: #f8fafc;
-      --text-secondary: #d8b4fe;
-      --accent-primary: #c084fc;
-      --accent-secondary: #a855f7;
-      --card-bg: rgba(88, 28, 135, 0.2);
-      --card-border: rgba(192, 132, 252, 0.3);
-      --input-bg: rgba(88, 28, 135, 0.4);
-      --input-border: #a855f7;
-    }
-
-    /* Base body styles */
-    body {
-      font-family: "Inter", sans-serif;
-      background-color: #020617;
-      /* Fallback */
-      color: var(--text-primary);
-      transition: background 0.5s ease;
-      overflow: hidden;
-      /* Prevent scrollbars from the full-screen canvas */
-      /* Custom glowing cursor */
-      cursor:
-        url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3" fill="%23facc15" /><circle cx="12" cy="12" r="8" fill="%23facc15" fill-opacity="0.3" /></svg>') 12 12,
-        auto;
-    }
-
-    /* Custom font for display text (headings) */
-    h1,
-    h2,
-    h3,
-    .font-display {
-      font-family: "Cormorant Garamond", serif;
-    }
-
-    /* Styles for the ticker component */
-    .ticker-wrap {
-      width: 100%;
-      padding: 0.5rem 0;
-    }
-
-    .ticker-move-slow,
-    .ticker-move-fast {
-      display: inline-block;
-      white-space: nowrap;
-      padding-left: 100%;
-    }
-
-    .ticker-move-slow p,
-    .ticker-move-fast p {
-      display: inline-block;
-    }
-
-    .ticker-move-slow {
-      animation: ticker 150s linear infinite;
-    }
-
-    .ticker-move-fast {
-      animation: ticker 40s linear infinite;
-    }
-
-    @keyframes ticker {
-      0% {
-        transform: translate3d(0, 0, 0);
-      }
-
-      100% {
-        transform: translate3d(-100%, 0, 0);
-      }
-    }
-  </style>
-<!-- Core dependencies are managed by Vite -->
   <link rel="stylesheet" href="/index.css" />
 </head>
-
-
 <body>
-  <!-- The root element where the React application will be rendered -->
   <div id="root"></div>
-  <!-- The main script for the application -->
   <script type="module" src="/index.tsx"></script>
 </body>
-
-
 </html>
