@@ -64,8 +64,7 @@ export const Radio: React.FC<RadioProps> = ({ onNavigate, onSignOut, profile, mi
   if (!context) return null;
 
   return (
-    <div className="h-full w-full relative flex flex-col bg-black overflow-hidden">
-
+    <div className="h-full w-full relative flex flex-col bg-black overflow-hidden pt-safe-top pb-safe-bottom">
         <div className="h-full w-full relative flex z-20 overflow-hidden">
             {/* Main Content Area */}
             <div className="flex-grow relative flex flex-col min-w-0 h-full overflow-hidden">
@@ -121,9 +120,9 @@ export const Radio: React.FC<RadioProps> = ({ onNavigate, onSignOut, profile, mi
                     </AnimatePresence>
                 </div>
 
-                {/* HEADER */}
+                {/* HEADER - with safe area */}
                 {!minimal && (
-                    <div className="flex-none z-30">
+                    <div className="flex-none z-30 pt-safe-top">
                         <Header 
                             onNavigate={onNavigate} 
                             onSignOut={onSignOut} 
@@ -135,16 +134,9 @@ export const Radio: React.FC<RadioProps> = ({ onNavigate, onSignOut, profile, mi
                 )}
 
                 {/* DANCE FLOOR AREA */}
-                <div className="flex-grow relative flex flex-col">
-                    {/* Status */}
-                    <div className="flex justify-center pt-2">
-                        <span className="text-[9px] font-black uppercase tracking-[0.5em] text-white/15">
-                            {context.radioState === 'NOW_PLAYING' || context.radioState === 'DJ_TALKING' ? 'B-MAX BROADCAST' : 'STANDBY'}
-                        </span>
-                    </div>
-
-                    {/* Now Playing - Bottom, Compact */}
-                    <div className="mt-auto mb-20 sm:mb-4 mx-3 sm:mx-6 z-40 pointer-events-auto">
+                <div className="flex-grow relative flex flex-col justify-end">
+                    {/* Now Playing - Fixed at bottom, compact */}
+                    <div className="px-3 pb-3 z-40 pointer-events-auto">
                         <NowPlay />
                     </div>
                 </div>
@@ -152,7 +144,7 @@ export const Radio: React.FC<RadioProps> = ({ onNavigate, onSignOut, profile, mi
 
             {/* DESKTOP SIDEBAR: CHAT + POOL */}
             {!minimal && (
-                <div className="hidden lg:flex flex-none w-[340px] h-full flex-col pointer-events-auto bg-black/70 backdrop-blur-3xl border-l border-white/5">
+                <div className="hidden lg:flex flex-none w-[320px] h-full flex-col pointer-events-auto bg-black/70 backdrop-blur-3xl border-l border-white/5">
                     {/* LEADERBOARD - TOP */}
                     <AnimatePresence>
                         {context.danceFloorEnabled && (
@@ -169,7 +161,7 @@ export const Radio: React.FC<RadioProps> = ({ onNavigate, onSignOut, profile, mi
                         )}
                     </AnimatePresence>
 
-                    {/* CHAT FEED - transparent on dance floor */}
+                    {/* CHAT FEED */}
                     <div className="flex-grow overflow-hidden">
                         <TheChat profile={profile} transparent={true} />
                     </div>
@@ -202,7 +194,7 @@ export const Radio: React.FC<RadioProps> = ({ onNavigate, onSignOut, profile, mi
                                     transition={{ type: "spring", damping: 25, stiffness: 200 }}
                                     className="lg:hidden fixed right-0 top-0 bottom-0 w-[85%] max-w-[360px] bg-black/95 backdrop-blur-xl z-[70] border-l border-white/10"
                                 >
-                                    <div className="flex flex-col h-full">
+                                    <div className="flex flex-col h-full pt-safe-top">
                                         <div className="flex items-center justify-between p-4 border-b border-white/5">
                                             <span className="text-[11px] font-black uppercase tracking-widest text-white/50">Profile</span>
                                             <button onClick={() => setShowProfile(false)} className="p-2 text-white/40 hover:text-white">
@@ -234,14 +226,14 @@ export const Radio: React.FC<RadioProps> = ({ onNavigate, onSignOut, profile, mi
                                     onClick={() => setShowPool(false)}
                                 />
                                 <motion.div
-initial={{ x: "-100%" }}
+                                    initial={{ x: "-100%" }}
                                     animate={{ x: 0 }}
                                     exit={{ x: "-100%" }}
                                     transition={{ type: "spring", damping: 25, stiffness: 200 }}
                                     className="lg:hidden fixed left-0 top-0 bottom-0 w-[90%] max-w-[400px] bg-black/95 backdrop-blur-xl z-[70] border-r border-white/10 flex flex-col"
                                 >
                                     {/* Header */}
-                                    <div className="flex items-center justify-between p-4 border-b border-white/5 shrink-0">
+                                    <div className="flex items-center justify-between p-4 border-b border-white/5 shrink-0 pt-safe-top">
                                         <div className="flex items-center gap-2">
                                             <Music size={16} className="text-purple-400" />
                                             <span className="text-[11px] font-black uppercase tracking-widest text-white/50">Song Pool</span>
@@ -258,7 +250,7 @@ initial={{ x: "-100%" }}
                                     </div>
                                     
                                     {/* Scrollable Pool */}
-                                    <div className="flex-grow overflow-y-auto">
+                                    <div className="flex-grow overflow-y-auto pb-safe-bottom">
                                         <ThePool />
                                     </div>
                                 </motion.div>
@@ -266,9 +258,9 @@ initial={{ x: "-100%" }}
                         )}
                     </AnimatePresence>
 
-                    {/* MOBILE BOTTOM CHAT */}
-                    <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-black/95 backdrop-blur-xl border-t border-white/10">
-                        <div className="h-[50vh] max-h-[350px]">
+                    {/* MOBILE BOTTOM CHAT - compact */}
+                    <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-black/90 backdrop-blur-xl border-t border-white/10 pb-safe-bottom">
+                        <div className="h-[40vh] max-h-[280px]">
                             <TheChat profile={profile} transparent={true} />
                         </div>
                     </div>
