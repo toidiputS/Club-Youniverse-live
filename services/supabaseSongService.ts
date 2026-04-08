@@ -29,6 +29,7 @@ type DbSong = {
   upvotes: number;
   downvotes: number;
   last_played_at: string;
+  suno_url?: string;
   created_at: string;
 };
 
@@ -68,6 +69,7 @@ const mapDbSongToAppSong = (dbSong: DbSong): Song => {
     upvotes: dbSong.upvotes,
     downvotes: dbSong.downvotes,
     lastPlayedAt: dbSong.last_played_at,
+    sunoUrl: dbSong.suno_url,
     createdAt: dbSong.created_at,
   };
 };
@@ -141,6 +143,7 @@ export const addSongToDatabase = async (
     play_count: songData.playCount,
     upvotes: songData.upvotes,
     downvotes: songData.downvotes,
+    suno_url: songData.sunoUrl,
   };
 
   const { data, error } = await supabase
@@ -302,6 +305,7 @@ export const updateSong = async (
     dbUpdates.box_rounds_lost = updates.boxRoundsLost;
   if (updates.upvotes !== undefined) dbUpdates.upvotes = updates.upvotes;
   if (updates.downvotes !== undefined) dbUpdates.downvotes = updates.downvotes;
+  if (updates.sunoUrl) dbUpdates.suno_url = updates.sunoUrl;
 
   const { error } = await supabase
     .from("songs")

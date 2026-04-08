@@ -39,7 +39,8 @@ create table public.songs (
   dsw_announced boolean default false,
   genre text default 'Other',
   stars integer default 5, -- Starts at 5, max 10, min 0
-  status text check (status in ('pool', 'in_box', 'now_playing', 'graveyard', 'debut', 'next_play')) default 'pool',
+  status text check (status in ('pool', 'in_box', 'now_playing', 'graveyard', 'debut', 'next_play', 'review')) default 'pool',
+  suno_url text,
   box_rounds_seen integer default 0,
   box_rounds_lost integer default 0,
   box_appearance_count integer default 0, -- Tracks consecutive appearances in box

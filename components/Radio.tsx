@@ -198,9 +198,11 @@ export const Radio: React.FC<RadioProps> = ({ onNavigate, profile, minimal = fal
                 {/* DANCE FLOOR AREA - HUD and foreground controls */}
                 <div className="grow relative flex flex-col justify-end pointer-events-none">
                     {/* Now Playing - Force pointer-events: auto for internal buttons */}
-                    <div className="px-3 pb-3 z-40 pointer-events-auto">
-                        <NowPlay />
-                    </div>
+                    {!minimal && (
+                        <div className="px-3 pb-3 z-40 pointer-events-auto">
+                            <NowPlay />
+                        </div>
+                    )}
                 </div>
             </div>
 

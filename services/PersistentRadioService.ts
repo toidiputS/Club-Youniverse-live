@@ -428,6 +428,7 @@ if (poolSongs && poolSongs.length > 0) {
             upvotes: dbSong.upvotes,
             downvotes: dbSong.downvotes,
             lastPlayedAt: dbSong.last_played_at,
+            sunoUrl: dbSong.suno_url,
             createdAt: dbSong.created_at
         };
     }

@@ -59,6 +59,7 @@ export interface Song {
   upvotes: number;
   downvotes: number;
   lastPlayedAt: string;
+  sunoUrl?: string;
   createdAt: string;
 }
 

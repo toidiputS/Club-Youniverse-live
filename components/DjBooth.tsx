@@ -29,7 +29,7 @@ export const DjBooth: React.FC<DjBoothProps> = ({ onNavigate }) => {
   const [activeTab, setActiveTab] = useState<'pool' | 'review' | 'graveyard' | 'leaderboard'>('pool');
 
   const [editingSong, setEditingSong] = useState<any>(null);
-  const [editFormData, setEditFormData] = useState({ title: '', artist_name: '', lyrics: '', coverArtUrl: '' });
+  const [editFormData, setEditFormData] = useState({ title: '', artist_name: '', lyrics: '', coverArtUrl: '', suno_url: '' });
   const [isUploading, setIsUploading] = useState(false);
   
   const isAdmin = profile.is_admin;
@@ -215,7 +215,8 @@ export const DjBooth: React.FC<DjBoothProps> = ({ onNavigate }) => {
         title: song.title,
         artist_name: song.artistName,
         lyrics: plain,
-        coverArtUrl: song.coverArtUrl || ''
+        coverArtUrl: song.coverArtUrl || '',
+        suno_url: song.sunoUrl || ''
     });
   };
 
@@ -477,7 +478,7 @@ export const DjBooth: React.FC<DjBoothProps> = ({ onNavigate }) => {
                             className="w-48 bg-white/5 border border-white/5 rounded-lg px-3 py-2 text-[11px] focus:outline-none focus:border-purple-500/50"
                         />
                         <button 
-                            onClick={() => openEditModal({ id: 'new', title: '', artistName: '', status: 'pool', stars: 5, lyrics: '[]' })}
+                            onClick={() => openEditModal({ id: 'new', title: '', artistName: '', status: activeTab === 'review' ? 'review' : 'pool', stars: 5, lyrics: '[]', sunoUrl: '' })}
                             className="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-[0_0_15px_rgba(168,85,247,0.4)]"
                         >
                             Deploy New Node
@@ -673,6 +674,8 @@ export const DjBooth: React.FC<DjBoothProps> = ({ onNavigate }) => {
                                 </div>
                                 <input 
                                     type="text" 
+                                    value={editFormData.suno_url}
+                                    onChange={(e) => setEditFormData({ ...editFormData, suno_url: e.target.value })}
                                     placeholder="https://suno.com/song/..." 
                                     className="w-full bg-black/40 border border-white/5 rounded-xl px-4 py-2.5 text-[10px] focus:outline-none focus:border-purple-500/50" 
                                 />
@@ -708,7 +711,8 @@ export const DjBooth: React.FC<DjBoothProps> = ({ onNavigate }) => {
                                     let finalLyrics = editFormData.lyrics;
                                     const choreographed = LyricService.plainToChoreography(editFormData.lyrics, editingSong.durationSec || 180);
                                     finalLyrics = JSON.stringify(choreographed);
-                                    await updateSong(editingSong.id, { ...editFormData, lyrics: finalLyrics });
+                                    const { suno_url, ...rest } = editFormData;
+                                    await updateSong(editingSong.id, { ...rest, lyrics: finalLyrics, sunoUrl: suno_url });
                                     setEditingSong(null);
                                 }}
                                 className="w-full py-4 bg-purple-600 hover:bg-purple-500 text-white rounded-2xl font-black uppercase tracking-widest transition-all active:scale-95 shadow-xl shadow-purple-900/40"
