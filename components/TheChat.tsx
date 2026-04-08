@@ -207,7 +207,7 @@ isCurrentUser={isCurrentUser(msg)}
                 {/* Input Area - Floating Glass Pill */}
                 <form 
                     onSubmit={handleSend} 
-                    className="p-3 bg-transparent pointer-events-none"
+                    className="pt-1 pb-3 px-3 bg-transparent pointer-events-none"
                 >
                     <div className="relative flex items-center gap-2 max-w-md mx-auto pointer-events-auto">
                         <div className="grow relative flex items-center">

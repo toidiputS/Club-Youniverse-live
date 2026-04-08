@@ -323,7 +323,7 @@ export const Radio: React.FC<RadioProps> = ({ onNavigate, profile, minimal = fal
                     </AnimatePresence>
 
                     {/* MOBILE BOTTOM CHAT - fully transparent floating bubbles */}
-                    <div className="lg:hidden fixed bottom-14 left-0 right-0 z-50 pb-safe-bottom pointer-events-none">
+                    <div className="lg:hidden fixed bottom-[68px] left-0 right-0 z-50 pb-safe-bottom pointer-events-none">
                         <div className="h-[45vh] max-h-[320px] pointer-events-none">
                             <TheChat profile={profile} transparent={true} />
                         </div>

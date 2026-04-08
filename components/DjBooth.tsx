@@ -189,6 +189,12 @@ export const DjBooth: React.FC<DjBoothProps> = ({ onNavigate }) => {
     await supabase.from("songs").delete().eq("id", id);
     await fetchLibrary();
   };
+  
+  const handleResurrectAll = async () => {
+      if (!canControl || !confirm("Resurrect all nodes in the graveyard?")) return;
+      await supabase.from("songs").update({ status: 'pool', stars: 5 }).eq("status", "graveyard");
+      await fetchLibrary();
+  };
 
   const handleFixLyrics = async (song: any) => {
     if (!canControl) return;
@@ -468,6 +474,14 @@ export const DjBooth: React.FC<DjBoothProps> = ({ onNavigate }) => {
                                 {tab === 'leaderboard' ? '💎 Leaderboard' : tab}
                             </button>
                         ))}
+                        {activeTab === 'graveyard' && canControl && (
+                            <button
+                                onClick={handleResurrectAll}
+                                className="px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border border-green-500/40 text-green-400 bg-green-500/5 hover:bg-green-500 hover:text-white transition-all"
+                            >
+                                ⚡ Resurrect All
+                            </button>
+                        )}
                     </div>
                     <div className="flex items-center gap-4">
                         <input 
@@ -532,11 +546,30 @@ export const DjBooth: React.FC<DjBoothProps> = ({ onNavigate }) => {
                                 </div>
 
                                 <div className="grid grid-cols-5 gap-1 pt-3 border-t border-white/5">
-                                    <button onClick={() => pushToNow(song)} className="py-1.5 rounded-lg bg-green-500/10 text-green-500 text-[8px] font-black hover:bg-green-500 hover:text-white transition-all uppercase">Air</button>
-                                    <button onClick={() => voteForBox(song)} className="py-1.5 rounded-lg bg-purple-500/10 text-purple-500 text-[8px] font-black hover:bg-purple-500 hover:text-white transition-all uppercase">Vote</button>
-                                    <button onClick={() => setSongStatus(song.id, activeTab === 'graveyard' ? 'pool' : 'graveyard')} className="py-1.5 rounded-lg bg-red-950/20 text-red-500 text-[8px] font-black hover:bg-red-600 hover:text-white transition-all uppercase">Bury</button>
-                                    <a href={song.song_url} download className="py-1.5 rounded-lg bg-blue-500/10 text-blue-500 text-[8px] font-black hover:bg-blue-500 hover:text-white transition-all uppercase flex items-center justify-center">File</a>
-                                    <button onClick={() => deleteSong(song.id)} className="py-1.5 rounded-lg bg-red-950/20 text-red-500 text-[8px] font-black hover:bg-red-600 hover:text-white transition-all uppercase">Del</button>
+                                    <button 
+                                        onClick={(e) => { e.stopPropagation(); pushToNow(song); }} 
+                                        className="py-1.5 rounded-lg bg-green-500/10 text-green-500 text-[8px] font-black hover:bg-green-500 hover:text-white transition-all uppercase"
+                                    >Air</button>
+                                    <button 
+                                        onClick={(e) => { e.stopPropagation(); voteForBox(song); }} 
+                                        className="py-1.5 rounded-lg bg-purple-500/10 text-purple-500 text-[8px] font-black hover:bg-purple-500 hover:text-white transition-all uppercase"
+                                    >Vote</button>
+                                    <button 
+                                        onClick={(e) => { e.stopPropagation(); setSongStatus(song.id, activeTab === 'graveyard' ? 'pool' : 'graveyard'); }} 
+                                        className={`py-1.5 rounded-lg ${activeTab === 'graveyard' ? 'bg-green-950/20 text-green-500 hover:bg-green-600' : 'bg-red-950/20 text-red-500 hover:bg-red-600'} text-[8px] font-black hover:text-white transition-all uppercase`}
+                                    >
+                                        {activeTab === 'graveyard' ? 'Wake' : 'Bury'}
+                                    </button>
+                                    <a 
+                                        href={song.song_url} 
+                                        download 
+                                        onClick={(e) => e.stopPropagation()}
+                                        className="py-1.5 rounded-lg bg-blue-500/10 text-blue-500 text-[8px] font-black hover:bg-blue-500 hover:text-white transition-all uppercase flex items-center justify-center"
+                                    >File</a>
+                                    <button 
+                                        onClick={(e) => { e.stopPropagation(); deleteSong(song.id); }} 
+                                        className="py-1.5 rounded-lg bg-red-950/20 text-red-500 text-[8px] font-black hover:bg-red-600 hover:text-white transition-all uppercase"
+                                    >Del</button>
                                 </div>
                             </div>
                         ))}
