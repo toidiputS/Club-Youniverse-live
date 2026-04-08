@@ -76,7 +76,7 @@ export class GlobalBroadcastManager {
     // Create the audio element
     this.audioElement = new Audio();
     this.audioElement.preload = "auto";
-    this.audioElement.crossOrigin = "anonymous";
+    // REMOVED: crossOrigin = "anonymous" for maximum compatibility until needed
     (globalThis as any).__CLUB_YOUNIVERSE_AUDIO__ = this.audioElement;
 
     // Initialize event listeners map
@@ -604,6 +604,10 @@ export class GlobalBroadcastManager {
 
     this.audioElement.volume = this.state.volume;
     this.audioElement.muted = this.state.isMuted;
+    
+    // MOBILE FIX: Ensure playsinline for standard compliance
+    this.audioElement.setAttribute("playsinline", "true");
+    this.audioElement.setAttribute("webkit-playsinline", "true");
 
     // Initialize Media Session metadata if supported
     this.updateMediaSession();
@@ -719,8 +723,8 @@ export class GlobalBroadcastManager {
         } else {
           console.warn("Initial playback failed, forcing reload:", e);
           this.audioElement.load();
-          this.play().catch(e2 => {
-            console.error("Force play (new song) failed:", e2);
+          this.play().catch(e3 => {
+            console.error("Force play (new song) failed:", e3);
             // Final fallback: show the overlay
             this.emit("autoplayBlocked", true);
           });
@@ -882,45 +886,58 @@ export class GlobalBroadcastManager {
     return this.state.isMuted;
   }
 
-  public async resumeAudioContext() {
+  private async ensureAudioContext() {
+    if (!this.audioContext) {
+      try {
+        console.log("🎙️ Initializing AudioContext for visualization...");
+        // REMOVED: CORS/Reload logic for now
+        
+        this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+        this.analyser = this.audioContext.createAnalyser();
+        // TEMPORARY: Commenting out hijacking to debug silence
+        /*
+        const source = this.audioContext.createMediaElementSource(this.audioElement);
+        source.connect(this.analyser);
+        this.analyser.connect(this.audioContext.destination);
+        */
+        this.analyser.fftSize = 256;
+        this.dataArray = new Uint8Array(this.analyser.frequencyBinCount);
+        console.log("✅ AudioContext & Analyser established");
+      } catch (e) {
+        console.warn("AudioContext initialization failed:", e);
+      }
+    }
+    
     if (this.audioContext && this.audioContext.state === 'suspended') {
       try {
-        console.log("🔊 Attempting to resume AudioContext...");
         await this.audioContext.resume();
-        console.log("✅ AudioContext state:", this.audioContext.state);
       } catch (e) {
-        console.warn("❌ Failed to resume AudioContext:", e);
+        console.warn("Failed to resume context:", e);
       }
     }
   }
 
+  public async resumeAudioContext() {
+    await this.ensureAudioContext();
+  }
+
   public async play() {
     if (this.state.nowPlaying) {
-      if (!this.audioContext) {
-        try {
-          this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-          this.analyser = this.audioContext.createAnalyser();
-          const source = this.audioContext.createMediaElementSource(this.audioElement);
-          source.connect(this.analyser);
-          this.analyser.connect(this.audioContext.destination);
-          this.analyser.fftSize = 256;
-          this.dataArray = new Uint8Array(this.analyser.frequencyBinCount);
-          console.log("🎙️ AudioContext & Analyser established");
-        } catch (e) {
-          console.warn("AudioContext initialization failed:", e);
-        }
-      }
-
-      // Always try to resume context on play() - critical for mobile user gestures
+      // SHIFT: Don't initialize AudioContext here. Keep it raw for mobile landing page.
       if (this.audioContext && this.audioContext.state === 'suspended') {
-        await this.audioContext.resume();
+        this.audioContext.resume().catch(() => {});
       }
 
       try {
-        // Force load if src is set but readyState is 0
+        // Force load logic
         if (this.audioElement.readyState === 0 && this.audioElement.src) {
+          console.log("📥 Loading audio source...");
           this.audioElement.load();
         }
+        
+        // Force volume and unmuted for debug
+        this.audioElement.volume = 1;
+        this.audioElement.muted = false;
         
         await this.audioElement.play();
         this.state.isPlaying = true;
@@ -928,6 +945,7 @@ export class GlobalBroadcastManager {
         this.updateMediaSession(); // Refresh handlers on state change
       } catch (e: any) {
         console.error("❌ play() failed:", e.name, e.message);
+        
         // BROADEN: Detect any block
         if (e.name === 'NotAllowedError' || e.name === 'SecurityError' || this.audioElement.paused) {
           console.warn("🚫 GlobalBroadcastManager: Play blocked. Emitting autoplayBlocked.");
@@ -939,7 +957,13 @@ export class GlobalBroadcastManager {
   }
 
   public getBassIntensity(): number {
-    if (!this.analyser || !this.dataArray || this.audioElement.paused) return 0;
+    if (!this.analyser || !this.dataArray || this.audioElement.paused) {
+      // If we are playing but analyser isn't ready, try to prime it
+      if (!this.audioElement.paused && !this.analyser) {
+        this.ensureAudioContext();
+      }
+      return 0;
+    }
     this.analyser.getByteFrequencyData(this.dataArray as any);
     // Focus on the first few bins (bass)
     const bassSum = this.dataArray[0] + this.dataArray[1] + this.dataArray[2];
