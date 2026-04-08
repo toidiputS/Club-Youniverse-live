@@ -189,12 +189,12 @@ export const Radio: React.FC<RadioProps> = ({ onNavigate, profile, minimal = fal
                         {sentimentBurst === 'cosmic' && (
                             <motion.div 
                                 initial={{ opacity: 0 }}
-                                animate={{ opacity: 1, filter: ['hue-rotate(0deg)', 'hue-rotate(90deg)', 'hue-rotate(0deg)'] }}
+                                animate={{ opacity: 1 }}
                                 exit={{ opacity: 0 }}
-                                transition={{ duration: 6, repeat: Infinity }}
-                                className="absolute inset-0 bg-purple-900/15"
+                                transition={{ duration: 1.5 }}
+                                className="absolute inset-0 bg-purple-900/10"
                             >
-                                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(168,85,247,0.2),transparent_80%)] mix-blend-screen" />
+                                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(168,85,247,0.1),transparent_80%)]" />
                             </motion.div>
                         )}
                     </AnimatePresence>

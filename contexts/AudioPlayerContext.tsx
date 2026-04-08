@@ -80,7 +80,7 @@ export const RadioProvider: React.FC<{
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [tickerText, setTickerText] = useState("Welcome to Club Youniverse. Vote in The Box to help shape the station.");
   const [djBanter, setDjBanter] = useState("DJ Python is loading up the decks... Please stand by.");
-  const [vjEnabled, setVjEnabled] = useState(true);
+  const [vjEnabled, setVjEnabled] = useState(false);
   const [danceFloorEnabled, setDanceFloorEnabledLocal] = useState(false);
   const [sentimentBurst, setSentimentBurst] = useState<string | null>(null);
 

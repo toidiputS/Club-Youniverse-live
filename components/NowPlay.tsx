@@ -91,47 +91,9 @@ export const NowPlay: React.FC = () => {
 
     return (
         <div className="flex flex-col gap-2 select-none">
-            {/* Compact Now Playing */}
-            <div className="flex items-center gap-3">
-                {/* Cover Art */}
-                <div 
-                    onClick={() => setShowPopOut(true)}
-                    className="relative w-10 h-10 sm:w-12 sm:h-12 shrink-0 cursor-pointer group"
-                >
-                    <img 
-                        src={nowPlaying.coverArtUrl || `https://picsum.photos/seed/${nowPlaying.id}/200`} 
-                        className="w-full h-full object-cover rounded-xl shadow-lg transition-transform group-hover:scale-105" 
-                        alt="Now Playing" 
-                    />
-                    {isPlaying && (
-                        <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-black animate-pulse" />
-                    )}
-                </div>
-
-                {/* Info - Hidden as per user request (visible in tickers) */}
-                <div className="flex flex-col min-w-0 grow">
-                    <div className="flex items-center gap-2 mt-0.5">
-                        <span className="text-[10px] font-black text-purple-400">
-                            RATE THIS NODE
-                        </span>
-                        <span className="text-[8px] font-bold text-white/40">
-                            {(liveRating.count > 0 ? (liveRating.sum / liveRating.count).toFixed(1) : (nowPlaying.stars || 0).toString())}/10⭐
-                        </span>
-                    </div>
-                </div>
-
-                {/* Favorite */}
-                <button
-                    onClick={toggleFavorite}
-                    className="text-base sm:text-lg transition-transform hover:scale-110 active:scale-95"
-                >
-                    {isFavorited ? '❤️' : '🤍'}
-</button>
-            </div>
-
-            {/* Stars & Progress */}
-            <div className="flex items-center gap-2 px-1">
-                <div className="flex gap-0.5">
+            {/* Stars & Progress & Rating */}
+            <div className="flex items-center gap-3 px-1 mt-auto bg-black/40 backdrop-blur-md rounded-2xl p-2 border border-white/5 mx-2">
+                <div className="flex gap-0.5 shrink-0">
                     {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((star) => (
                         <button
                             key={star}
@@ -142,8 +104,23 @@ export const NowPlay: React.FC = () => {
                         </button>
                     ))}
                 </div>
-                <div className="grow h-1 bg-white/10 rounded-full overflow-hidden">
-                    <div className="h-full bg-purple-500 transition-all" style={{ width: `${progress}%` }} />
+                
+                <div className="grow flex items-center gap-3">
+                    <div className="grow h-1 bg-white/10 rounded-full overflow-hidden">
+                        <div className="h-full bg-purple-500 transition-all" style={{ width: `${progress}%` }} />
+                    </div>
+                    
+                    <span className="text-[9px] font-black text-white/60 tracking-tighter whitespace-nowrap">
+                        {(liveRating.count > 0 ? (liveRating.sum / liveRating.count).toFixed(1) : (nowPlaying.stars || 0).toString())}/10
+                    </span>
+                    
+                    {/* Favorite */}
+                    <button
+                        onClick={toggleFavorite}
+                        className="text-sm transition-transform hover:scale-110 active:scale-95 px-1"
+                    >
+                        {isFavorited ? '❤️' : '🤍'}
+                    </button>
                 </div>
             </div>
 
