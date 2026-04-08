@@ -170,6 +170,7 @@ const App: React.FC = () => {
     return (
       <ThemeProvider>
         <RadioProvider profile={guestProfile} setProfile={setProfile}>
+          <TuneInOverlay />
           <Sidewalk 
             onEnterClub={() => {
               setCurrentView("club");

@@ -123,7 +123,7 @@ export const FeedbackOverlay: React.FC<FeedbackOverlayProps> = ({ userId, onClos
                 className="space-y-6"
               >
                 <div>
-                  <h3 className="text-xl font-black text-white uppercase tracking-widest mb-1">Email Collector</h3>
+                  <h3 className="text-xl font-black text-white uppercase tracking-widest mb-1">The Guest List</h3>
                   <p className="text-zinc-500 text-xs font-medium uppercase tracking-wider">Where should we send your reward?</p>
                 </div>
                 <div className="relative">

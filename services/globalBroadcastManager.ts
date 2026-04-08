@@ -712,14 +712,17 @@ export class GlobalBroadcastManager {
 
       // Try to autoplay with robust fallback
       this.play().catch((e) => {
-        if (e.name === 'NotAllowedError') {
-          console.warn("🚫 Autoplay blocked by browser. User interaction required.");
+        // BROADEN: Catch more than just NotAllowedError, especially on iOS
+        if (e.name === 'NotAllowedError' || e.name === 'SecurityError' || this.audioElement.paused) {
+          console.warn("🚫 Autoplay blocked or failed. User interaction required.");
           this.emit("autoplayBlocked", true);
         } else {
           console.warn("Initial playback failed, forcing reload:", e);
           this.audioElement.load();
           this.play().catch(e2 => {
             console.error("Force play (new song) failed:", e2);
+            // Final fallback: show the overlay
+            this.emit("autoplayBlocked", true);
           });
         }
       });
@@ -879,8 +882,20 @@ export class GlobalBroadcastManager {
     return this.state.isMuted;
   }
 
+  public async resumeAudioContext() {
+    if (this.audioContext && this.audioContext.state === 'suspended') {
+      try {
+        console.log("🔊 Attempting to resume AudioContext...");
+        await this.audioContext.resume();
+        console.log("✅ AudioContext state:", this.audioContext.state);
+      } catch (e) {
+        console.warn("❌ Failed to resume AudioContext:", e);
+      }
+    }
+  }
+
   public async play() {
-    if (this.audioElement.paused && this.state.nowPlaying) {
+    if (this.state.nowPlaying) {
       if (!this.audioContext) {
         try {
           this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
@@ -890,21 +905,32 @@ export class GlobalBroadcastManager {
           this.analyser.connect(this.audioContext.destination);
           this.analyser.fftSize = 256;
           this.dataArray = new Uint8Array(this.analyser.frequencyBinCount);
+          console.log("🎙️ AudioContext & Analyser established");
         } catch (e) {
           console.warn("AudioContext initialization failed:", e);
         }
-      } else if (this.audioContext.state === 'suspended') {
-        this.audioContext.resume();
+      }
+
+      // Always try to resume context on play() - critical for mobile user gestures
+      if (this.audioContext && this.audioContext.state === 'suspended') {
+        await this.audioContext.resume();
       }
 
       try {
+        // Force load if src is set but readyState is 0
+        if (this.audioElement.readyState === 0 && this.audioElement.src) {
+          this.audioElement.load();
+        }
+        
         await this.audioElement.play();
         this.state.isPlaying = true;
         this.emit("playbackStateChanged", true);
         this.updateMediaSession(); // Refresh handlers on state change
       } catch (e: any) {
-        if (e.name === 'NotAllowedError') {
-          console.warn("🚫 GlobalBroadcastManager: play() blocked. Emitting autoplayBlocked.");
+        console.error("❌ play() failed:", e.name, e.message);
+        // BROADEN: Detect any block
+        if (e.name === 'NotAllowedError' || e.name === 'SecurityError' || this.audioElement.paused) {
+          console.warn("🚫 GlobalBroadcastManager: Play blocked. Emitting autoplayBlocked.");
           this.emit("autoplayBlocked", true);
         }
         throw e;

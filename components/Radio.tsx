@@ -285,7 +285,7 @@ export const Radio: React.FC<RadioProps> = ({ onNavigate, onSignOut, profile, mi
                                     initial={{ opacity: 0 }}
                                     animate={{ opacity: 1 }}
                                     exit={{ opacity: 0 }}
-                                    className="lg:hidden fixed inset-0 bg-black/60 z-60"
+                                    className="fixed inset-0 bg-black/60 z-60"
                                     onClick={() => setShowPool(false)}
                                 />
                                 <motion.div
@@ -293,7 +293,7 @@ export const Radio: React.FC<RadioProps> = ({ onNavigate, onSignOut, profile, mi
                                     animate={{ x: 0 }}
                                     exit={{ x: "-100%" }}
                                     transition={{ type: "spring", damping: 25, stiffness: 200 }}
-                                    className="lg:hidden fixed left-0 top-0 bottom-0 w-[90%] max-w-[400px] bg-black/95 backdrop-blur-xl z-70 border-r border-white/10 flex flex-col"
+                                    className="fixed left-0 top-0 bottom-0 w-[90%] max-w-[400px] bg-black/95 backdrop-blur-xl z-70 border-r border-white/10 flex flex-col"
                                 >
                                     {/* Header */}
                                     <div className="flex items-center justify-between p-4 border-b border-white/5 shrink-0 pt-safe-top">

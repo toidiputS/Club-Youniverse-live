@@ -22,6 +22,8 @@ export const TuneInOverlay: React.FC = () => {
     const handleTuneIn = async () => {
         console.log("🔊 Tuning in...");
         try {
+            // CRITICAL: Resume AudioContext explicitly in the same call stack as the user gesture
+            await broadcastManager.resumeAudioContext();
             await broadcastManager.play();
             setIsVisible(false);
         } catch (e) {
@@ -32,7 +34,7 @@ export const TuneInOverlay: React.FC = () => {
     if (!isVisible) return null;
 
     return (
-        <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/80 backdrop-blur-3xl animate-in fade-in duration-500">
+        <div className="fixed inset-0 z-1000 flex items-center justify-center bg-black/80 backdrop-blur-3xl animate-in fade-in duration-500">
             {/* Background Effects */}
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-purple-600/30 blur-[120px] rounded-full animate-pulse" />
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] bg-blue-600/20 blur-[100px] rounded-full" />
