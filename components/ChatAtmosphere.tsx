@@ -200,7 +200,7 @@ const MoodGradient: React.FC<{ mood: MoodType; intensity: number }> = ({ mood, i
 
   return (
     <div 
-      className={`absolute inset-0 bg-gradient-to-b ${gradient.from} ${gradient.to} transition-all duration-1000 ease-out`}
+      className={`absolute inset-0 bg-linear-to-b ${gradient.from} ${gradient.to} transition-all duration-1000 ease-out`}
       style={{ opacity: opacityFactor }}
     >
       {/* Animated shimmer overlay */}
@@ -253,7 +253,7 @@ const MoodBadge: React.FC<{ mood: MoodType; intensity: number }> = ({ mood, inte
       {/* Intensity indicator */}
       <div className="w-8 h-1 rounded-full bg-black/30 overflow-hidden">
         <div 
-          className="h-full rounded-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all duration-500"
+          className="h-full rounded-full bg-linear-to-r from-purple-500 to-pink-500 transition-all duration-500"
           style={{ width: `${intensity * 100}%` }}
         />
       </div>

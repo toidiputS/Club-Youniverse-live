@@ -2,13 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '../services/supabaseClient';
 import type { Profile } from '../types';
 
-interface PresenceTarget {
-    user_id: string;
-    name: string;
-    avatar_url?: string;
-    presence_ref: string;
-}
-
 interface AlertMessage {
     id: string;
     userId: string;
@@ -34,7 +27,7 @@ export const PresenceAlerts: React.FC<{ profile: Profile }> = ({ profile }) => {
         // 2. Listen for Presence changes (Join / Leave)
         channel
             .on('presence', { event: 'join' }, ({ newPresences }) => {
-                newPresences.forEach((presence: PresenceTarget) => {
+                newPresences.forEach((presence: any) => {
                     // Don't alert for ourselves
                     if (presence.user_id === profile.user_id) return;
 
@@ -52,7 +45,7 @@ export const PresenceAlerts: React.FC<{ profile: Profile }> = ({ profile }) => {
                 });
             })
             .on('presence', { event: 'leave' }, ({ leftPresences }) => {
-                leftPresences.forEach((presence: PresenceTarget) => {
+                leftPresences.forEach((presence: any) => {
                     // Don't alert if we are the ones leaving (we shouldn't see it anyway)
                     if (presence.user_id === profile.user_id) return;
 
@@ -72,7 +65,7 @@ export const PresenceAlerts: React.FC<{ profile: Profile }> = ({ profile }) => {
             .subscribe(async (status) => {
                 if (status === 'SUBSCRIBED') {
                     // 3. Announce ourselves to the channel
-                    const presenceData: PresenceTarget = {
+                    const presenceData: any = {
                         user_id: profile.user_id,
                         name: profile.name,
                         avatar_url: profile.avatar_url,
@@ -98,7 +91,7 @@ export const PresenceAlerts: React.FC<{ profile: Profile }> = ({ profile }) => {
     if (alerts.length === 0) return null;
 
     return (
-        <div className="fixed bottom-24 sm:bottom-32 left-4 z-[9999] flex flex-col gap-2 pointer-events-none max-w-[80vw] sm:max-w-xs">
+        <div className="fixed bottom-24 sm:bottom-32 left-4 z-50 flex flex-col gap-2 pointer-events-none max-w-[80vw] sm:max-w-xs">
             {alerts.map((alert) => (
                 <div
                     key={alert.id}

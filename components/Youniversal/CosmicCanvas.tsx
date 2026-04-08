@@ -52,6 +52,13 @@ function InteractionLayer({ mousePosRef }: { mousePosRef: React.MutableRefObject
 export default function CosmicCanvas() {
   const mousePosRef = useRef<THREE.Vector3 | null>(null);
   const isMobile = useIsMobile();
+  const connect = useGameStore(state => state.connect);
+  const disconnect = useGameStore(state => state.disconnect);
+
+  React.useEffect(() => {
+    connect();
+    return () => disconnect();
+  }, [connect, disconnect]);
 
   return (
     <div className="absolute inset-0 z-0 bg-black overflow-hidden select-none touch-none">
@@ -95,7 +102,7 @@ export default function CosmicCanvas() {
         </Suspense>
       </Canvas>
       <GameHUD />
-      <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-black/20 via-transparent to-black/40 z-[9]" />
+      <div className="absolute inset-0 pointer-events-none bg-linear-to-b from-black/20 via-transparent to-black/40 z-10" />
     </div>
   );
 }

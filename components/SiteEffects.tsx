@@ -61,17 +61,17 @@ export const SiteEffects: React.FC = () => {
         <>
             {/* Glitch Overlay */}
             {activeFx === "Glitch" && (
-                <div className="fixed inset-0 z-[100] pointer-events-none mix-blend-difference animate-glitch-active bg-purple-500/20" />
+                <div className="fixed inset-0 z-100 pointer-events-none mix-blend-difference animate-glitch-active bg-purple-500/20" />
             )}
 
             {/* Shake Effect */}
             {activeFx === "Shake" && (
-                <div className="fixed inset-0 z-[100] pointer-events-none mix-blend-difference bg-white/5 backdrop-blur-[1px] animate-shake" />
+                <div className="fixed inset-0 z-100 pointer-events-none mix-blend-difference bg-white/5 backdrop-blur-[1px] animate-shake" />
             )}
 
             {/* Confetti (Simple CSS version) */}
             {activeFx === "Confetti" && (
-                <div className="fixed inset-0 z-[100] pointer-events-none">
+                <div className="fixed inset-0 z-100 pointer-events-none">
                     {[...Array(50)].map((_, i) => (
                         <div
                             key={i}
@@ -89,12 +89,12 @@ export const SiteEffects: React.FC = () => {
 
             {/* Pulse Effect */}
             {activeFx === "Pulse" && (
-                <div className="fixed inset-0 z-[100] pointer-events-none mix-blend-screen bg-purple-500/20 animate-pulse-fx" />
+                <div className="fixed inset-0 z-100 pointer-events-none mix-blend-screen bg-purple-500/20 animate-pulse-fx" />
             )}
 
             {/* Static Effect */}
             {activeFx === "Static" && (
-                <div className="fixed inset-0 z-[100] pointer-events-none opacity-30 mix-blend-overlay animate-static-fx"
+                <div className="fixed inset-0 z-100 pointer-events-none opacity-30 mix-blend-overlay animate-static-fx"
                     style={{
                         backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 256 256\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noiseFilter\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'4\' numOctaves=\'3\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noiseFilter)\'/%3E%3C/svg%3E")',
                     }}
@@ -103,28 +103,28 @@ export const SiteEffects: React.FC = () => {
 
             {/* Invert Effect */}
             {activeFx === "Invert" && (
-                <div className="fixed inset-0 z-[100] pointer-events-none backdrop-invert animate-pulse-fx-fast" />
+                <div className="fixed inset-0 z-100 pointer-events-none backdrop-invert animate-pulse-fx-fast" />
             )}
 
             {/* Hue Rotate Effect */}
             {activeFx === "Hue" && (
-                <div className="fixed inset-0 z-[100] pointer-events-none backdrop-hue-rotate-180 transition-all duration-1000" />
+                <div className="fixed inset-0 z-100 pointer-events-none backdrop-hue-rotate-180 transition-all duration-1000" />
             )}
 
             {/* Blur Effect */}
             {activeFx === "Blur" && (
-                <div className="fixed inset-0 z-[100] pointer-events-none backdrop-blur-md animate-pulse-fx-slow" />
+                <div className="fixed inset-0 z-100 pointer-events-none backdrop-blur-md animate-pulse-fx-slow" />
             )}
 
             {/* Pixel Effect */}
             {activeFx === "Pixel" && (
-                <div className="fixed inset-0 z-[100] pointer-events-none backdrop-blur-[2px] backdrop-contrast-200"
+                <div className="fixed inset-0 z-100 pointer-events-none backdrop-blur-[2px] backdrop-contrast-200"
                     style={{ imageRendering: 'pixelated' }} />
             )}
 
             {/* Neon Effect */}
             {activeFx === "Neon" && (
-                <div className="fixed inset-0 z-[100] pointer-events-none mix-blend-color-dodge bg-gradient-to-tr from-cyan-500/30 via-purple-500/30 to-pink-500/30 animate-pulse-fx-fast" />
+                <div className="fixed inset-0 z-100 pointer-events-none mix-blend-color-dodge bg-linear-to-tr from-cyan-500/30 via-purple-500/30 to-pink-500/30 animate-pulse-fx-fast" />
             )}
 
             <style>{`

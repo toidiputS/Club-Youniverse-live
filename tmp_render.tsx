@@ -1,5 +1,5 @@
 return (
-    <div className="fixed inset-0 bg-black text-white/90 font-mono overflow-hidden flex flex-col z-[100] selection:bg-purple-500/30">
+    <div className="fixed inset-0 bg-black text-white/90 font-mono overflow-hidden flex flex-col z-100 selection:bg-purple-500/30">
 
         {/* 1. BACKGROUND FLOOR RE-RENDER (Silent View) */}
         <div className="absolute inset-0 z-0 opacity-20 pointer-events-none grayscale">
@@ -79,7 +79,7 @@ return (
         </div>
 
         {/* 3. CORE INTERFACE (4-Column Dense Grid) */}
-        <div className="relative z-10 flex-grow flex flex-col md:flex-row min-h-0 overflow-y-auto md:overflow-hidden gap-2 bg-black/60 p-2">
+        <div className="relative z-10 grow flex flex-col md:flex-row min-h-0 overflow-y-auto md:overflow-hidden gap-2 bg-black/60 p-2">
 
             {/* === COL 1: SYSTEM & INTAKE (w-64) === */}
             <div className="w-full md:w-64 bg-zinc-950/80 border border-white/5 rounded-xl flex flex-col p-3 gap-3 shrink-0">
@@ -110,9 +110,9 @@ return (
                     </div>
                 </div>
 
-                <div className="flex-grow min-h-0 border border-yellow-500/30 bg-yellow-500/5 rounded-lg p-2 flex flex-col">
+                <div className="grow min-h-0 border border-yellow-500/30 bg-yellow-500/5 rounded-lg p-2 flex flex-col">
                     <span className="text-[8px] font-bold text-yellow-500 uppercase block mb-2 tracking-widest leading-tight">Youser Intake</span>
-                    <div className="flex-grow divide-y divide-white/5 overflow-y-auto pr-1 flex flex-col gap-1">
+                    <div className="grow divide-y divide-white/5 overflow-y-auto pr-1 flex flex-col gap-1">
                         {songs.filter(s => s.status === 'review').map(song => (
                             <div key={song.id} className="p-2 bg-black/40 rounded border border-white/5 flex flex-col gap-1.5 transition-all hover:bg-black/60">
                                 <div className="flex justify-between items-start">
@@ -139,8 +139,8 @@ return (
                 </div>
             </div>
 
-            {/* === COL 2: DEEP LIBRARY (flex-grow) === */}
-            <div className="flex-grow min-w-[300px] bg-zinc-950/80 border border-white/5 rounded-xl flex flex-col shrink-0 md:shrink overflow-hidden">
+            {/* === COL 2: DEEP LIBRARY (grow) === */}
+            <div className="grow min-w-[300px] bg-zinc-950/80 border border-white/5 rounded-xl flex flex-col shrink-0 md:shrink overflow-hidden">
                 <div className="p-3 border-b border-white/5 flex flex-col sm:flex-row items-center justify-between bg-black/40 gap-2 shrink-0">
                     <span className="text-[10px] font-black text-purple-400 uppercase tracking-[0.4em]">Node Archive</span>
                     <div className="flex gap-2 w-full sm:w-auto">
@@ -170,7 +170,7 @@ return (
                     </div>
                 </div>
 
-                <div className="flex-grow overflow-y-auto px-4 py-2 divide-y divide-white/[0.02] min-h-0">
+                <div className="grow overflow-y-auto px-4 py-2 divide-y divide-white/[0.02] min-h-0">
                     {filteredSongs.length === 0 ? (
                         <div className="h-full flex flex-col items-center justify-center opacity-20 py-10">
                             <div className="w-10 h-10 border-2 border-dashed border-white/20 rounded-full animate-spin mb-3" />
@@ -179,7 +179,7 @@ return (
                     ) : (
                         filteredSongs.map(song => (
                             <div key={song.id} className="py-2.5 flex flex-col xl:flex-row items-start xl:items-center justify-between group hover:bg-white/[0.02] -mx-4 px-4 transition-all gap-2">
-                                <div className="w-full xl:w-auto min-w-0 flex-grow flex items-center gap-3">
+                                <div className="w-full xl:w-auto min-w-0 grow flex items-center gap-3">
                                     <div className="w-8 h-8 rounded-lg bg-zinc-900 border border-white/5 flex-shrink-0 overflow-hidden relative">
                                         {song.is_canvas && song.cover_art_url ? (
                                             <video src={song.cover_art_url} muted loop playsInline autoPlay className="w-full h-full object-cover grayscale opacity-50 group-hover:grayscale-0 group-hover:opacity-100 transition-all pointer-events-none" />
@@ -187,7 +187,7 @@ return (
                                             <img src={song.cover_art_url || `https://picsum.photos/seed/${song.id}/100`} className="w-full h-full object-cover grayscale opacity-50 group-hover:grayscale-0 group-hover:opacity-100 transition-all" alt="" />
                                         )}
                                     </div>
-                                    <div className="flex-grow min-w-0 overflow-hidden">
+                                    <div className="grow min-w-0 overflow-hidden">
                                         <div className="flex items-center gap-2 flex-wrap">
                                             <h4 className="text-[10px] font-black text-white/50 group-hover:text-white truncate uppercase transition-colors">{song.title}</h4>
                                             {(song.status === 'in_box' || song.status === 'pool') && (song.upvotes > 0 || song.status === 'in_box') && (
@@ -242,7 +242,7 @@ return (
                                             {isAdmin && (
                                                 <button
                                                     onClick={() => handleDelete(song.id)}
-                                                    className="text-[7px] font-black border border-red-500/20 px-3 py-1.5 sm:px-2 sm:py-1 rounded text-red-500 hover:text-white hover:bg-red-600 transition-all uppercase flex-grow sm:flex-none text-center"
+                                                    className="text-[7px] font-black border border-red-500/20 px-3 py-1.5 sm:px-2 sm:py-1 rounded text-red-500 hover:text-white hover:bg-red-600 transition-all uppercase grow sm:flex-none text-center"
                                                 >
                                                     DEL
                                                 </button>
@@ -325,7 +325,7 @@ return (
                     )}
                 </div>
 
-                <div className="bg-zinc-950/80 border border-white/5 rounded-xl p-3 flex flex-col flex-grow min-h-0">
+                <div className="bg-zinc-950/80 border border-white/5 rounded-xl p-3 flex flex-col grow min-h-0">
                     <div className="flex items-center justify-between mb-3 border-b border-white/5 pb-2">
                         <span className="text-[9px] font-black text-white/30 uppercase tracking-[0.4em]">The Box</span>
                         <div className="flex items-center gap-3">
@@ -340,7 +340,7 @@ return (
                         </div>
                     </div>
 
-                    <div className="flex-grow overflow-y-auto flex flex-col gap-2 pr-1">
+                    <div className="grow overflow-y-auto flex flex-col gap-2 pr-1">
                         {songs.filter(s => s.status === 'in_box').sort((a, b) => (b.upvotes || 0) - (a.upvotes || 0)).map((song, i) => {
                             const totalVotes = songs.filter(s => s.status === 'in_box').reduce((acc, curr) => acc + (curr.upvotes || 0), 0) || 1;
                             const percentage = Math.round(((song.upvotes || 0) / totalVotes) * 100);
@@ -427,7 +427,7 @@ return (
                 </div>
 
                 {/* Suno Deployment */}
-                <div className="bg-black/40 border border-white/5 rounded-lg p-2.5 shrink-0 flex-grow">
+                <div className="bg-black/40 border border-white/5 rounded-lg p-2.5 shrink-0 grow">
                     <span className="text-[7px] font-bold text-zinc-600 uppercase block mb-1.5 tracking-widest">Suno Deployment</span>
                     <label className="flex items-center gap-1.5 cursor-pointer mb-2 opacity-60 hover:opacity-100 transition-opacity">
                         <input type="checkbox" checked={isSunoConfirmed} onChange={e => setIsSunoConfirmed(e.target.checked)} className="w-2.5 h-2.5 bg-black rounded border-white/10 text-purple-600 focus:ring-0" />

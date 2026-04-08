@@ -38,7 +38,7 @@ export const TuneInOverlay: React.FC = () => {
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] bg-blue-600/20 blur-[100px] rounded-full" />
 
             <div className="relative z-10 text-center flex flex-col items-center gap-10 max-w-md px-6">
-                <div className="w-24 h-24 bg-gradient-to-br from-purple-500 to-blue-600 rounded-[2.5rem] flex items-center justify-center shadow-2xl shadow-purple-500/40 animate-bounce">
+                <div className="w-24 h-24 bg-linear-to-br from-purple-500 to-blue-600 rounded-[2.5rem] flex items-center justify-center shadow-2xl shadow-purple-500/40 animate-bounce">
                     <span className="text-white text-5xl">📡</span>
                 </div>
 
@@ -54,7 +54,7 @@ export const TuneInOverlay: React.FC = () => {
                     className="group relative px-12 py-5 bg-white text-black font-black uppercase tracking-widest text-sm rounded-2xl transition-all hover:scale-105 active:scale-95 shadow-[0_0_50px_rgba(255,255,255,0.2)]"
                 >
                     <span className="relative z-10">Connect to Stream</span>
-                    <div className="absolute inset-0 bg-gradient-to-r from-purple-400 to-blue-400 opacity-0 group-hover:opacity-10 transition-opacity rounded-2xl" />
+                    <div className="absolute inset-0 bg-linear-to-r from-purple-400 to-blue-400 opacity-0 group-hover:opacity-10 transition-opacity rounded-2xl" />
                 </button>
 
                 <p className="text-[10px] text-zinc-600 font-black uppercase tracking-[0.3em]">Audio Connection Required</p>

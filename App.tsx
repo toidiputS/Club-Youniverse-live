@@ -4,7 +4,6 @@
  */
 
 import React, { useState, useEffect } from "react";
-import { LoginScreen } from "./components/LoginScreen";
 import { Radio as Club } from "./components/Radio";
 import { DjBooth } from "./components/DjBooth";
 import { Loader } from "./components/Loader";
@@ -17,6 +16,7 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 import { UserProfileCard } from './components/UserProfileCard';
 import { RadioProvider } from "./contexts/AudioPlayerContext";
 import { Sidewalk } from "./components/Sidewalk";
+import { LoginScreen } from "./components/LoginScreen";
 import { supabase } from "./services/supabaseClient";
 import type { Session, Profile, View } from "./types";
 import { Analytics } from "@vercel/analytics/react";
@@ -25,24 +25,41 @@ const App: React.FC = () => {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [currentView, setCurrentView] = useState<View>("club");
+  const [currentView, setCurrentView] = useState<View>("sidewalk");
   const [updateAvailable, setUpdateAvailable] = useState(false);
   const [updateSWFn, setUpdateSWFn] = useState<((reloadPage?: boolean) => Promise<void>) | null>(null);
   
-  // Route state - determine if we're on sidewalk (public) or inside club
-  const [isClubRoute, setIsClubRoute] = useState(false);
+  // Computed route check - determine if we're on sidewalk (public) or inside club
+  const getIsClubRoute = () => {
+    const hash = window.location.hash;
+    const path = window.location.pathname;
+    return path.startsWith("/club") || 
+           hash.startsWith("#/club") || 
+           hash === "#club" ||
+           path === "/club/";
+  };
+
+  const [isClubRoute, setIsClubRoute] = useState(getIsClubRoute());
+  const [showPrivacy, setShowPrivacy] = useState(false);
   
-  // Check route on mount and hash change
+  // Sync route state on navigation
   useEffect(() => {
-    const checkRoute = () => {
-      const hash = window.location.hash;
-      setIsClubRoute(hash === "#/club" || hash === "#/club/" || window.location.pathname === "/club");
+    const handlePopState = () => {
+      const isClub = getIsClubRoute();
+      setIsClubRoute(isClub);
+      // If we navigate to a non-club route, force back to sidewalk
+      if (!isClub) {
+        setCurrentView("sidewalk");
+      }
     };
     
-    checkRoute();
-    window.addEventListener("hashchange", checkRoute);
+    window.addEventListener("popstate", handlePopState);
+    window.addEventListener("hashchange", handlePopState);
     
-    return () => window.removeEventListener("hashchange", checkRoute);
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+      window.removeEventListener("hashchange", handlePopState);
+    };
   }, []);
 
   useEffect(() => {
@@ -119,22 +136,9 @@ const App: React.FC = () => {
     await supabase.auth.signOut();
     setSession(null);
     setProfile(null);
-  };
-
-  const handleAdminLogin = () => {
-    const mockProfile: Profile = {
-      user_id: "god-mode-admin",
-      name: "The Creator",
-      is_premium: true,
-      is_artist: true,
-      is_admin: true,
-      roast_consent: false,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      stats: { plays: 999999, uploads: 999, votes_cast: 999, graveyard_count: 0 }
-    };
-    setProfile(mockProfile);
-    setSession({ user: { id: "god-mode-admin" } } as Session);
+    // Return to sidewalk
+    window.history.pushState({ view: 'home' }, "", "/");
+    window.dispatchEvent(new PopStateEvent('popstate'));
   };
 
   // Show loading state
@@ -146,54 +150,81 @@ const App: React.FC = () => {
     );
   }
 
-  // SIDWALK VIEW - Public landing page (no auth required)
-  // Show sidewalk if: on root path OR explicitly on sidewalk route OR not logged in (but can still view)
-  if (!isClubRoute || !session) {
-    // Create a guest profile for the sidewalk
+  // SIDEWALK FIRST - Everyone starts here
+  if (currentView === "sidewalk" || !isClubRoute) {
     const guestProfile: Profile = {
-      user_id: "guest-" + Date.now(),
-      name: "Guest Listener",
-      is_premium: false,
-      is_artist: false,
-      is_admin: false,
-      roast_consent: false,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      stats: { plays: 0, uploads: 0, votes_cast: 0, graveyard_count: 0 }
+      user_id: profile?.user_id || "guest-" + Date.now(),
+      name: profile?.name || "Guest Listener",
+      is_premium: profile?.is_premium || false,
+      is_artist: profile?.is_artist || false,
+      is_admin: profile?.is_admin || false,
+      roast_consent: profile?.roast_consent || false,
+      created_at: profile?.created_at || new Date().toISOString(),
+      updated_at: profile?.updated_at || new Date().toISOString(),
+      stats: profile?.stats || { plays: 0, uploads: 0, votes_cast: 0, graveyard_count: 0 }
     };
     
-    // Show the sidewalk landing page for everyone with RadioProvider
     return (
       <ThemeProvider>
         <RadioProvider profile={guestProfile} setProfile={setProfile}>
-          <Sidewalk />
+          <Sidewalk 
+            onEnterClub={() => {
+              setCurrentView("club");
+              window.history.pushState({ view: 'club' }, "", "/club");
+              window.dispatchEvent(new PopStateEvent('popstate'));
+            }} 
+            onSignIn={() => {
+              setCurrentView("club");
+              window.history.pushState({ view: 'club' }, "", "/club");
+              window.dispatchEvent(new PopStateEvent('popstate'));
+            }}
+          />
         </RadioProvider>
         <Analytics />
       </ThemeProvider>
     );
   }
 
-  // CLUB VIEW - Premium members only
-  // If on /club route but not logged in, redirect to sidewalk which has login
-  if (isClubRoute && (!session || !profile)) {
-    window.location.hash = "#/";
+  // AUTH GATEKEEPER
+  // 1. If we are on /club but have no session, show Login Screen
+  if (isClubRoute && !session) {
     return (
-      <div className="h-screen w-screen flex items-center justify-center bg-black">
-        <Loader message="Redirecting..." />
-      </div>
+      <ThemeProvider>
+        {showPrivacy ? (
+          <div className="h-screen w-screen bg-black overflow-y-auto p-12 text-zinc-400">
+            <button onClick={() => setShowPrivacy(false)} className="mb-8 text-white font-black uppercase tracking-widest text-xs flex items-center gap-2">
+              ← Back to Login
+            </button>
+            <h1 className="text-2xl font-black text-white mb-6">Privacy Policy</h1>
+            <p className="mb-4">Club Youniverse is an AI-driven experiential platform.</p>
+          </div>
+        ) : (
+          <LoginScreen 
+            onShowPrivacy={() => setShowPrivacy(true)}
+            onAdminLogin={() => {
+              setSession({ user: { id: "admin-bypass" } } as any);
+              setProfile({
+                user_id: "admin-bypass",
+                name: "System Admin",
+                is_premium: true,
+                is_artist: true,
+                is_admin: true,
+                stats: { plays: 999, uploads: 999, votes_cast: 999, graveyard_count: 0 }
+              } as any);
+            }}
+          />
+        )}
+        <Analytics />
+      </ThemeProvider>
     );
   }
 
-  // Check if user can access the club (premium or admin)
-  const canAccessClub = profile?.is_premium || profile?.is_admin;
-
-  if (!canAccessClub) {
-    // User is logged in but not premium - show message or redirect
+  // 2. If we have a session but profile is still loading, show loader
+  if (session && !profile) {
     return (
-      <ThemeProvider>
-        <Sidewalk />
-        <Analytics />
-      </ThemeProvider>
+      <div className="h-screen w-screen flex items-center justify-center bg-black">
+        <Loader message="Fetching your credentials..." />
+      </div>
     );
   }
 
@@ -207,7 +238,7 @@ const App: React.FC = () => {
 
         {/* PWA Update Prompt */}
         {updateAvailable && (
-          <div className="fixed top-0 left-0 right-0 z-[9999] p-4 flex justify-center pointer-events-none animate-fade-in-down">
+          <div className="fixed top-0 left-0 right-0 z-9999 p-4 flex justify-center pointer-events-none animate-fade-in-down">
             <div className="bg-zinc-900 border border-purple-500/50 shadow-[0_0_30px_rgba(168,85,247,0.3)] rounded-2xl p-4 flex items-center gap-4 pointer-events-auto max-w-sm w-full">
               <div className="w-10 h-10 rounded-full bg-purple-500/20 flex items-center justify-center shrink-0">
                 <svg className="w-5 h-5 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -215,7 +246,7 @@ const App: React.FC = () => {
                 </svg>
               </div>
 
-              <div className="flex-grow">
+              <div className="grow">
                 <h3 className="text-white text-[12px] font-black uppercase tracking-wider mb-0.5">Club Update Ready</h3>
                 <p className="text-zinc-400 text-[10px] font-medium leading-tight">A new version of Youniverse is available. Update now to fix issues and load fresh code.</p>
               </div>
@@ -231,17 +262,17 @@ const App: React.FC = () => {
           </div>
         )}
 
-        <div className="h-[100dvh] relative z-10 flex flex-col overflow-y-auto overflow-x-hidden text-white w-full pb-14">
-          <main className="flex-grow flex flex-col relative w-full h-full">
+        <div className="h-dvh relative z-10 flex flex-col overflow-y-auto overflow-x-hidden text-white w-full pb-14">
+          <main className="grow flex flex-col relative w-full h-full">
             {currentView === "club" ? (
               <div className="h-full w-full overflow-hidden absolute inset-0">
-                <Club onNavigate={setCurrentView} onSignOut={handleSignOut} profile={profile} />
+                <Club onNavigate={setCurrentView} onSignOut={handleSignOut} profile={profile!} />
               </div>
 
             ) : currentView === "profile" ? (
               <div className="h-full w-full overflow-hidden absolute inset-0">
                 <UserProfileCard
-                  userId={profile.user_id}
+                  userId={profile!.user_id}
                   onClose={() => setCurrentView("club")}
                   isCurrentUser={true}
                 />
@@ -260,7 +291,7 @@ const App: React.FC = () => {
 
         </div>
 
-        <PresenceAlerts profile={profile} />
+        <PresenceAlerts profile={profile!} />
         <Analytics />
       </RadioProvider>
     </ThemeProvider>

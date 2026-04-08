@@ -36,7 +36,7 @@ export const ThePool: React.FC = () => {
                     <h2 className="text-[10px] font-black tracking-[0.3em] uppercase text-white/40">Node Archive</h2>
                     <span className="text-[12px] font-black text-purple-400 uppercase italic">THE POOL</span>
                 </div>
-                <div className="h-px flex-grow mx-6 bg-gradient-to-r from-purple-500/20 to-transparent" />
+                <div className="h-px grow mx-6 bg-linear-to-r from-purple-500/20 to-transparent" />
             </header>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 px-2">

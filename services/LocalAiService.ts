@@ -4,7 +4,7 @@
 
 import { Song } from "../types";
 
-const LM_STUDIO_URL = "http://172.20.20.20:1234/v1/chat/completions";
+const LM_STUDIO_URL = import.meta.env?.VITE_LM_STUDIO_URL || "http://localhost:1234/v1/chat/completions";
 
 export class LocalAiService {
     /**
@@ -12,7 +12,7 @@ export class LocalAiService {
      */
     static async generateDJSpeech(winner: Song, losers: Song[]): Promise<string> {
         // Prevent external clients (phones, internet users) from getting PNA (Private Network Access) browser prompts
-        const isLocalHost = ['localhost', '127.0.0.1', '172.20.20.20'].includes(window.location.hostname);
+        const isLocalHost = ['localhost', '127.0.0.1'].includes(window.location.hostname);
         if (!isLocalHost) {
             console.log("🤖 Skipping Local AI (Running on remote client)");
             return `The crowd has spoken! Up next: ${winner.title} by ${winner.artistName}.`;
@@ -37,7 +37,7 @@ export class LocalAiService {
                     "Authorization": "Bearer no-key" // Some servers expect this header even if not used
                 },
                 body: JSON.stringify({
-                    model: "gemma-3-1b-it.gguf",
+                    model: import.meta.env?.VITE_LM_MODEL || "nemotron",
                     messages: [
                         { role: "system", content: "You are a professional radio DJ." },
                         { role: "user", content: prompt }
@@ -51,7 +51,10 @@ export class LocalAiService {
             clearTimeout(timeoutId);
             return data.choices?.[0]?.message?.content || `The crowd has spoken! Up next: ${winner.title}.`;
         } catch (e) {
-            console.warn("🤖 Local AI unavailable, falling back to basic banter.", e);
+            // SILENT FAIL: Don't spam the console with red errors if LM Studio is just off or unreachable
+            console.groupCollapsed("🤖 AI Banter Fallback Enabled");
+            console.debug("Reason:", e);
+            console.groupEnd();
             return `The crowd has spoken! Up next: ${winner.title} by ${winner.artistName}.`;
         }
     }
@@ -60,7 +63,7 @@ export class LocalAiService {
      * Generate a short roast for the chat.
      */
     static async generateRoast(song: Song): Promise<string> {
-        const isLocalHost = ['localhost', '127.0.0.1', '172.20.20.20'].includes(window.location.hostname);
+        const isLocalHost = ['localhost', '127.0.0.1'].includes(window.location.hostname);
         if (!isLocalHost) {
             return "This track is hitting different right now.";
         }
@@ -74,7 +77,7 @@ export class LocalAiService {
                     "Authorization": "Bearer no-key"
                 },
                 body: JSON.stringify({
-                    model: "gemma-3-1b-it.gguf",
+                    model: import.meta.env?.VITE_LM_MODEL || "nemotron",
                     messages: [
                         { role: "system", content: "You are a witty, sarcastic AI bot in a club chat." },
                         { role: "user", content: `Write a very short, funny one-line roast for the song "${song.title}" by ${song.artistName}.` }
@@ -87,6 +90,9 @@ export class LocalAiService {
             const data = await response.json();
             return data.choices?.[0]?.message?.content || "This track is... certainly something.";
         } catch (e) {
+            console.groupCollapsed("🤖 AI Roast Fallback Enabled");
+            console.debug("Reason:", e);
+            console.groupEnd();
             return "This track is hitting different right now.";
         }
     }

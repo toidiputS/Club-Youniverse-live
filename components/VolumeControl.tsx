@@ -65,23 +65,24 @@ const VolumeOffIcon = () => (
 );
 
 export const VolumeControl: React.FC = () => {
-  const { volume, setVolume, isGloballyMuted, setIsGloballyMuted } =
-    useContext(RadioContext);
+  const context = useContext(RadioContext);
+  if (!context) return null;
+  const { volume, setVolume, isMuted, setMuted } = context;
 
   const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newVolume = parseFloat(e.target.value);
     setVolume(newVolume);
-    if (newVolume > 0 && isGloballyMuted) {
-      setIsGloballyMuted(false);
+    if (newVolume > 0 && isMuted) {
+      setMuted(false);
     }
   };
 
   const toggleMute = () => {
-    setIsGloballyMuted(!isGloballyMuted);
+    setMuted(!isMuted);
   };
 
   const getVolumeIcon = () => {
-    if (isGloballyMuted || volume === 0) {
+    if (isMuted || volume === 0) {
       return <VolumeOffIcon />;
     }
     if (volume < 0.5) {
@@ -95,7 +96,7 @@ export const VolumeControl: React.FC = () => {
       <button
         onClick={toggleMute}
         className="p-2 text-gray-300 hover:text-white hover:bg-white/10 rounded-full transition-colors"
-        aria-label={isGloballyMuted ? "Unmute" : "Mute"}
+        aria-label={isMuted ? "Unmute" : "Mute"}
       >
         {getVolumeIcon()}
       </button>

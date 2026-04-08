@@ -1,3 +1,7 @@
+/**
+ * @file Radio Component - Rebuilt for Club Youniverse SPA architecture.
+ */
+
 import React, { useContext, useMemo, useState } from "react";
 import { RadioContext } from "../contexts/AudioPlayerContext";
 import { TheBox } from "./TheBox";
@@ -22,8 +26,10 @@ interface RadioProps {
   minimal?: boolean;
 }
 
-export const Radio: React.FC<RadioProps> = ({ onNavigate, onSignOut, profile, minimal = false }) => {
+export const Radio: React.FC<RadioProps> = ({ onNavigate, profile, minimal = false }) => {
   const context = useContext(RadioContext);
+  if (!context) return null;
+  const { sentimentBurst } = context;
   const [showProfile, setShowProfile] = useState(false);
   const [showPool, setShowPool] = useState(false);
 
@@ -67,16 +73,24 @@ export const Radio: React.FC<RadioProps> = ({ onNavigate, onSignOut, profile, mi
     <div className="h-full w-full relative flex flex-col bg-black overflow-hidden pt-safe-top pb-safe-bottom">
         <div className="h-full w-full relative flex z-20 overflow-hidden">
             {/* Main Content Area */}
-            <div className="flex-grow relative flex flex-col min-w-0 h-full overflow-hidden">
+            <div className="grow relative flex flex-col min-w-0 h-full overflow-hidden">
                 {/* Atmosphere Layer */}
                 <div className="absolute inset-0 z-0">
                     {context.nowPlaying && (
                         <div className="absolute inset-0 pointer-events-none opacity-60 mix-blend-overlay">
-                            <img 
-                                src={context.nowPlaying.coverArtUrl || `https://picsum.photos/seed/${context.nowPlaying.id}/1000`} 
-                                className="w-full h-full object-cover grayscale brightness-50" 
-                                alt="" 
-                            />
+                            {context.nowPlaying.coverArtUrl?.endsWith('.mp4') ? (
+                                <video 
+                                    src={context.nowPlaying.coverArtUrl} 
+                                    autoPlay muted loop playsInline
+                                    className="w-full h-full object-cover grayscale brightness-50"
+                                />
+                            ) : (
+                                <img 
+                                    src={context.nowPlaying.coverArtUrl || `https://picsum.photos/seed/${context.nowPlaying.id}/1000`} 
+                                    className="w-full h-full object-cover grayscale brightness-50" 
+                                    alt="" 
+                                />
+                            )}
                         </div>
                     )}
 
@@ -102,30 +116,77 @@ export const Radio: React.FC<RadioProps> = ({ onNavigate, onSignOut, profile, mi
                     </AnimatePresence>
                     
                     {/* Vignette */}
-                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(0,0,0,0.8)_100%)] pointer-events-none z-[5]" />
-                    <div className="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-black to-transparent pointer-events-none z-[10]" />
+                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(0,0,0,0.8)_100%)] pointer-events-none z-5" />
+                    <div className="absolute inset-x-0 bottom-0 h-48 bg-linear-to-t from-black to-transparent pointer-events-none z-10" />
 
-                    {/* YOUNIVERSAL DANCE FLOOR */}
+                    {/* YOUNIVERSAL DANCE FLOOR - Increased z-index to 15, ensure pointer-events: auto when enabled */}
                     <AnimatePresence>
                         {context.danceFloorEnabled && (
                             <motion.div
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
                                 exit={{ opacity: 0 }}
-                                className="absolute inset-0 z-[8] pointer-events-auto"
+                                className="absolute inset-0 z-15 pointer-events-auto"
                             >
                                 <CosmicCanvas />
                             </motion.div>
                         )}
                     </AnimatePresence>
                 </div>
+                
+                {/* 1. ATMOSPHERIC OVERLAY (Generative VJ Layer) */}
+                <div className="absolute inset-0 pointer-events-none overflow-hidden z-20">
+                    <AnimatePresence>
+                        {sentimentBurst === 'love' && (
+                            <motion.div 
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                className="absolute inset-0 bg-red-600/10 backdrop-blur-[2px] flex items-center justify-center"
+                            >
+                                {[...Array(16)].map((_, i) => (
+                                    <motion.div
+                                        key={i}
+                                        initial={{ y: 200, x: (Math.random() - 0.5) * 800, opacity: 0, scale: 0.2 }}
+                                        animate={{ y: -600, opacity: [0, 0.5, 0], scale: [0.2, 1.2, 0.4] }}
+                                        transition={{ duration: 5, repeat: Infinity, delay: i * 0.25 }}
+                                        className="absolute text-red-500/20 blur-[1px] text-5xl"
+                                    >
+                                        ❤️
+                                    </motion.div>
+                                ))}
+                            </motion.div>
+                        )}
+                        {sentimentBurst === 'fire' && (
+                            <motion.div 
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: [0, 0.3, 0.1, 0.4, 0] }}
+                                exit={{ opacity: 0 }}
+                                transition={{ duration: 0.15, repeat: 12 }}
+                                className="absolute inset-0 bg-orange-600/15 mix-blend-color-dodge z-30"
+                            >
+                                 <div className="absolute inset-0 bg-[linear-gradient(transparent_0%,rgba(255,50,0,0.1)_50%,transparent_100%)] animate-scanline" />
+                            </motion.div>
+                        )}
+                        {sentimentBurst === 'cosmic' && (
+                            <motion.div 
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1, filter: ['hue-rotate(0deg)', 'hue-rotate(90deg)', 'hue-rotate(0deg)'] }}
+                                exit={{ opacity: 0 }}
+                                transition={{ duration: 6, repeat: Infinity }}
+                                className="absolute inset-0 bg-purple-900/15"
+                            >
+                                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(168,85,247,0.2),transparent_80%)] mix-blend-screen" />
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+                </div>
 
-                {/* HEADER - with safe area */}
+                {/* HEADER - Increased z-index to 50 for priority */}
                 {!minimal && (
-                    <div className="flex-none z-30 pt-safe-top">
+                    <div className="flex-none z-50 pt-safe-top">
                         <Header 
                             onNavigate={onNavigate} 
-                            onSignOut={onSignOut} 
                             profile={profile} 
                             onProfileClick={() => setShowProfile(true)}
                             onPoolClick={() => setShowPool(true)}
@@ -133,9 +194,9 @@ export const Radio: React.FC<RadioProps> = ({ onNavigate, onSignOut, profile, mi
                     </div>
                 )}
 
-                {/* DANCE FLOOR AREA */}
-                <div className="flex-grow relative flex flex-col justify-end">
-                    {/* Now Playing - Fixed at bottom, compact */}
+                {/* DANCE FLOOR AREA - HUD and foreground controls */}
+                <div className="grow relative flex flex-col justify-end pointer-events-none">
+                    {/* Now Playing - Force pointer-events: auto for internal buttons */}
                     <div className="px-3 pb-3 z-40 pointer-events-auto">
                         <NowPlay />
                     </div>
@@ -162,7 +223,7 @@ export const Radio: React.FC<RadioProps> = ({ onNavigate, onSignOut, profile, mi
                     </AnimatePresence>
 
                     {/* CHAT FEED */}
-                    <div className="flex-grow overflow-hidden">
+                    <div className="grow overflow-hidden">
                         <TheChat profile={profile} transparent={true} />
                     </div>
 
@@ -184,7 +245,7 @@ export const Radio: React.FC<RadioProps> = ({ onNavigate, onSignOut, profile, mi
                                     initial={{ opacity: 0 }}
                                     animate={{ opacity: 1 }}
                                     exit={{ opacity: 0 }}
-                                    className="lg:hidden fixed inset-0 bg-black/60 z-[60]"
+                                    className="lg:hidden fixed inset-0 bg-black/60 z-60"
                                     onClick={() => setShowProfile(false)}
                                 />
                                 <motion.div
@@ -192,7 +253,7 @@ export const Radio: React.FC<RadioProps> = ({ onNavigate, onSignOut, profile, mi
                                     animate={{ x: 0 }}
                                     exit={{ x: "100%" }}
                                     transition={{ type: "spring", damping: 25, stiffness: 200 }}
-                                    className="lg:hidden fixed right-0 top-0 bottom-0 w-[85%] max-w-[360px] bg-black/95 backdrop-blur-xl z-[70] border-l border-white/10"
+                                    className="lg:hidden fixed right-0 top-0 bottom-0 w-[85%] max-w-[360px] bg-black/95 backdrop-blur-xl z-70 border-l border-white/10"
                                 >
                                     <div className="flex flex-col h-full pt-safe-top">
                                         <div className="flex items-center justify-between p-4 border-b border-white/5">
@@ -201,9 +262,9 @@ export const Radio: React.FC<RadioProps> = ({ onNavigate, onSignOut, profile, mi
                                                 <X size={20} />
                                             </button>
                                         </div>
-                                        <div className="flex-grow overflow-y-auto p-4">
+                                        <div className="grow overflow-y-auto p-4">
                                             <UserProfileCard 
-                                                userId={profile.id}
+                                                userId={profile.user_id}
                                                 onClose={() => setShowProfile(false)}
                                                 isCurrentUser={true}
                                             />
@@ -222,7 +283,7 @@ export const Radio: React.FC<RadioProps> = ({ onNavigate, onSignOut, profile, mi
                                     initial={{ opacity: 0 }}
                                     animate={{ opacity: 1 }}
                                     exit={{ opacity: 0 }}
-                                    className="lg:hidden fixed inset-0 bg-black/60 z-[60]"
+                                    className="lg:hidden fixed inset-0 bg-black/60 z-60"
                                     onClick={() => setShowPool(false)}
                                 />
                                 <motion.div
@@ -230,7 +291,7 @@ export const Radio: React.FC<RadioProps> = ({ onNavigate, onSignOut, profile, mi
                                     animate={{ x: 0 }}
                                     exit={{ x: "-100%" }}
                                     transition={{ type: "spring", damping: 25, stiffness: 200 }}
-                                    className="lg:hidden fixed left-0 top-0 bottom-0 w-[90%] max-w-[400px] bg-black/95 backdrop-blur-xl z-[70] border-r border-white/10 flex flex-col"
+                                    className="lg:hidden fixed left-0 top-0 bottom-0 w-[90%] max-w-[400px] bg-black/95 backdrop-blur-xl z-70 border-r border-white/10 flex flex-col"
                                 >
                                     {/* Header */}
                                     <div className="flex items-center justify-between p-4 border-b border-white/5 shrink-0 pt-safe-top">
@@ -250,7 +311,7 @@ export const Radio: React.FC<RadioProps> = ({ onNavigate, onSignOut, profile, mi
                                     </div>
                                     
                                     {/* Scrollable Pool */}
-                                    <div className="flex-grow overflow-y-auto pb-safe-bottom">
+                                    <div className="grow overflow-y-auto pb-safe-bottom">
                                         <ThePool />
                                     </div>
                                 </motion.div>

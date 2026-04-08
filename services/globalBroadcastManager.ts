@@ -23,6 +23,7 @@ interface BroadcastState {
   isMuted: boolean;
   isPlaying: boolean;
   leaderId: string | null;
+  djBanter: string;
 }
 
 /**
@@ -178,12 +179,16 @@ export class GlobalBroadcastManager {
 
     // If data is empty, it means the condition failed (someone else won the race)
     if (!error && data && data.length > 0) {
-      console.log("👑 Leadership claimed successfully.");
+      // console.debug("👑 Leadership claimed successfully.");
       this.isLeaderLocal = true;
       this.state.leaderId = this.userId;
       this.emit("leaderIdChanged", this.userId);
       this.emit("leaderChanged", true);
+      
+      // Ensure we only have ONE loop
+      this.stopConductorLoop();
       this.startConductorLoop();
+      
       await this.fetchAndSync();
       return true;
     } else {
@@ -239,7 +244,7 @@ export class GlobalBroadcastManager {
       // But skip if we just voluntarily released (15s cooldown)
       const releaseCooldown = Date.now() - this.releasedAt < 15000;
       if (isLeaderDead && this.userId && !releaseCooldown) {
-        console.log("🔦 Leader is missing or dead. Attempting auto-claim...");
+        // console.debug("🔦 Leader is missing or dead. Attempting auto-claim...");
         // Auto-claim passes the previousLeaderId to prevent race conditions
         await this.claimLeadership(false, remoteLeaderId);
         return; // Next interval will pick up the change
@@ -247,7 +252,7 @@ export class GlobalBroadcastManager {
 
       if (amILeader) {
         if (!this.isLeaderLocal) {
-          console.log("👑 I am now the Global Leader.");
+          // console.debug("👑 I am now the Global Leader.");
           this.isLeaderLocal = true;
           this.emit("leaderChanged", true);
           this.startConductorLoop();
@@ -330,6 +335,7 @@ export class GlobalBroadcastManager {
       isMuted,
       isPlaying: false,
       leaderId: null,
+      djBanter: "",
     };
   }
 
@@ -369,7 +375,6 @@ export class GlobalBroadcastManager {
       });
 
     // 3. Subscribe to dedicated Broadcast channel for ephemeral site commands
-    // This is separate from postgres_changes and more reliable for transient messages
     this.siteCommandChannel = supabase
       .channel("site-commands")
       .on("broadcast", { event: "site_command" }, (payload: any) => {
@@ -377,6 +382,11 @@ export class GlobalBroadcastManager {
         console.log("📡 Site Command received via broadcast channel:", cmd);
         if (cmd && cmd.id && cmd.id !== this.lastCommandId) {
           this.lastCommandId = cmd.id;
+          
+          if (cmd.type === "dj_banter") {
+            this.state.djBanter = cmd.payload?.text || "";
+          }
+
           this.emit("siteCommandReceived", cmd);
           
           // LEADER ACTION: Handle global commands
@@ -424,7 +434,14 @@ export class GlobalBroadcastManager {
       }
 
       // LEADER ACTION: If a trigger state is detected, perform the action
-      if (this.isLeaderLocal && isActionState) {
+      // DEDUPLICATION: Only process if the update is NEWER than our last processed action
+      // or if it's the first time we're seeing an action state.
+      const remoteUpdatedAt = data.updated_at ? new Date(data.updated_at).getTime() : 0;
+      const alreadyProcessed = (globalThis as any).__LAST_ACTION_TIMESTAMP__ >= remoteUpdatedAt;
+
+      if (this.isLeaderLocal && isActionState && !alreadyProcessed) {
+        console.log(`👑 Leader: Processing new action trigger (${remoteState}) at ${data.updated_at}`);
+        (globalThis as any).__LAST_ACTION_TIMESTAMP__ = remoteUpdatedAt;
         this.handleStateTrigger(remoteState);
       }
     }
@@ -437,7 +454,7 @@ export class GlobalBroadcastManager {
 
     // Sync Now Playing
     if (remoteSong?.id !== this.state.nowPlaying?.id) {
-      console.log(`🎵 Global Song Update: ${data.current_song?.title || 'Unknown'}`);
+      // console.log(`🎵 Global Song Update: ${data.current_song?.title || 'Unknown'}`);
       const mappedSong = data.current_song ? PersistentRadioService.mapDbToApp(data.current_song) : null;
       const offset = this.calculateOffset(data.song_started_at);
       this.setNowPlaying(mappedSong, offset);
@@ -461,6 +478,9 @@ export class GlobalBroadcastManager {
       // Prevent stale commands from re-triggering on initial load
       const isStale = data.site_command.timestamp && (Date.now() - data.site_command.timestamp > 10000);
       if (!isStale) {
+        if (data.site_command.type === "dj_banter") {
+          this.state.djBanter = data.site_command.payload?.text || "";
+        }
         this.emit("siteCommandReceived", data.site_command);
       } else {
         console.log("📡 Ignored stale site command from DB:", data.site_command.type);
@@ -637,7 +657,7 @@ export class GlobalBroadcastManager {
       console.error("❌ CRITICAL: Attempting to play song with NO AUDIO URL:", song.title);
       return;
     } else {
-      console.log(`🎵 Ready to play: ${song.title} -> ${song.audioUrl}`);
+      // console.log(`🎵 Ready to play: ${song.title} -> ${song.audioUrl}`);
     }
 
     // CHECK: Is this the same song?
@@ -673,7 +693,7 @@ export class GlobalBroadcastManager {
         }
       });
     } else {
-      console.log(`🔄 Updating metadata for current song: ${song.title}`);
+      // console.log(`🔄 Updating metadata for current song: ${song.title}`);
 
       // FIX: Ensure it's actually playing!
       if (this.audioElement.paused) {
@@ -795,6 +815,9 @@ export class GlobalBroadcastManager {
       console.error("Site Command Failed:", e);
     }
   }
+  public getDjBanter() {
+    return this.state.djBanter;
+  }
   public getNextSong() {
     return this.state.nextSong;
   }
@@ -824,7 +847,6 @@ export class GlobalBroadcastManager {
 
   public async play() {
     if (this.audioElement.paused && this.state.nowPlaying) {
-      // Initialize Audio Analysis on first user interaction (play)
       if (!this.audioContext) {
         try {
           this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
@@ -832,18 +854,26 @@ export class GlobalBroadcastManager {
           const source = this.audioContext.createMediaElementSource(this.audioElement);
           source.connect(this.analyser);
           this.analyser.connect(this.audioContext.destination);
-          this.analyser.fftSize = 256; // Increased from 64 for smoother high-fidelity data
+          this.analyser.fftSize = 256;
           this.dataArray = new Uint8Array(this.analyser.frequencyBinCount);
         } catch (e) {
-          console.warn("AudioContext initialization failed (cross-origin or blocked):", e);
+          console.warn("AudioContext initialization failed:", e);
         }
       } else if (this.audioContext.state === 'suspended') {
         this.audioContext.resume();
       }
 
-      await this.audioElement.play();
-      this.state.isPlaying = true;
-      this.emit("playbackStateChanged", true);
+      try {
+        await this.audioElement.play();
+        this.state.isPlaying = true;
+        this.emit("playbackStateChanged", true);
+      } catch (e: any) {
+        if (e.name === 'NotAllowedError') {
+          console.warn("🚫 GlobalBroadcastManager: play() blocked. Emitting autoplayBlocked.");
+          this.emit("autoplayBlocked", true);
+        }
+        throw e;
+      }
     }
   }
 

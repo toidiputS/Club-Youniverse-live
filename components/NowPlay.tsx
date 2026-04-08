@@ -109,7 +109,7 @@ export const NowPlay: React.FC = () => {
                 </div>
 
                 {/* Info */}
-                <div className="flex flex-col min-w-0 flex-grow">
+                <div className="flex flex-col min-w-0 grow">
                     <h2 className="text-[11px] sm:text-[13px] font-black text-white leading-tight uppercase tracking-wide truncate">
                         {nowPlaying.title}
                     </h2>
@@ -145,7 +145,7 @@ export const NowPlay: React.FC = () => {
                         </button>
                     ))}
                 </div>
-                <div className="flex-grow h-1 bg-white/10 rounded-full overflow-hidden">
+                <div className="grow h-1 bg-white/10 rounded-full overflow-hidden">
                     <div className="h-full bg-purple-500 transition-all" style={{ width: `${progress}%` }} />
                 </div>
             </div>

@@ -1,0 +1,13 @@
+﻿components/PresenceAlerts.tsx(5,11): error TS6196: 'PresenceTarget' is declared but never used.
+components/Radio.tsx(128,29): error TS2322: Type '{ onNavigate: (view: View) => void; onSignOut: () => void; profile: Profile; onProfileClick: () => void; onPoolClick: () => void; }' is not assignable to type 'IntrinsicAttributes & HeaderProps'.
+  Property 'onSignOut' does not exist on type 'IntrinsicAttributes & HeaderProps'.
+contexts/ThemeContext.tsx(8,25): error TS6196: 'ThemeName' is declared but never used.
+contexts/ThemeContext.tsx(14,3): error TS2353: Object literal may only specify known properties, and 'defaultAspectRatio' does not exist in type 'Settings'.
+scripts/seed_db.ts(56,13): error TS6133: 'data' is declared but its value is never read.
+scripts/youniversal-server.ts(18,7): error TS6133: 'TRANSFER_AMOUNT' is declared but its value is never read.
+scripts/youniversal-server.ts(22,7): error TS6133: 'PARTICLE_SPAWN_RATE' is declared but its value is never read.
+scripts/youniversal-server.ts(23,7): error TS6133: 'ENERGY_PER_PARTICLE' is declared but its value is never read.
+scripts/youniversal-server.ts(74,11): error TS6133: 'gameLoopInterval' is declared but its value is never read.
+scripts/youniversal-server.ts(75,11): error TS6133: 'forceFieldCleanupInterval' is declared but its value is never read.
+scripts/youniversal-server.ts(435,11): error TS6133: 'now' is declared but its value is never read.
+scripts/youniversal-server.ts(525,7): error TS6133: 'server' is declared but its value is never read.

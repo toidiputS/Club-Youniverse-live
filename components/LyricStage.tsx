@@ -166,7 +166,7 @@ export const LyricStage: React.FC<LyricStageProps> = ({ currentLine, nextLine, p
         
       {/* Transition Effects Layer (Overlay) */}
       {transitionType === 'wipe' && (
-        <div className="absolute left-0 w-full h-1/4 bg-gradient-to-b from-transparent via-cyan-400/30 to-transparent animate-scanline-wipe z-50 pointer-events-none blur-md" />
+        <div className="absolute left-0 w-full h-1/4 bg-linear-to-b from-transparent via-cyan-400/30 to-transparent animate-scanline-wipe z-50 pointer-events-none blur-md" />
       )}
 
       {transitionType === 'flash' && (

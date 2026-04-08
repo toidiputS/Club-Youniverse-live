@@ -120,10 +120,10 @@ export const TheChat: React.FC<TheChatProps> = ({ profile, transparent }) => {
                 {/* Chat Messages */}
                 <div
                     ref={scrollRef}
-                    className="flex flex-col flex-grow overflow-y-auto px-3 scrollbar-hide min-h-0"
+                    className="flex flex-col grow overflow-y-auto px-3 scrollbar-hide min-h-0"
                     style={{ maskImage: 'linear-gradient(to bottom, transparent, black 20px)', WebkitMaskImage: 'linear-gradient(to bottom, transparent, black 20px)' }}
                 >
-                    <div className="mt-auto flex flex-col space-y-2 pt-2 pb-4">
+                    <div className="mt-auto flex flex-col space-y-2 pt-2 pb-4 items-end">
                         {chatMessages.length === 0 && (
                             <div className="flex flex-col items-center justify-center py-8 text-zinc-600">
                                 <span className="text-lg mb-2">🎵</span>
@@ -162,14 +162,14 @@ isCurrentUser={isCurrentUser(msg)}
                 </div>
 
                 {/* Input Area */}
-                <form onSubmit={handleSend} className={`p-2 border-t border-white/[0.03] ${transparent ? 'bg-black/10 backdrop-blur-md' : 'bg-black/30 backdrop-blur-sm'}`}>
+                <form onSubmit={handleSend} className={`p-2 border-t border-white/3 ${transparent ? 'bg-black/10 backdrop-blur-md' : 'bg-black/30 backdrop-blur-sm'}`}>
                     <div className="relative flex items-center gap-2">
                         <input
                             type="text"
                             value={input}
                             onChange={(e) => setInput(e.target.value)}
                             placeholder="@dj..."
-                            className="flex-grow bg-zinc-900/60 border border-zinc-700/30 rounded-lg py-2 px-3 pr-10 text-[10px] text-white/80 placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-purple-500/40 focus:border-purple-500/40 transition-all"
+                            className="grow bg-zinc-900/60 border border-zinc-700/30 rounded-lg py-2 px-3 pr-10 text-[10px] text-white/80 placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-purple-500/40 focus:border-purple-500/40 transition-all"
                         />
                         <button
                             type="submit"

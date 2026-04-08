@@ -116,10 +116,10 @@ export function GameHUD() {
     const repulsorCount = Math.floor(p.energy / 2500);
 
     const posClass = {
-      tl: 'top-0 left-0 items-start text-left',
-      tr: 'top-0 right-0 items-end text-right',
-      bl: 'bottom-0 left-0 items-start text-left flex-col-reverse',
-      br: 'bottom-0 right-0 items-end text-right flex-col-reverse',
+      tl: 'top-16 sm:top-20 left-2 sm:left-4 items-start text-left',
+      tr: 'top-16 sm:top-20 right-2 sm:right-4 items-end text-right',
+      bl: 'bottom-28 sm:bottom-32 left-2 sm:left-4 items-start text-left flex-col-reverse',
+      br: 'bottom-28 sm:bottom-32 right-2 sm:right-4 items-end text-right flex-col-reverse',
     }[corner];
 
     return (
@@ -200,7 +200,7 @@ export function GameHUD() {
               transferEnergy(slotId, 500);
             }}
             disabled={players[mySlotId]?.energy < 500 || p.energy >= p.maxEnergy}
-            className={`mt-2 flex items-center gap-1 text-[8px] sm:text-[10px] tracking-[0.1em] uppercase border px-2 py-1 rounded transition-all pointer-events-auto ${
+            className={`mt-2 flex items-center gap-1 text-[8px] sm:text-[10px] tracking-widest uppercase border px-2 py-1 rounded transition-all pointer-events-auto ${
               players[mySlotId]?.energy >= 500 && p.energy < p.maxEnergy
                 ? 'text-yellow-500/50 hover:text-yellow-400 border-transparent hover:border-yellow-500/30' 
                 : 'text-gray-500/30 border-transparent cursor-not-allowed'
@@ -218,7 +218,7 @@ export function GameHUD() {
   return (
     <div className="absolute inset-0 z-10 pointer-events-none select-none overflow-hidden">
       {/* Top Center: Title & Timer */}
-      <div className="absolute top-4 sm:top-8 left-1/2 -translate-x-1/2 z-30 flex flex-col items-center gap-1 sm:gap-2 pointer-events-auto opacity-80 hover:opacity-100 transition-opacity">
+      <div className="absolute top-16 sm:top-20 left-1/2 -translate-x-1/2 z-30 flex flex-col items-center gap-1 sm:gap-2 pointer-events-auto opacity-80 hover:opacity-100 transition-opacity">
         <h1 className="text-[12px] sm:text-sm font-bold tracking-[0.8em] uppercase text-white/80 select-none drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]">
           YOUNIVERSAL
         </h1>
@@ -301,7 +301,7 @@ export function GameHUD() {
         {showGameOver && (
           <motion.div 
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="absolute inset-0 z-[60] bg-black/80 flex flex-col items-center justify-center backdrop-blur-md"
+            className="absolute inset-0 z-60 bg-black/80 flex flex-col items-center justify-center backdrop-blur-md"
           >
             <div className="text-center space-y-4 p-6">
               <h2 className="text-4xl sm:text-6xl font-bold tracking-[0.5em] text-red-500 uppercase">VOIDED</h2>

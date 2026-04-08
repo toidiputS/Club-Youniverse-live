@@ -12,6 +12,10 @@ export interface Profile {
   user_id: string;
   name: string;
   email?: string;
+  tagline?: string;
+  bio?: string;
+  website_url?: string;
+  twitter_handle?: string;
   is_premium: boolean;
   is_artist: boolean;
   is_admin?: boolean;
@@ -89,7 +93,7 @@ export interface SiteControlCommand {
 
 // --- App State & Navigation ---
 //export type AppState = 'HOME' | 'CLUB' | 'DJ_BOOTH' | 'PROFILE';
-export type View = 'home' | 'club' | 'dj-booth' | 'radio' | 'profile';
+export type View = 'sidewalk' | 'home' | 'club' | 'dj-booth' | 'radio' | 'profile';
 
 export type RadioState =
   | "POOL"
@@ -107,6 +111,8 @@ export type ThemeName = "dark" | "light" | "gradient1" | "gradient2";
 export interface Settings {
   theme: ThemeName;
   customCardBackground: string | null;
+  defaultAspectRatio?: string;
+  defaultStyleKeywords?: string;
 }
 
 export interface DjProfile {
@@ -138,5 +144,17 @@ export interface ChoreographedLine {
     fontFamily?: 'sans' | 'marker' | 'tech';
     sentiment?: 'bright' | 'energetic' | 'calm' | 'dark';
     secondaryText?: string;
+  };
+}
+
+export interface DjBanterScriptInput {
+  event: string;
+  song?: {
+    finalRating?: number;
+    title?: string;
+    artistName?: string;
+  };
+  djProfile?: {
+    name?: string;
   };
 }

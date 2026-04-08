@@ -6,9 +6,8 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { RadioContext } from "../contexts/AudioPlayerContext";
-import { supabase } from "../services/supabaseClient";
-import { motion, AnimatePresence } from "framer-motion";
-import { Play, Pause, Volume2, VolumeX, Users, Music, Lock, ChevronRight, Sparkles } from "lucide-react";
+import { motion } from "framer-motion";
+import { Play, Pause, Volume2, Users, Music, Lock, ChevronRight, Sparkles } from "lucide-react";
 
 interface ChatMessage {
   id: string;
@@ -34,40 +33,33 @@ const SAMPLE_CHAT = [
   { username: "NightOwl", text: "247 people outside rn thats crazy" },
 ];
 
-export const Sidewalk: React.FC = () => {
+interface SidewalkProps {
+  onEnterClub?: () => void;
+  onSignIn?: () => void;
+}
+
+export const Sidewalk: React.FC<SidewalkProps> = ({ onEnterClub, onSignIn }) => {
   const context = React.useContext(RadioContext);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [chatInput, setChatInput] = useState("");
   const [listenerCount] = useState(Math.floor(Math.random() * 200) + 150);
-  const [isPlaying, setIsPlaying] = useState(false);
+  const [isPlayingLocal, setIsPlayingLocal] = useState(false);
   const chatRef = useRef<HTMLDivElement>(null);
-  const audioRef = useRef<HTMLAudioElement>(null);
-
-  // Handle audio playback
-  useEffect(() => {
-    if (!audioRef.current || !context?.nowPlaying?.audioUrl) return;
-    
-    audioRef.current.src = context.nowPlaying.audioUrl;
-    if (isPlaying) {
-      audioRef.current.play().catch(console.error);
-    }
-  }, [context?.nowPlaying?.audioUrl]);
-
-  useEffect(() => {
-    if (!audioRef.current) return;
-    if (isPlaying) {
-      audioRef.current.play().catch(console.error);
-    } else {
-      audioRef.current.pause();
-    }
-  }, [isPlaying]);
 
   // Sync with global player when context changes
   useEffect(() => {
     if (context?.isPlaying !== undefined) {
-      setIsPlaying(context.isPlaying);
+      setIsPlayingLocal(context.isPlaying);
     }
   }, [context?.isPlaying]);
+
+  const togglePlayback = () => {
+    if (context?.togglePlay) {
+      context.togglePlay();
+    } else {
+      setIsPlayingLocal(!isPlayingLocal);
+    }
+  };
 
   // Generate anonymous username
   const [myUsername] = useState(() => {
@@ -135,9 +127,26 @@ export const Sidewalk: React.FC = () => {
     setChatInput("");
   };
 
-  const enterClub = () => {
-    // Redirect to main app (will check premium status)
-    window.location.href = "/club";
+  const handleEnterClub = () => {
+    console.log("🚶 Sidewalk: Requesting club entry...");
+    if (onEnterClub) {
+      onEnterClub();
+    } else {
+      // Fallback if prop missing
+      window.location.hash = "#/club";
+      window.location.reload();
+    }
+  };
+
+  const handleSignIn = () => {
+    console.log("🔑 Sidewalk: Requesting sign in...");
+    if (onSignIn) {
+      onSignIn();
+    } else {
+      // Fallback if prop missing
+      window.location.hash = "#/club";
+      window.location.reload();
+    }
   };
 
   return (
@@ -153,12 +162,12 @@ export const Sidewalk: React.FC = () => {
         />
         
         {/* Fog overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+        <div className="absolute inset-0 bg-linear-to-t from-black/80 via-transparent to-transparent" />
         
         {/* Vignette */}
         <div 
           className="absolute inset-0"
-style={{
+          style={{
             background: "radial-gradient(ellipse at center, transparent 0%, rgba(0,0,0,0.7) 100%)"
           }}
         />
@@ -347,19 +356,19 @@ style={{
               {/* Play Button - ACTUAL AUDIO PLAYBACK */}
               {context?.nowPlaying ? (
                 <button
-                  onClick={() => setIsPlaying(!isPlaying)}
+                  onClick={togglePlayback}
                   className="w-full py-4 rounded-xl font-bold text-lg tracking-wider uppercase transition-all duration-300 flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-[0.98]"
                   style={{
-                    background: isPlaying 
+                    background: isPlayingLocal 
                       ? "linear-gradient(135deg, #FF2D55 0%, #CC0033 100%)"
                       : "linear-gradient(135deg, #00F5FF 0%, #00CCDD 100%)",
                     color: "#FFFFFF",
-                    boxShadow: isPlaying
+                    boxShadow: isPlayingLocal
                       ? "0 0 30px rgba(255, 45, 85, 0.4)"
                       : "0 0 30px rgba(0, 245, 255, 0.4)"
                   }}
                 >
-                  {isPlaying ? (
+                  {isPlayingLocal ? (
                     <>
                       <Pause className="w-5 h-5" />
                       LISTENING... (TAP TO PAUSE)
@@ -420,7 +429,7 @@ style={{
                     <div className="w-8 h-8 rounded flex items-center justify-center text-xs font-bold bg-cyan-500 text-black">
                       ▶
                     </div>
-                    <div className="flex-grow min-w-0">
+                    <div className="grow min-w-0">
                       <p className="text-sm font-medium truncate" style={{ color: "#FFFFFF" }}>{context.nextSong.title}</p>
                       <p className="text-xs truncate" style={{ color: "#8888AA" }}>{context.nextSong.artistName}</p>
                     </div>
@@ -434,7 +443,13 @@ style={{
                 )}
               </div>
               <p className="text-center text-xs mt-3" style={{ color: "#8888AA" }}>
-                <a href="/club" style={{ color: "#00F5FF" }} className="underline">Join the club</a> to vote for what's next
+                <button
+                  onClick={handleEnterClub}
+                  className="underline"
+                  style={{ color: "#00F5FF" }}
+                >
+                  Join the club
+                </button> to vote for what's next
               </p>
             </div>
           </motion.div>
@@ -475,7 +490,7 @@ style={{
               {/* Messages */}
               <div 
                 ref={chatRef}
-                className="flex-grow p-3 space-y-2 overflow-y-auto"
+                className="grow p-3 space-y-2 overflow-y-auto"
                 style={{ maxHeight: "280px", minHeight: "200px" }}
               >
                 {chatMessages.map((msg) => (
@@ -508,7 +523,7 @@ style={{
                     value={chatInput}
                     onChange={(e) => setChatInput(e.target.value)}
                     placeholder="Drop a vibe..."
-                    className="flex-grow px-3 py-2 rounded-lg text-sm outline-none transition-colors"
+                    className="grow px-3 py-2 rounded-lg text-sm outline-none transition-colors"
                     style={{
                       background: "#0F0F18",
                       border: "1px solid rgba(136, 136, 170, 0.2)",
@@ -540,7 +555,7 @@ style={{
                 {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((i) => (
                   <div 
                     key={i}
-                    className="flex-grow"
+                    className="grow"
                     style={{ background: i % 2 === 0 ? "#8B6914" : "#FFE600" }}
                   />
                 ))}
@@ -572,7 +587,7 @@ style={{
                     "Full chat with all members"
                   ].map((benefit, i) => (
                     <div key={i} className="flex items-center gap-2 text-sm">
-                      <Sparkles className="w-4 h-4 flex-shrink-0" style={{ color: "#FFE600" }} />
+                      <Sparkles className="w-4 h-4 shrink-0" style={{ color: "#FFE600" }} />
                       <span style={{ color: "#FFFFFF" }}>{benefit}</span>
                     </div>
                   ))}
@@ -586,7 +601,7 @@ style={{
                 
                 {/* CTA Button */}
                 <button
-                  onClick={enterClub}
+                  onClick={handleEnterClub}
                   className="w-full py-4 rounded-xl font-bold text-lg tracking-wider uppercase transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2"
                   style={{
                     background: "linear-gradient(135deg, #FFE600 0%, #FFB800 100%)",
@@ -604,7 +619,7 @@ style={{
                   <button 
                     className="underline font-bold"
                     style={{ color: "#00F5FF" }}
-                    onClick={() => window.location.href = "/club"}
+                    onClick={handleSignIn}
                   >
                     sign in
                   </button>
@@ -632,12 +647,7 @@ style={{
           </p>
         </motion.div>
       </div>
-
-      {/* Hidden audio element for outside playback */}
-      <audio 
-        ref={audioRef}
-        loop
-      />
+      {/* Global audio is managed by AudioPlayerContext/AudioVisualizer */}
     </div>
   );
 };

@@ -75,7 +75,7 @@ export const SongCardPopOut: React.FC<SongCardPopOutProps> = ({ song, isOpen, on
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         onClick={onClose}
-                        className="fixed inset-0 bg-black/80 backdrop-blur-2xl z-[100] cursor-pointer"
+                        className="fixed inset-0 bg-black/80 backdrop-blur-2xl z-100 cursor-pointer"
                     />
 
                     {/* Card Content */}
@@ -88,7 +88,7 @@ export const SongCardPopOut: React.FC<SongCardPopOutProps> = ({ song, isOpen, on
                         <div className="w-full max-w-[400px] pointer-events-auto">
                         <div className="w-full bg-[#0a0a0a] border border-white/10 rounded-[2rem] overflow-hidden shadow-[0_40px_100px_rgba(0,0,0,0.8)] relative">
                             {/* Inner Glow */}
-                            <div className="absolute inset-0 bg-gradient-to-b from-purple-500/10 to-transparent pointer-events-none" />
+                            <div className="absolute inset-0 bg-linear-to-b from-purple-500/10 to-transparent pointer-events-none" />
 
                             {/* Large Cover Art */}
                             <div className="relative aspect-square w-full overflow-hidden p-5">
@@ -120,7 +120,7 @@ export const SongCardPopOut: React.FC<SongCardPopOutProps> = ({ song, isOpen, on
                                         className={`flex items-center justify-center gap-2 py-4 rounded-2xl font-black text-[11px] uppercase tracking-wider transition-all shadow-xl active:scale-95 ${
                                             downloaded 
                                                 ? 'bg-green-600 text-white' 
-                                                : 'bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:shadow-purple-500/30'
+                                                : 'bg-linear-to-r from-purple-600 to-pink-600 text-white hover:shadow-purple-500/30'
                                         } disabled:opacity-50 disabled:cursor-not-allowed`}
                                     >
                                         {downloading ? (

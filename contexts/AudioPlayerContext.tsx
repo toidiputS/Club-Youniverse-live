@@ -11,6 +11,7 @@ import React, {
   useCallback,
 } from "react";
 import { getBroadcastManager } from "../services/globalBroadcastManager";
+import { PersistentRadioService } from "../services/PersistentRadioService";
 import type {
   Song,
   RadioState,
@@ -34,6 +35,7 @@ interface RadioContextType {
   djBanter: string;
   vjEnabled: boolean;
   danceFloorEnabled: boolean;
+  sentimentBurst: string | null;
 
 
   // Actions
@@ -80,6 +82,7 @@ export const RadioProvider: React.FC<{
   const [djBanter, setDjBanter] = useState("DJ Python is loading up the decks... Please stand by.");
   const [vjEnabled, setVjEnabled] = useState(true);
   const [danceFloorEnabled, setDanceFloorEnabledLocal] = useState(false);
+  const [sentimentBurst, setSentimentBurst] = useState<string | null>(null);
 
   const [leaderId, setLeaderId] = useState<string | null>(broadcastManager.getLeaderId());
 
@@ -99,6 +102,15 @@ export const RadioProvider: React.FC<{
 
   const addChatMessage = useCallback((msg: ChatMessage) => {
     setChatMessages(prev => [...prev, msg].slice(-50));
+    
+    // Keyword Burst Detection
+    const text = msg.text.toLowerCase();
+    if (text.includes('love') || text.includes('heart')) setSentimentBurst('love');
+    else if (text.includes('fire') || text.includes('lit')) setSentimentBurst('fire');
+    else if (text.includes('cosmic') || text.includes('youniverse')) setSentimentBurst('cosmic');
+    
+    // Auto-clear burst
+    setTimeout(() => setSentimentBurst(null), 5000);
   }, []);
 
   const setRadioState = useCallback((state: RadioState) => {
@@ -154,7 +166,55 @@ export const RadioProvider: React.FC<{
     setIsPlaying(broadcastManager.isPlaying());
     setIsLeader(broadcastManager.isLeader);
 
+    // Ticker Logic (Dynamic System Feed)
+    let tickerIndex = 0;
+    const hints = [
+      "/YOUNIVERSAL : Toggle the cosmic game",
+      "/DJ-BOOTH : Access the command sector",
+      "VOTE IN THE BOX TO BOOST GLOBAL INFLUENCE",
+      "ALL SONGS GENERATED VIA SUNO PRO ACCOUNTS"
+    ];
+
+    const updateSystemTicker = async () => {
+      let nextText = "";
+      const currentNowPlaying = broadcastManager.getNowPlaying();
+      
+      // Rotate through information types
+      const cycle = tickerIndex % 3;
+      if (cycle === 0) {
+        nextText = await PersistentRadioService.getBoxStatusSummary();
+      } else if (cycle === 1 && currentNowPlaying) {
+        nextText = PersistentRadioService.getNowPlayingFact(currentNowPlaying);
+      } else {
+        nextText = `SYSTEM HINT: ${hints[Math.floor(Math.random() * hints.length)]}`;
+      }
+      
+      setTickerText(nextText);
+      tickerIndex++;
+    };
+
+    const updateDjTicker = () => {
+      const currentNowPlaying = broadcastManager.getNowPlaying();
+      const currentBanter = broadcastManager.getDjBanter() || "";
+      
+      if (currentBanter && !currentBanter.includes("DJ Python is loading")) {
+         setDjBanter(currentBanter);
+      } else if (currentNowPlaying) {
+         const mins = Math.floor(currentNowPlaying.durationSec / 60);
+         const secs = Math.floor(currentNowPlaying.durationSec % 60).toString().padStart(2, '0');
+         setDjBanter(`NOW TRANSMITTING: ${currentNowPlaying.title.toUpperCase()} BY ${currentNowPlaying.artistName.toUpperCase()} [${mins}:${secs}]`);
+      }
+    };
+
+    const tickerInterval = window.setInterval(() => {
+        updateSystemTicker();
+        updateDjTicker();
+    }, 20000);
+    updateSystemTicker();
+    updateDjTicker();
+
     return () => {
+      clearInterval(tickerInterval);
       broadcastManager.off("nowPlayingChanged", setNowPlayingState);
       broadcastManager.off("nextSongChanged", setNextSongState);
       broadcastManager.off("radioStateChanged", setRadioStateLocal);
@@ -205,6 +265,7 @@ export const RadioProvider: React.FC<{
     setVjEnabled,
     danceFloorEnabled,
     setDanceFloorEnabled,
+    sentimentBurst,
     claimLeadership: () => broadcastManager.claimLeadership(),
 
     releaseLeadership: () => broadcastManager.releaseLeadership(),
@@ -214,7 +275,8 @@ export const RadioProvider: React.FC<{
     setVolume, setMuted, togglePlay, addChatMessage, setProfile, setTickerText, setDjBanter,
     setTickerText, setRadioState, setNowPlaying, setNextSong, leaderId,
     vjEnabled, setVjEnabled,
-    danceFloorEnabled, setDanceFloorEnabled
+    danceFloorEnabled, setDanceFloorEnabled,
+    sentimentBurst
   ]);
 
 

@@ -451,10 +451,50 @@ if (poolSongs && poolSongs.length > 0) {
 
         // 3. Add 1-5 votes (robot weight)
         const extraVotes = Math.floor(Math.random() * 5) + 1;
+        
+        // 4. Update the DB: handle main vote, weekly_stars, and lifetime stars
+        const { data: current } = await supabase.from("songs").select("upvotes, weekly_stars, stars").eq("id", targetSong.id).single();
+        if (current) {
+            await supabase
+                .from("songs")
+                .update({ 
+                    upvotes: (current.upvotes || 0) + extraVotes,
+                    weekly_stars: (current.weekly_stars || 0) + extraVotes,
+                    stars: (current.stars || 0) + extraVotes
+                })
+                .eq("id", targetSong.id);
+        }
+    }
+    /**
+     * Ticker Data: Generates a scorecard of the current competition.
+     */
+    static async getBoxStatusSummary(): Promise<string> {
+        try {
+            const { data: boxSongs } = await supabase
+                .from("songs")
+                .select("title, upvotes, artist_name")
+                .eq("status", "in_box")
+                .order("upvotes", { ascending: false })
+                .limit(3);
 
-        await supabase
-            .from("songs")
-            .update({ upvotes: (targetSong.upvotes || 0) + extraVotes })
-            .eq("id", targetSong.id);
+            if (!boxSongs || boxSongs.length === 0) return "LIBRARY OPTIMIZATION IN PROGRESS...";
+
+            const standings = boxSongs
+                .map((s, i) => `${i + 1}. ${s.title.toUpperCase()} [${s.upvotes || 0} VOTES]`)
+                .join(" | ");
+
+            return `VOTING STANDINGS: ${standings}`;
+        } catch (error) {
+            return "VOTING SYSTEM STANDBY...";
+        }
+    }
+
+    /**
+     * Node Stats: Fetches facts about the current song.
+     */
+    static getNowPlayingFact(song: Song): string {
+        const plays = song.playCount || 0;
+        const influence = song.stars || 0;
+        return `NODE DATA: ${song.title.toUpperCase()} // PLAYS: ${plays} // INFLUENCE: ${influence}/10`;
     }
 }

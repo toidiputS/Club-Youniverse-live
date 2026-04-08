@@ -1,6 +1,4 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
 /* Safe Area Padding for Mobile */
 :root {
@@ -13,7 +11,15 @@
 }
 
 .pb-safe-bottom {
-    padding-bottom: max(var(--safe-bottom), env(safe-area-inset-bottom, 12px));
+    padding-bottom: max(var(--safe-bottom), env(safe-area-bottom, 12px));
+}
+
+.mt-safe-top {
+    margin-top: env(safe-area-inset-top, 0px);
+}
+
+.mb-safe-bottom {
+    margin-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 /* Custom Futuristic Scrollbar */
@@ -35,4 +41,24 @@
 /* Base styles */
 body {
     font-family: "Inter", sans-serif;
+}
+
+/* Fix CSS property warnings for standard line-clamp compatibility */
+@layer utilities {
+    .line-clamp-1 { line-clamp: 1; -webkit-line-clamp: 1; }
+    .line-clamp-2 { line-clamp: 2; -webkit-line-clamp: 2; }
+    .line-clamp-3 { line-clamp: 3; -webkit-line-clamp: 3; }
+    .line-clamp-4 { line-clamp: 4; -webkit-line-clamp: 4; }
+    .line-clamp-5 { line-clamp: 5; -webkit-line-clamp: 5; }
+    .line-clamp-6 { line-clamp: 6; -webkit-line-clamp: 6; }
+    .line-clamp-none { line-clamp: none; -webkit-line-clamp: none; }
+}
+
+@keyframes scanline {
+    0% { transform: translateY(-100%); }
+    100% { transform: translateY(100%); }
+}
+
+.animate-scanline {
+    animation: scanline 2s linear infinite;
 }

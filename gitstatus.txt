@@ -1,0 +1,30 @@
+On branch main
+Your branch is up to date with 'origin/main'.
+
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+	modified:   App.tsx
+	modified:   components/DjBooth.tsx
+	modified:   components/Header.tsx
+	modified:   components/PresenceAlerts.tsx
+	modified:   components/Radio.tsx
+	modified:   components/Youniversal/GameHUD.tsx
+	modified:   index.css
+	modified:   index.html
+	modified:   index.tsx
+	modified:   tsconfig.json
+	modified:   types.ts
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+	Club-Youniverse-live/
+	gitstatus.txt
+	news_aggregator.py
+	tsc_clean.txt
+	tsc_errors.json
+	tsc_output.txt
+	tsc_output_2.txt
+	tsc_output_3.txt
+
+no changes added to commit (use "git add" and/or "git commit -a")

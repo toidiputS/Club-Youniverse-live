@@ -5,6 +5,20 @@
 
 import React, { useEffect, useState } from 'react';
 import { detectMood, type MoodType, getMoodColors } from '../utils/emotionEngine';
+import { motion, AnimatePresence } from 'framer-motion';
+
+// --- Particle Definitions ---
+const KEYWORD_MAP: Record<string, string> = {
+  love: '❤️',
+  heart: '💖',
+  fire: '🔥',
+  lit: '💥',
+  dope: '⚡',
+  wow: '✨',
+  legend: '👑',
+  hack: '🛸',
+  glitch: '👾',
+};
 
 interface ChatMoodBubbleProps {
   message: string;
@@ -42,9 +56,9 @@ export const ChatMoodBubble: React.FC<ChatMoodBubbleProps> = ({
 
   return (
     <div className="animate-in fade-in slide-in-from-bottom-1 duration-300">
-      <div className="flex flex-col gap-0.5 w-fit max-w-[85%]">
+      <div className="flex flex-col gap-0.5 w-fit max-w-[85%] items-end">
         {/* Username */}
-        <div className="flex items-center gap-2 px-1">
+        <div className="flex items-center gap-2 px-1 justify-end w-full">
           <span className={`text-[7px] font-bold uppercase tracking-wider ${isAdmin ? 'text-purple-400/80' : 'text-zinc-500'}`}>
             {username}
           </span>
@@ -61,28 +75,66 @@ export const ChatMoodBubble: React.FC<ChatMoodBubbleProps> = ({
         {/* Message - Frosted Mood Shard Style */}
         <div
           className={`
-            relative px-3 py-1.5 w-fit min-w-[24px] transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)]
-            bg-white/[0.08] backdrop-blur-md shadow-[0_4px_15px_rgba(0,0,0,0.3)]
+            relative px-4 py-2 w-fit min-w-[24px] transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)]
+            bg-[#111111]/80 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.5)] border border-white/5
             ${isCurrentUser 
-              ? 'border-r-2 border-white/20' 
+              ? 'border-r-purple-500/30' 
               : isMention
-                ? 'border-l-2 border-purple-500/50 shadow-[0_0_50px_rgba(168,85,247,0.3)]'
-                : `border-l-2 border-white/5`
+                ? 'border-l-purple-500/50 shadow-[0_0_50px_rgba(168,85,247,0.3)]'
+                : `border-l-white/10`
             }
-            group hover:scale-[1.04] active:scale-95
+            group overflow-hidden
           `}
           style={{
             boxShadow: currentMood !== 'neutral' 
-              ? `0 0 50px ${getMoodColorHex(currentMood)}40` 
+              ? `0 0 40px ${getMoodColorHex(currentMood)}30` 
               : '0 4px 20px rgba(0,0,0,0.4)',
-            borderRadius: isCurrentUser ? '12px 12px 2px 12px' : '12px 12px 12px 2px',
+            borderRadius: isCurrentUser ? '16px 4px 16px 16px' : '4px 16px 16px 16px',
             background: currentMood !== 'neutral' 
-              ? `linear-gradient(135deg, rgba(255,255,255,0.08) 0%, ${getMoodColorHex(currentMood)}15 100%)`
-              : 'rgba(255,255,255,0.08)',
-            transform: 'scale(calc(1 + var(--audio-bass, 0) * 0.02))',
-            transition: 'transform 0.1s ease-out'
+              ? `linear-gradient(135deg, #111 0%, ${getMoodColorHex(currentMood)}25 100%)`
+              : '#111',
           }}
         >
+          {/* 1. GENERATIVE NOISE LAYER */}
+          <div className="absolute inset-0 opacity-[0.03] pointer-events-none mix-blend-overlay">
+             <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+                <filter id={`noise-${username}`}>
+                    <feTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" stitchTiles="stitch" />
+                </filter>
+                <rect width="100%" height="100%" filter={`url(#noise-${username})`} />
+             </svg>
+          </div>
+
+          {/* 2. REACTIVE PARTICLES */}
+          <div className="absolute inset-0 pointer-events-none overflow-hidden">
+             <AnimatePresence mode="popLayout">
+                {Object.entries(KEYWORD_MAP).map(([kw, emoji]) => (
+                   message.toLowerCase().includes(kw) && (
+                      <motion.div
+                         key={kw}
+                         initial={{ y: 20, opacity: 0, scale: 0 }}
+                         animate={{ 
+                           y: [-10, -40], 
+                           x: Math.random() * 40 - 20,
+                           opacity: [0, 0.8, 0], 
+                           scale: [0.5, 1.2, 0.8],
+                           rotate: Math.random() * 40 - 20 
+                         }}
+                         transition={{ 
+                           duration: 3, 
+                           repeat: Infinity, 
+                           delay: Math.random() * 2 
+                         }}
+                         className="absolute bottom-2 left-1/2 text-[12px] filter blur-[0.5px]"
+                      >
+                         {emoji}
+                      </motion.div>
+                   )
+                ))}
+             </AnimatePresence>
+          </div>
+
+          {/* THE COLOR SHADOW / AURA */}
           {/* THE COLOR SHADOW / AURA - INTENSIFIED */}
           {currentMood !== 'neutral' && (
             <div 
@@ -95,7 +147,7 @@ export const ChatMoodBubble: React.FC<ChatMoodBubbleProps> = ({
           )}
 
           {/* Message Text */}
-          <div className={`relative z-10 text-[11px] font-black leading-snug tracking-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)] ${isCurrentUser ? 'text-white' : isMention ? 'text-purple-200' : 'text-zinc-100'}`}>
+          <div className={`relative z-10 text-[11px] font-black leading-snug tracking-tight text-right drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)] ${isCurrentUser ? 'text-white' : isMention ? 'text-purple-200' : 'text-zinc-100'}`}>
             {message}
           </div>
         </div>
@@ -113,7 +165,7 @@ export const SystemMessage: React.FC<{ message: string; timestamp?: number }> = 
 }) => {
   return (
     <div className="flex items-center justify-center gap-3 py-2 animate-in fade-in duration-300 opacity-60">
-      <div className="h-px flex-1 bg-gradient-to-r from-transparent via-zinc-600 to-transparent" />
+      <div className="h-px flex-1 bg-linear-to-r from-transparent via-zinc-600 to-transparent" />
       <span className="text-[8px] font-bold text-zinc-500 uppercase tracking-widest px-2 flex flex-col items-center">
         {message}
         {timestamp && (
@@ -122,7 +174,7 @@ export const SystemMessage: React.FC<{ message: string; timestamp?: number }> = 
           </span>
         )}
       </span>
-      <div className="h-px flex-1 bg-gradient-to-r from-transparent via-zinc-600 to-transparent" />
+      <div className="h-px flex-1 bg-linear-to-r from-transparent via-zinc-600 to-transparent" />
     </div>
   );
 };

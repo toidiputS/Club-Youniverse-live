@@ -80,7 +80,7 @@ export const EditSongModal: React.FC<EditSongModalProps> = ({ song, onClose, onS
     };
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+        <div className="fixed inset-0 z-100 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
             <div
                 className="w-full max-w-md bg-zinc-950 border border-purple-500/30 rounded-3xl shadow-[0_0_50px_rgba(168,85,247,0.15)] overflow-hidden"
                 onClick={(e) => e.stopPropagation()}
@@ -113,7 +113,7 @@ export const EditSongModal: React.FC<EditSongModalProps> = ({ song, onClose, onS
                             </label>
                         </div>
 
-                        <div className="flex-grow min-w-0 flex flex-col gap-1">
+                        <div className="grow min-w-0 flex flex-col gap-1">
                             <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest">Asset Upload</span>
                             <span className="text-[8px] text-zinc-600">Supports JPG, PNG, and MP4 (Canvas)</span>
                             {coverArtFile && (

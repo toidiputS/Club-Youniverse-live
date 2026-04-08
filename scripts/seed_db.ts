@@ -53,7 +53,7 @@ async function seed() {
   console.log("🌱 Seeding database...");
 
   for (const song of songsToSeed) {
-    const { data, error } = await supabase.from("songs").insert(song).select();
+    const { error } = await supabase.from("songs").insert(song).select();
 
     if (error) {
       console.error(`❌ Failed to insert ${song.title}:`, error);

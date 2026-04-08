@@ -5,7 +5,7 @@
  */
 
 import React, { createContext, useState, useEffect, useMemo } from "react";
-import type { Settings, ThemeName } from "../types";
+import type { Settings } from "../types";
 
 // Default settings for a new user.
 const defaultSettings: Settings = {

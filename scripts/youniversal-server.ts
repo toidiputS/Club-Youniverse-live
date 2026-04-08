@@ -15,12 +15,9 @@ const PORT = 3000;
 const GAME_DURATION = 10 * 60 * 1000; // 10 minutes
 const ATTRACTOR_COST = 500;
 const REPULSOR_COST = 2500;
-const TRANSFER_AMOUNT = 500;
 const MAX_FORCE_FIELDS = 20;
 const FORCE_FIELD_LIFETIME = 15000; // 15 seconds
 const ENERGY_DECAY_RATE = 0.5; // Energy lost per second when no activity
-const PARTICLE_SPAWN_RATE = 50; // Particles per second from passive spawning
-const ENERGY_PER_PARTICLE = 10; // Energy gained per particle attracted
 
 interface Vector3 {
   x: number;
@@ -71,7 +68,9 @@ class YouniversalServer {
   private timerRunning: boolean = false;
   private isWaiting: boolean = true;
   private waitingEndTime: number = 0;
+  // @ts-ignore - Assigned but not read
   private gameLoopInterval: NodeJS.Timeout | null = null;
+  // @ts-ignore - Assigned but not read
   private forceFieldCleanupInterval: NodeJS.Timeout | null = null;
 
   constructor(port: number) {
@@ -432,7 +431,6 @@ client.slotId = slotId;
     }
 
     // Process force fields and energy transfer
-    const now = Date.now();
     const forces = Array.from(this.forceFields.values());
     const players = Array.from(this.players.values());
 
@@ -522,5 +520,5 @@ client.slotId = slotId;
 }
 
 // Start the server
-const server = new YouniversalServer(PORT);
+new YouniversalServer(PORT);
 console.log(`[Youniversal] Server ready. Waiting for players...`);

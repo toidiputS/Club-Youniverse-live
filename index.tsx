@@ -34,6 +34,7 @@ if (typeof window !== 'undefined') {
       leakedAudio.src = "";
     }
   };
+  killStrayAudio();
 }
 
 // Create a React root and render the main App component.

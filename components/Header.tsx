@@ -5,13 +5,12 @@ import { getBroadcastManager } from "../services/globalBroadcastManager";
 
 interface HeaderProps {
   onNavigate: (view: View) => void;
-  onSignOut: () => void;
   profile: Profile;
   onProfileClick?: () => void;
   onPoolClick?: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ onNavigate, onSignOut, profile, onProfileClick, onPoolClick }) => {
+export const Header: React.FC<HeaderProps> = ({ onNavigate, profile, onProfileClick, onPoolClick }) => {
   const context = useContext(RadioContext);
 
   const broadcastManager = getBroadcastManager();
@@ -124,7 +123,7 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate, onSignOut, profile, 
 
           <button
             onClick={handleInvite}
-            className="px-3 py-2 sm:px-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-full text-[9px] sm:text-[10px] font-black uppercase tracking-wider transition-all border border-white/30"
+            className="px-3 py-2 sm:px-4 bg-linear-to-r from-purple-600 to-pink-600 text-white rounded-full text-[9px] sm:text-[10px] font-black uppercase tracking-wider transition-all border border-white/30"
           >
             {inviteText === "Invite" ? "✨" : ""} {inviteText}
           </button>

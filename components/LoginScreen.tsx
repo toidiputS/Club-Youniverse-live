@@ -68,7 +68,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
 
       <div className="w-full max-w-md z-10 animate-in fade-in slide-in-from-bottom-8 duration-1000">
         <div className="text-center mb-10">
-          <div className="w-20 h-20 bg-gradient-to-br from-purple-500 to-blue-600 rounded-[2rem] flex items-center justify-center shadow-2xl shadow-purple-500/30 mx-auto mb-6 hover:rotate-12 transition-transform duration-500 relative overflow-hidden">
+          <div className="w-20 h-20 bg-linear-to-br from-purple-500 to-blue-600 rounded-[2rem] flex items-center justify-center shadow-2xl shadow-purple-500/30 mx-auto mb-6 hover:rotate-12 transition-transform duration-500 relative overflow-hidden">
             <img src="/icons/favicon.svg" alt="Youniverse" className="relative z-10 w-12 h-12 object-contain" />
           </div>
           <h1 className="text-4xl font-black text-white tracking-tighter mb-2">CLUB YOUNIVERSE</h1>

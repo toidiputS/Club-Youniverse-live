@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "youniversal": "npx ts-node --esm scripts/youniversal-server.ts"
+    "youniversal": "npx ts-node --esm scripts/youniversal-server.ts",
+    "dev:all": "start npm run dev & start npm run youniversal"
   },
   "dependencies": {
     "@google/genai": "^1.28.0",
