@@ -8,9 +8,10 @@ interface HeaderProps {
   profile: Profile;
   onProfileClick?: () => void;
   onPoolClick?: () => void;
+  onFeedbackClick?: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ onNavigate, profile, onProfileClick, onPoolClick }) => {
+export const Header: React.FC<HeaderProps> = ({ onNavigate, profile, onProfileClick, onPoolClick, onFeedbackClick }) => {
   const context = useContext(RadioContext);
 
   const broadcastManager = getBroadcastManager();
@@ -112,6 +113,13 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate, profile, onProfileCl
             className="px-2 py-1.5 sm:px-3 sm:py-2 bg-purple-600/30 border border-purple-500/30 text-purple-400 rounded-full text-[7px] sm:text-[9px] font-black uppercase tracking-wider hover:bg-purple-500/50 transition-all"
           >
             Pool
+          </button>
+
+          <button
+            onClick={onFeedbackClick}
+            className="px-2 py-1.5 sm:px-3 sm:py-2 bg-yellow-500/20 border border-yellow-500/30 text-yellow-500 rounded-full text-[7px] sm:text-[9px] font-black uppercase tracking-wider hover:bg-yellow-500/50 transition-all"
+          >
+            Reward
           </button>
 
           <button

@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useContext } from 'react';
 import { supabase } from '../services/supabaseClient';
+import { RadioContext } from '../contexts/AudioPlayerContext';
 import type { Profile } from '../types';
 
 interface AlertMessage {
@@ -13,8 +14,12 @@ interface AlertMessage {
 
 export const PresenceAlerts: React.FC<{ profile: Profile }> = ({ profile }) => {
     const [alerts, setAlerts] = useState<AlertMessage[]>([]);
+    const context = useContext(RadioContext);
 
     useEffect(() => {
+        if (!context) return;
+        const { addChatMessage } = context;
+
         // 1. Create the Presence channel
         const channel = supabase.channel('club-presence', {
             config: {
@@ -31,17 +36,28 @@ export const PresenceAlerts: React.FC<{ profile: Profile }> = ({ profile }) => {
                     // Don't alert for ourselves
                     if (presence.user_id === profile.user_id) return;
 
+                    const name = presence.name || "A Listener";
+                    
+                    // Add to popup alerts
                     setAlerts((prev) => [
                         ...prev,
                         {
                             id: `${presence.presence_ref}-join-${Date.now()}`,
                             userId: presence.user_id,
-                            name: presence.name,
+                            name: name,
                             avatarUrl: presence.avatar_url,
                             action: 'JOIN',
                             timestamp: Date.now(),
                         },
                     ]);
+
+                    // Add to chat feed
+                    addChatMessage({
+                        id: `presence-join-${presence.presence_ref}-${Date.now()}`,
+                        user: { name: "SYSTEM PROTOCOL", isAdmin: true },
+                        text: `${name.toUpperCase()} ENTERED THE CLUB`,
+                        timestamp: Date.now()
+                    });
                 });
             })
             .on('presence', { event: 'leave' }, ({ leftPresences }) => {
@@ -49,17 +65,28 @@ export const PresenceAlerts: React.FC<{ profile: Profile }> = ({ profile }) => {
                     // Don't alert if we are the ones leaving (we shouldn't see it anyway)
                     if (presence.user_id === profile.user_id) return;
 
+                    const name = presence.name || "A Listener";
+
+                    // Add to popup alerts
                     setAlerts((prev) => [
                         ...prev,
                         {
                             id: `${presence.presence_ref}-leave-${Date.now()}`,
                             userId: presence.user_id,
-                            name: presence.name,
+                            name: name,
                             avatarUrl: presence.avatar_url,
                             action: 'LEAVE',
                             timestamp: Date.now(),
                         },
                     ]);
+
+                    // Add to chat feed
+                    addChatMessage({
+                        id: `presence-leave-${presence.presence_ref}-${Date.now()}`,
+                        user: { name: "SYSTEM PROTOCOL", isAdmin: true },
+                        text: `${name.toUpperCase()} LEFT THE CLUB`,
+                        timestamp: Date.now()
+                    });
                 });
             })
             .subscribe(async (status) => {
@@ -86,7 +113,7 @@ export const PresenceAlerts: React.FC<{ profile: Profile }> = ({ profile }) => {
             clearInterval(cleanupInterval);
             supabase.removeChannel(channel);
         };
-    }, [profile.user_id, profile.name, profile.avatar_url]);
+    }, [profile.user_id, profile.name, profile.avatar_url, context]);
 
     if (alerts.length === 0) return null;
 

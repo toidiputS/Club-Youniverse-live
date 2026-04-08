@@ -12,6 +12,7 @@ import { SiteEffects } from "./components/SiteEffects";
 import { Ticker } from "./components/Ticker";
 import { TuneInOverlay } from "./components/TuneInOverlay";
 import { PresenceAlerts } from "./components/PresenceAlerts";
+import { FeedbackOverlay } from "./components/FeedbackOverlay";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { UserProfileCard } from './components/UserProfileCard';
 import { RadioProvider } from "./contexts/AudioPlayerContext";
@@ -41,6 +42,7 @@ const App: React.FC = () => {
 
   const [isClubRoute, setIsClubRoute] = useState(getIsClubRoute());
   const [showPrivacy, setShowPrivacy] = useState(false);
+  const [showFeedback, setShowFeedback] = useState(false);
   
   // Sync route state on navigation
   useEffect(() => {
@@ -266,7 +268,7 @@ const App: React.FC = () => {
           <main className="grow flex flex-col relative w-full h-full">
             {currentView === "club" ? (
               <div className="h-full w-full overflow-hidden absolute inset-0">
-                <Club onNavigate={setCurrentView} onSignOut={handleSignOut} profile={profile!} />
+                <Club onNavigate={setCurrentView} onSignOut={handleSignOut} profile={profile!} onFeedbackClick={() => setShowFeedback(true)} />
               </div>
 
             ) : currentView === "profile" ? (
@@ -292,6 +294,16 @@ const App: React.FC = () => {
         </div>
 
         <PresenceAlerts profile={profile!} />
+        
+        <AnimatePresence>
+          {showFeedback && (
+            <FeedbackOverlay 
+              userId={profile!.user_id} 
+              onClose={() => setShowFeedback(false)} 
+            />
+          )}
+        </AnimatePresence>
+
         <Analytics />
       </RadioProvider>
     </ThemeProvider>

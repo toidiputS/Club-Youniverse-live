@@ -24,9 +24,10 @@ interface RadioProps {
   onSignOut: () => void;
   profile: Profile;
   minimal?: boolean;
+  onFeedbackClick?: () => void;
 }
 
-export const Radio: React.FC<RadioProps> = ({ onNavigate, profile, minimal = false }) => {
+export const Radio: React.FC<RadioProps> = ({ onNavigate, onSignOut, profile, minimal = false, onFeedbackClick }) => {
   const context = useContext(RadioContext);
   if (!context) return null;
   const { sentimentBurst } = context;
@@ -190,6 +191,7 @@ export const Radio: React.FC<RadioProps> = ({ onNavigate, profile, minimal = fal
                             profile={profile} 
                             onProfileClick={() => setShowProfile(true)}
                             onPoolClick={() => setShowPool(true)}
+                            onFeedbackClick={onFeedbackClick}
                         />
                     </div>
                 )}
@@ -203,9 +205,9 @@ export const Radio: React.FC<RadioProps> = ({ onNavigate, profile, minimal = fal
                 </div>
             </div>
 
-            {/* DESKTOP SIDEBAR: CHAT + POOL */}
+            {/* DESKTOP SIDEBAR: CHAT + POOL - Now an absolute overlay to blend with dance floor */}
             {!minimal && (
-                <div className="hidden lg:flex flex-none w-[320px] h-full flex-col pointer-events-auto bg-black/70 backdrop-blur-3xl border-l border-white/5">
+                <div className="hidden lg:flex absolute right-0 top-0 bottom-0 w-[320px] flex-col pointer-events-auto bg-black/20 backdrop-blur-md border-l border-white/5 z-30">
                     {/* LEADERBOARD - TOP */}
                     <AnimatePresence>
                         {context.danceFloorEnabled && (
@@ -224,11 +226,11 @@ export const Radio: React.FC<RadioProps> = ({ onNavigate, profile, minimal = fal
 
                     {/* CHAT FEED */}
                     <div className="grow overflow-hidden">
-                        <TheChat profile={profile} transparent={true} />
+                        <TheChat profile={profile} transparent={true} onFeedbackClick={onFeedbackClick} />
                     </div>
 
                     {/* THE BOX */}
-                    <div className="flex-none p-3 border-t border-white/5 bg-black/40">
+                    <div className="flex-none p-3 border-t border-white/5 bg-black/20">
                         <TheBox />
                     </div>
                 </div>
@@ -319,10 +321,10 @@ export const Radio: React.FC<RadioProps> = ({ onNavigate, profile, minimal = fal
                         )}
                     </AnimatePresence>
 
-                    {/* MOBILE BOTTOM CHAT - compact */}
-                    <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-black/90 backdrop-blur-xl border-t border-white/10 pb-safe-bottom">
+                    {/* MOBILE BOTTOM CHAT - more transparent to blend with dance floor */}
+                    <div className="lg:hidden fixed bottom-14 left-0 right-0 z-50 bg-black/40 backdrop-blur-md border-t border-white/10 pb-safe-bottom">
                         <div className="h-[40vh] max-h-[280px]">
-                            <TheChat profile={profile} transparent={true} />
+                            <TheChat profile={profile} transparent={true} onFeedbackClick={onFeedbackClick} />
                         </div>
                     </div>
                 </>

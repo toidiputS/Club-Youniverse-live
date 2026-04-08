@@ -159,11 +159,11 @@ export const ChatAtmosphere: React.FC<ChatAtmosphereProps> = ({
         />
       )}
       
-      {/* Vignette Effect */}
+      {/* Vignette Effect - lightened to allow more dance floor visibility */}
       <div 
         className="absolute inset-0 pointer-events-none"
         style={{
-          background: 'radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.4) 100%)'
+          background: 'radial-gradient(ellipse at center, transparent 60%, rgba(0,0,0,0.3) 100%)'
         }}
       />
       
@@ -196,7 +196,8 @@ const MoodGradient: React.FC<{ mood: MoodType; intensity: number }> = ({ mood, i
   };
 
   const gradient = gradientMap[mood] || gradientMap.neutral;
-  const opacityFactor = Math.min(1, 0.3 + intensity * 0.5);
+  // Lowered default opacity from 0.3 to 0.1 to allow dance floor to shine through
+  const opacityFactor = Math.min(1, 0.1 + intensity * 0.4);
 
   return (
     <div 

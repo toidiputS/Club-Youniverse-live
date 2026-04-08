@@ -180,6 +180,37 @@ export const SystemMessage: React.FC<{ message: string; timestamp?: number }> = 
 };
 
 /**
+ * SystemPromo - Promotional card for chat
+ */
+export const SystemPromo: React.FC<{ 
+  title: string; 
+  subtitle: string; 
+  actionLabel: string; 
+  onClick: () => void 
+}> = ({ title, subtitle, actionLabel, onClick }) => {
+  return (
+    <div className="w-full py-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
+      <div className="mx-3 p-4 bg-linear-to-br from-purple-900/40 to-pink-900/30 border border-white/10 rounded-2xl flex flex-col items-center text-center space-y-3 relative overflow-hidden group">
+        <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+        <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center border border-white/10">
+          <Star size={20} className="text-yellow-400 fill-yellow-400" />
+        </div>
+        <div>
+          <h4 className="text-[11px] font-black text-white uppercase tracking-widest">{title}</h4>
+          <p className="text-[9px] font-medium text-white/50 uppercase tracking-wider mt-1">{subtitle}</p>
+        </div>
+        <button
+          onClick={onClick}
+          className="w-full py-2 bg-white text-black text-[9px] font-black uppercase tracking-widest rounded-lg hover:bg-yellow-400 transition-all active:scale-95"
+        >
+          {actionLabel}
+        </button>
+      </div>
+    </div>
+  );
+};
+
+/**
  * Helper to get mood color hex
  */
 function getMoodColorHex(mood: MoodType): string {

@@ -6,16 +6,17 @@
 import React, { useContext, useState, useEffect, useRef } from "react";
 import { RadioContext } from "../contexts/AudioPlayerContext";
 import { supabase } from "../services/supabaseClient";
-import { ChatMoodBubble, SystemMessage } from "./ChatMoodBubble";
+import { ChatMoodBubble, SystemMessage, SystemPromo } from "./ChatMoodBubble";
 import { ChatAtmosphere } from "./ChatAtmosphere";
 import type { ChatMessage, Profile } from "../types";
 
 interface TheChatProps {
     profile: Profile;
     transparent?: boolean;
+    onFeedbackClick?: () => void;
 }
 
-export const TheChat: React.FC<TheChatProps> = ({ profile, transparent }) => {
+export const TheChat: React.FC<TheChatProps> = ({ profile, transparent, onFeedbackClick }) => {
     const context = useContext(RadioContext);
     if (!context) return null;
 
@@ -124,6 +125,15 @@ export const TheChat: React.FC<TheChatProps> = ({ profile, transparent }) => {
                     style={{ maskImage: 'linear-gradient(to bottom, transparent, black 20px)', WebkitMaskImage: 'linear-gradient(to bottom, transparent, black 20px)' }}
                 >
                     <div className="mt-auto flex flex-col space-y-2 pt-2 pb-4 items-end">
+                        {onFeedbackClick && (
+                            <SystemPromo 
+                                title="Get 1 Month Free" 
+                                subtitle="Help us build the club by sharing feedback." 
+                                actionLabel="Claim Reward" 
+                                onClick={onFeedbackClick} 
+                            />
+                        )}
+
                         {chatMessages.length === 0 && (
                             <div className="flex flex-col items-center justify-center py-8 text-zinc-600">
                                 <span className="text-lg mb-2">🎵</span>
