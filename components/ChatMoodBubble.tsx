@@ -25,6 +25,7 @@ interface ChatMoodBubbleProps {
   message: string;
   username: string;
   isAdmin?: boolean;
+  isDj?: boolean;
   isCurrentUser?: boolean;
   timestamp?: number;
 }
@@ -41,6 +42,7 @@ export const ChatMoodBubble: React.FC<ChatMoodBubbleProps> = ({
   message,
   username,
   isAdmin = false,
+  isDj = false,
   isCurrentUser = false,
   timestamp
 }) => {
@@ -55,12 +57,14 @@ export const ChatMoodBubble: React.FC<ChatMoodBubbleProps> = ({
   const colors = getMoodColors(currentMood);
   const isMention = message.toLowerCase().includes('@dj');
 
+  const isDjOrAdmin = isAdmin || isDj || username === "DJ Python" || username === "SYSTEM PROTOCOL";
+
   return (
-    <div className="animate-in fade-in slide-in-from-bottom-1 duration-300">
-      <div className="flex flex-col gap-0.5 w-fit max-w-[85%] items-end">
+    <div className="animate-in fade-in slide-in-from-bottom-1 duration-300 w-full flex flex-col">
+      <div className={`flex flex-col gap-0.5 w-fit max-w-[85%] ${isDjOrAdmin ? 'items-start mr-auto' : 'items-end ml-auto'}`}>
         {/* Username */}
-        <div className="flex items-center gap-2 px-1 justify-end w-full">
-          <span className={`text-[7px] font-bold uppercase tracking-wider ${isAdmin ? 'text-purple-400/80' : 'text-zinc-500'}`}>
+        <div className={`flex items-center gap-2 px-1 w-full ${isDjOrAdmin ? 'justify-start' : 'justify-end'}`}>
+          <span className={`text-[7px] font-bold uppercase tracking-wider ${isDjOrAdmin ? 'text-purple-400/80' : 'text-zinc-500'}`}>
             {username}
           </span>
           {timestamp && (
@@ -90,7 +94,7 @@ export const ChatMoodBubble: React.FC<ChatMoodBubbleProps> = ({
             boxShadow: currentMood !== 'neutral' 
               ? `0 0 40px ${getMoodColorHex(currentMood)}30` 
               : '0 4px 20px rgba(0,0,0,0.4)',
-            borderRadius: isCurrentUser ? '16px 4px 16px 16px' : '4px 16px 16px 16px',
+            borderRadius: isDjOrAdmin ? '4px 16px 16px 16px' : '16px 4px 16px 16px',
             background: currentMood !== 'neutral' 
               ? `linear-gradient(135deg, #111 0%, ${getMoodColorHex(currentMood)}25 100%)`
               : '#111',
@@ -148,7 +152,7 @@ export const ChatMoodBubble: React.FC<ChatMoodBubbleProps> = ({
           )}
 
           {/* Message Text */}
-          <div className={`relative z-10 text-[11px] font-black leading-snug tracking-tight text-right drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)] ${isCurrentUser ? 'text-white' : isMention ? 'text-purple-200' : 'text-zinc-100'}`}>
+          <div className={`relative z-10 text-[11px] font-black leading-snug tracking-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)] ${isDjOrAdmin ? 'text-left text-purple-200' : 'text-right text-zinc-100'}`}>
             {message}
           </div>
         </div>

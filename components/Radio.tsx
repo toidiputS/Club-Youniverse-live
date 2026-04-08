@@ -24,10 +24,9 @@ interface RadioProps {
   onSignOut: () => void;
   profile: Profile;
   minimal?: boolean;
-  onFeedbackClick?: () => void;
 }
 
-export const Radio: React.FC<RadioProps> = ({ onNavigate, onSignOut, profile, minimal = false, onFeedbackClick }) => {
+export const Radio: React.FC<RadioProps> = ({ onNavigate, profile, minimal = false }) => {
   const context = useContext(RadioContext);
   if (!context) return null;
   const { sentimentBurst } = context;
@@ -191,7 +190,6 @@ export const Radio: React.FC<RadioProps> = ({ onNavigate, onSignOut, profile, mi
                             profile={profile} 
                             onProfileClick={() => setShowProfile(true)}
                             onPoolClick={() => setShowPool(true)}
-                            onFeedbackClick={onFeedbackClick}
                         />
                     </div>
                 )}
@@ -226,7 +224,7 @@ export const Radio: React.FC<RadioProps> = ({ onNavigate, onSignOut, profile, mi
 
                     {/* CHAT FEED */}
                     <div className="grow overflow-hidden">
-                        <TheChat profile={profile} transparent={true} onFeedbackClick={onFeedbackClick} />
+                        <TheChat profile={profile} transparent={true} />
                     </div>
 
                     {/* THE BOX */}
@@ -324,7 +322,7 @@ export const Radio: React.FC<RadioProps> = ({ onNavigate, onSignOut, profile, mi
                     {/* MOBILE BOTTOM CHAT - more transparent to blend with dance floor */}
                     <div className="lg:hidden fixed bottom-14 left-0 right-0 z-50 bg-black/40 backdrop-blur-md border-t border-white/10 pb-safe-bottom">
                         <div className="h-[40vh] max-h-[280px]">
-                            <TheChat profile={profile} transparent={true} onFeedbackClick={onFeedbackClick} />
+                            <TheChat profile={profile} transparent={true} />
                         </div>
                     </div>
                 </>

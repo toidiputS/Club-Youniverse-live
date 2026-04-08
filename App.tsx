@@ -270,7 +270,7 @@ const App: React.FC = () => {
           <main className="grow flex flex-col relative w-full h-full">
             {currentView === "club" ? (
               <div className="h-full w-full overflow-hidden absolute inset-0">
-                <Club onNavigate={setCurrentView} onSignOut={handleSignOut} profile={profile!} onFeedbackClick={() => setShowFeedback(true)} />
+                <Club onNavigate={setCurrentView} onSignOut={handleSignOut} profile={profile!} />
               </div>
 
             ) : currentView === "profile" ? (

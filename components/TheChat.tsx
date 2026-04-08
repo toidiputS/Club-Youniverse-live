@@ -6,17 +6,26 @@
 import React, { useContext, useState, useEffect, useRef } from "react";
 import { RadioContext } from "../contexts/AudioPlayerContext";
 import { supabase } from "../services/supabaseClient";
-import { ChatMoodBubble, SystemMessage, SystemPromo } from "./ChatMoodBubble";
+import { ChatMoodBubble, SystemMessage } from "./ChatMoodBubble";
 import { ChatAtmosphere } from "./ChatAtmosphere";
 import type { ChatMessage, Profile } from "../types";
 
 interface TheChatProps {
-    profile: Profile;
+    profile: Profile & { is_admin?: boolean };
     transparent?: boolean;
-    onFeedbackClick?: () => void;
 }
 
-export const TheChat: React.FC<TheChatProps> = ({ profile, transparent, onFeedbackClick }) => {
+const DJ_BANTER = [
+    "Yo! Help us build the club by sharing feedback. You might even land 1 MONTH FREE! 🎁",
+    "DROP A VIBE IN THE CHAT TO INFLUENCE THE LIGHTS ✨",
+    "ENJOYING THE SESSION? TYPE /YOUNIVERSE TO SYNC UP 🎶",
+    "Stay YOUNIVERSAL. The broadcast is flowing. 🛸",
+    "WHO'S ON THE FLOOR? DROP A ❤️ IF YOU'RE VIBING.",
+    "New wave in the pool. Stay tuned. 🎧",
+    "Visuals reacting to the mood... What's the frequency? 🌊"
+];
+
+export const TheChat: React.FC<TheChatProps> = ({ profile, transparent }) => {
     const context = useContext(RadioContext);
     if (!context) return null;
 
@@ -41,6 +50,39 @@ export const TheChat: React.FC<TheChatProps> = ({ profile, transparent, onFeedba
 
         return () => { supabase.removeChannel(channel); };
     }, [addChatMessage]);
+
+    // Automated DJ Banter
+    useEffect(() => {
+        if (!profile.is_admin) return; // Only admins trigger the bot to avoid duplication
+
+        const sendBanter = async () => {
+            const banter = DJ_BANTER[Math.floor(Math.random() * DJ_BANTER.length)];
+            const message: ChatMessage = {
+                id: `dj-bot-${Date.now()}`,
+                user: {
+                    name: "DJ Python",
+                    isDj: true,
+                    isAdmin: true
+                },
+                text: banter,
+                timestamp: Date.now()
+            };
+
+            await supabase.channel('club-chat').send({
+                type: 'broadcast',
+                event: 'new_message',
+                payload: message
+            });
+            addChatMessage(message);
+        };
+
+        // Send a message every 3-5 minutes
+        const timer = setInterval(() => {
+            if (Math.random() > 0.5) sendBanter();
+        }, 180000 + Math.random() * 120000);
+
+        return () => clearInterval(timer);
+    }, [profile.is_admin, addChatMessage]);
 
     // Handle sending a message
     const handleSend = async (e: React.FormEvent) => {
@@ -68,7 +110,7 @@ export const TheChat: React.FC<TheChatProps> = ({ profile, transparent, onFeedba
             id: Date.now().toString(),
             user: {
                 name: profile.name || "Anonymous",
-                isAdmin: profile.is_admin
+                isAdmin: !!profile.is_admin
             },
             text: input,
             timestamp: Date.now()
@@ -124,16 +166,7 @@ export const TheChat: React.FC<TheChatProps> = ({ profile, transparent, onFeedba
                     className="flex flex-col grow overflow-y-auto px-3 scrollbar-hide min-h-0"
                     style={{ maskImage: 'linear-gradient(to bottom, transparent, black 20px)', WebkitMaskImage: 'linear-gradient(to bottom, transparent, black 20px)' }}
                 >
-                    <div className="mt-auto flex flex-col space-y-2 pt-2 pb-4 items-end">
-                        {onFeedbackClick && (
-                            <SystemPromo 
-                                title="Get 1 Month Free" 
-                                subtitle="Help us build the club by sharing feedback." 
-                                actionLabel="Claim Reward" 
-                                onClick={onFeedbackClick} 
-                            />
-                        )}
-
+                    <div className="mt-auto flex flex-col space-y-2 pt-2 pb-4 items-stretch">
                         {chatMessages.length === 0 && (
                             <div className="flex flex-col items-center justify-center py-8 text-zinc-600">
                                 <span className="text-lg mb-2">🎵</span>
