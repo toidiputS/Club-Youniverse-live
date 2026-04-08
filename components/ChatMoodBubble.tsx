@@ -6,6 +6,7 @@
 import React, { useEffect, useState } from 'react';
 import { detectMood, type MoodType, getMoodColors } from '../utils/emotionEngine';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Star } from 'lucide-react';
 
 // --- Particle Definitions ---
 const KEYWORD_MAP: Record<string, string> = {

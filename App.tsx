@@ -21,6 +21,7 @@ import { LoginScreen } from "./components/LoginScreen";
 import { supabase } from "./services/supabaseClient";
 import type { Session, Profile, View } from "./types";
 import { Analytics } from "@vercel/analytics/react";
+import { AnimatePresence } from "framer-motion";
 
 const App: React.FC = () => {
   const [session, setSession] = useState<Session | null>(null);
