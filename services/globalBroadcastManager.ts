@@ -604,6 +604,37 @@ export class GlobalBroadcastManager {
 
     this.audioElement.volume = this.state.volume;
     this.audioElement.muted = this.state.isMuted;
+
+    // Initialize Media Session metadata if supported
+    this.updateMediaSession();
+  }
+
+  private updateMediaSession() {
+    if ('mediaSession' in navigator && this.state.nowPlaying) {
+      const song = this.state.nowPlaying;
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: song.title,
+        artist: song.artistName,
+        album: 'Club Youniverse',
+        artwork: [
+          { src: '/icons/icon-192.svg', sizes: '192x192', type: 'image/svg+xml' },
+          { src: '/social-cover.png', sizes: '1200x630', type: 'image/png' }
+        ]
+      });
+
+      // Unified handlers for lock screen controls: Mute instead of Pause for live show
+      navigator.mediaSession.setActionHandler('play', () => {
+        this.setMuted(false);
+        this.play().catch(console.error);
+      });
+      navigator.mediaSession.setActionHandler('pause', () => {
+        this.setMuted(true);
+      });
+      
+      // Explicitly disable skipping from lock screen to maintain live show integrity
+      navigator.mediaSession.setActionHandler('nexttrack', null);
+      navigator.mediaSession.setActionHandler('previoustrack', null);
+    }
   }
 
   /**
@@ -720,6 +751,9 @@ export class GlobalBroadcastManager {
     }
 
     this.emit("nowPlayingChanged", song);
+    
+    // Sync with OS Media Session (Lock Screen)
+    this.updateMediaSession();
 
     // PERSIST TO GLOBAL STATE (Only if Leader)
     if (this.isLeaderLocal) {
@@ -867,6 +901,7 @@ export class GlobalBroadcastManager {
         await this.audioElement.play();
         this.state.isPlaying = true;
         this.emit("playbackStateChanged", true);
+        this.updateMediaSession(); // Refresh handlers on state change
       } catch (e: any) {
         if (e.name === 'NotAllowedError') {
           console.warn("🚫 GlobalBroadcastManager: play() blocked. Emitting autoplayBlocked.");

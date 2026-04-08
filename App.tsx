@@ -262,7 +262,7 @@ const App: React.FC = () => {
           </div>
         )}
 
-        <div className="h-dvh relative z-10 flex flex-col overflow-y-auto overflow-x-hidden text-white w-full pb-14">
+        <div className="h-dvh relative z-10 flex flex-col overflow-y-auto overflow-x-hidden text-white w-full pb-ticker">
           <main className="grow flex flex-col relative w-full h-full">
             {currentView === "club" ? (
               <div className="h-full w-full overflow-hidden absolute inset-0">
@@ -270,7 +270,7 @@ const App: React.FC = () => {
               </div>
 
             ) : currentView === "profile" ? (
-              <div className="h-full w-full overflow-hidden absolute inset-0">
+              <div className="h-full w-full absolute inset-0">
                 <UserProfileCard
                   userId={profile!.user_id}
                   onClose={() => setCurrentView("club")}
@@ -285,7 +285,7 @@ const App: React.FC = () => {
           </main>
 
           {/* FULL WIDTH BOTTOM TICKERS */}
-          <div className="fixed bottom-0 left-0 w-full z-50">
+          <div className="fixed bottom-0 left-0 w-full z-40">
             <Ticker />
           </div>
 

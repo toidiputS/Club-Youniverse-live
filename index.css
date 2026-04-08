@@ -22,6 +22,11 @@
     margin-bottom: env(safe-area-inset-bottom, 0px);
 }
 
+/* Custom Ticker Push-up Utility */
+.pb-ticker {
+    padding-bottom: calc(3.5rem + env(safe-area-inset-bottom, 12px));
+}
+
 /* Custom Futuristic Scrollbar */
 .custom-scrollbar::-webkit-scrollbar {
     width: 4px;

@@ -228,10 +228,10 @@ export const DjBooth: React.FC<DjBoothProps> = ({ onNavigate }) => {
   );
 
   return (
-    <div className="fixed inset-0 bg-[#050505] text-white/90 font-mono overflow-hidden flex flex-col z-100 selection:bg-purple-500/30">
+    <div className="fixed inset-0 bg-black/40 text-white/90 font-mono overflow-hidden flex flex-col z-100 selection:bg-purple-500/30 pb-ticker lg:pb-0 backdrop-blur-xl">
       
       {/* 1. BACKGROUND FLOOR RE-RENDER (Silent View) */}
-      <div className="absolute inset-0 z-[-1] opacity-10 pointer-events-none grayscale select-none">
+      <div className="absolute inset-0 z-[-1] opacity-20 pointer-events-none grayscale select-none">
         <FloorView onNavigate={() => { }} onSignOut={() => { }} profile={profile} minimal={true} />
       </div>
 
@@ -440,8 +440,8 @@ export const DjBooth: React.FC<DjBoothProps> = ({ onNavigate }) => {
         </AnimatePresence>
 
         {/* COLUMN 2: MAIN STACK (Center) */}
-        <div className="lg:col-span-6 order-1 lg:order-2 flex flex-col h-full bg-[#000000] overflow-hidden relative z-10 w-full mb-safe-bottom">
-            <div className="h-[40vh] bg-[#000000] flex flex-col overflow-hidden relative border-b border-white/10 shrink-0 z-20 pointer-events-none">
+        <div className="lg:col-span-6 order-1 lg:order-2 flex flex-col h-full bg-transparent overflow-hidden relative z-10 w-full mb-safe-bottom border-x border-white/5">
+            <div className="h-[35vh] md:h-[40vh] bg-black/40 backdrop-blur-md flex flex-col overflow-hidden relative border-b border-white/10 shrink-0 z-20 pointer-events-none">
                 <div className="absolute top-4 left-4 z-40 flex items-center gap-2">
                     <div className="px-2 py-0.5 bg-red-600 text-white text-[8px] font-black rounded uppercase animate-pulse">Live Broadcast</div>
                     <span className="text-[10px] font-bold text-white/70 uppercase">Monitor</span>
@@ -547,8 +547,8 @@ export const DjBooth: React.FC<DjBoothProps> = ({ onNavigate }) => {
         {/* COLUMN 3: CHAT + THE BOX (Right Sidebar) */}
         <div className={`
           absolute lg:relative inset-y-0 right-0 w-80 lg:w-auto lg:col-span-3 
-          bg-[#050505] lg:bg-[#0a0a0a]/40 lg:backdrop-blur-3xl border-l border-white/5 overflow-hidden flex flex-col z-80 lg:z-50
-          transition-transform duration-300 ease-in-out
+          bg-black/40 backdrop-blur-3xl border-l border-white/5 overflow-hidden flex flex-col z-80 lg:z-50
+          transition-transform duration-300 ease-in-out pb-ticker lg:pb-0
           ${rightDrawerOpen ? 'translate-x-0' : 'translate-x-full lg:translate-x-0'}
         `}>
           {/* Mobile close handle */}
@@ -562,7 +562,7 @@ export const DjBooth: React.FC<DjBoothProps> = ({ onNavigate }) => {
                 <TheChat profile={profile} transparent={true} />
             </div>
             
-            <div className="flex-none p-4 border-t border-white/5 bg-black/40">
+            <div className="flex-none p-4 pb-ticker lg:pb-4 border-t border-white/5 bg-black/40">
                 <TheBox />
             </div>
         </div>
