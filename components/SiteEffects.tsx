@@ -42,16 +42,35 @@ export const SiteEffects: React.FC = () => {
         return () => broadcastManager.off("siteCommandReceived", handleCommand);
     }, [broadcastManager]);
 
-    const playTts = (text: string, _voice?: string) => {
-        // Basic browser TTS for now, could be upgraded to ElevenLabs API call
-        console.log("🎙️ Playing TTS:", text);
-        const utterance = new SpeechSynthesisUtterance(text);
+    const playTts = async (text: string, _voice?: string) => {
+        const localServer = localStorage.getItem('VOICE_SERVER_URL');
+        
+        if (localServer) {
+            console.log("🎙️ SiteEffects: Routing to Local AI Voice Server", localServer);
+            try {
+                const response = await fetch(localServer, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text, voice: _voice || 'DJ Python' })
+                });
+                
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const audioUrl = URL.createObjectURL(blob);
+                    const audio = new Audio(audioUrl);
+                    audio.play();
+                    return;
+                }
+            } catch (e) {
+                console.warn("Local Voice Server failed, falling back to browser TTS", e);
+            }
+        }
 
-        // Attempt to find a cool voice
+        console.log("🎙️ Playing Browser TTS:", text);
+        const utterance = new SpeechSynthesisUtterance(text);
         const voices = window.speechSynthesis.getVoices();
         const deepVoice = voices.find(v => v.name.includes("Male") || v.name.includes("Deep")) || voices[0];
         if (deepVoice) utterance.voice = deepVoice;
-
         utterance.pitch = 0.8;
         utterance.rate = 0.9;
         window.speechSynthesis.speak(utterance);

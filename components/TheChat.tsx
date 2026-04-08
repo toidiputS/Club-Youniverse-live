@@ -73,6 +73,17 @@ export const TheChat: React.FC<TheChatProps> = ({ profile, transparent }) => {
                 event: 'new_message',
                 payload: message
             });
+
+            // TRIGGER VOICE BROADCAST
+            await supabase.channel('club-site-commands').send({
+                type: 'broadcast',
+                event: 'siteCommand',
+                payload: {
+                    type: "tts",
+                    payload: { text: banter, voice: "DJ Python" }
+                }
+            });
+
             addChatMessage(message);
         };
 

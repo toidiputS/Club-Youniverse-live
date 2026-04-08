@@ -22,6 +22,9 @@ export const DjBooth: React.FC<DjBoothProps> = ({ onNavigate }) => {
   const { profile, radioState, vjEnabled, setVjEnabled, danceFloorEnabled, leaderId } = context;
   const [ttsInput, setTtsInput] = useState("");
   const [isSending, setIsSending] = useState(false);
+  const [localAiUrl, setLocalAiUrl] = useState(() => localStorage.getItem('LM_STUDIO_URL') || 'http://localhost:1234/v1');
+  const [voiceServerUrl, setVoiceServerUrl] = useState(() => localStorage.getItem('VOICE_SERVER_URL') || 'http://localhost:5000/tts');
+  const [isGenerating, setIsGenerating] = useState(false);
   
   // Library & Upload State
   const [songs, setSongs] = useState<any[]>([]);
@@ -112,6 +115,40 @@ export const DjBooth: React.FC<DjBoothProps> = ({ onNavigate }) => {
     await bm.sendSiteCommand("tts", { text: ttsInput, voice: "Fenrir" });
     setTtsInput("");
     setIsSending(false);
+  };
+
+  const handleGenerateNews = async () => {
+    if (isGenerating) return;
+    setIsGenerating(true);
+    try {
+        const response = await fetch(`${localAiUrl}/chat/completions`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                model: "local-model",
+                messages: [{
+                    role: "system",
+                    content: "You are DJ Python, a witty AI radio host at Club Youniverse. Give a very short, high-energy 20-word news brief about the cosmic energy in the club right now."
+                }],
+                temperature: 0.7,
+            })
+        });
+        const data = await response.json();
+        const content = data.choices[0].message.content;
+        const bm = getBroadcastManager();
+        await bm.sendSiteCommand("tts", { text: content, voice: "DJ Python" });
+    } catch (e) {
+        console.error("LM Studio Error:", e);
+        alert("Could not connect to LM Studio at " + localAiUrl);
+    } finally {
+        setIsGenerating(false);
+    }
+  };
+
+  const saveAiConfig = () => {
+    localStorage.setItem('LM_STUDIO_URL', localAiUrl);
+    localStorage.setItem('VOICE_SERVER_URL', voiceServerUrl);
+    alert("Local AI Config Saved!");
   };
 
   const forceNextState = async (state: string) => {
@@ -413,6 +450,48 @@ export const DjBooth: React.FC<DjBoothProps> = ({ onNavigate }) => {
                             {isSending ? 'TRANSMITTING...' : 'SEND VOICE COMMAND'}
                         </button>
                     </form>
+                </section>
+
+                <section className="pt-6 border-t border-white/5">
+                    <h3 className="text-[9px] font-black text-purple-400 uppercase tracking-[0.3em] mb-4">Local AI Hub</h3>
+                    <div className="space-y-4">
+                        <div className="space-y-1">
+                            <label className="text-[8px] text-white/40 uppercase font-bold">LM Studio API</label>
+                            <input 
+                                type="text"
+                                value={localAiUrl}
+                                onChange={(e) => setLocalAiUrl(e.target.value)}
+                                className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-[10px] text-white outline-none focus:border-purple-500/50"
+                                placeholder="http://localhost:1234/v1"
+                            />
+                        </div>
+                        <div className="space-y-1">
+                            <label className="text-[8px] text-white/40 uppercase font-bold">Voicebox / TTS URL</label>
+                            <input 
+                                type="text"
+                                value={voiceServerUrl}
+                                onChange={(e) => setVoiceServerUrl(e.target.value)}
+                                className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-[10px] text-white outline-none focus:border-purple-500/50"
+                                placeholder="http://localhost:5000/tts"
+                            />
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                            <button 
+                                onClick={saveAiConfig}
+                                className="py-2.5 bg-white/5 hover:bg-white/10 text-white rounded-lg text-[9px] font-black tracking-widest transition-all uppercase border border-white/10"
+                            >Save Config</button>
+                            <button 
+                                onClick={handleGenerateNews}
+                                disabled={isGenerating}
+                                className="py-2.5 bg-purple-600 hover:bg-purple-500 text-white rounded-lg text-[9px] font-black tracking-widest transition-all uppercase animate-pulse shadow-lg shadow-purple-500/20"
+                            >
+                                {isGenerating ? 'THINKING...' : 'LIVE NEWS BRIEF'}
+                            </button>
+                        </div>
+                        <p className="text-[8px] text-white/20 italic leading-relaxed text-center">
+                            Connect your local LM Studio and Voicebox to let DJ Python speak directly to the floor.
+                        </p>
+                    </div>
                 </section>
                 
                 {isAdmin && (
