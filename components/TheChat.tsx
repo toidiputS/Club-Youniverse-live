@@ -204,41 +204,46 @@ isCurrentUser={isCurrentUser(msg)}
                     </div>
                 </div>
 
-                {/* Input Area */}
-                <form onSubmit={handleSend} className={`p-2 border-t border-white/3 ${transparent ? 'bg-black/10 backdrop-blur-md' : 'bg-black/30 backdrop-blur-sm'}`}>
-                    <div className="relative flex items-center gap-2">
-                        <input
-                            type="text"
-                            value={input}
-                            onChange={(e) => setInput(e.target.value)}
-                            placeholder="@dj..."
-                            className="grow bg-zinc-900/60 border border-zinc-700/30 rounded-lg py-2 px-3 pr-10 text-[10px] text-white/80 placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-purple-500/40 focus:border-purple-500/40 transition-all"
-                        />
-                        <button
-                            type="submit"
-                            disabled={!input.trim()}
-                            className={`
-                                absolute right-2 p-1.5 rounded-md transition-all
-                                ${input.trim() 
-                                    ? 'bg-purple-600/80 hover:bg-purple-500 text-white' 
-                                    : 'bg-zinc-800/50 text-zinc-600 cursor-not-allowed'
-                                }
-                            `}
-                        >
-                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                            </svg>
-                        </button>
+                {/* Input Area - Floating Glass Pill */}
+                <form 
+                    onSubmit={handleSend} 
+                    className="p-3 bg-transparent pointer-events-none"
+                >
+                    <div className="relative flex items-center gap-2 max-w-md mx-auto pointer-events-auto">
+                        <div className="grow relative flex items-center">
+                            <input
+                                type="text"
+                                value={input}
+                                onChange={(e) => setInput(e.target.value)}
+                                placeholder="@dj..."
+                                className={`w-full ${transparent ? 'bg-black/40' : 'bg-black/60'} backdrop-blur-xl border border-white/10 rounded-full py-2.5 px-4 pr-12 text-[11px] text-white/90 placeholder-white/30 focus:outline-none focus:ring-1 focus:ring-purple-500/50 shadow-2xl transition-all`}
+                            />
+                            <button
+                                type="submit"
+                                disabled={!input.trim()}
+                                className={`
+                                    absolute right-1.5 p-1.5 rounded-full transition-all
+                                    ${input.trim() 
+                                        ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/40' 
+                                        : 'bg-zinc-800/50 text-zinc-600 cursor-not-allowed'
+                                    }
+                                `}
+                            >
+                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                                </svg>
+                            </button>
+                        </div>
                     </div>
                     
-                    {/* Quick mood hints */}
-                    <div className="flex gap-1 mt-1.5 overflow-x-auto scrollbar-hide pb-0.5">
+                    {/* Quick mood hints - Floating Pill Style */}
+                    <div className="flex justify-center gap-1.5 mt-2 overflow-x-auto scrollbar-hide pointer-events-auto">
                         {['❤️', '🔥', '😂', '😮', '✨', '🎵'].map((emoji) => (
                             <button
                                 key={emoji}
                                 type="button"
                                 onClick={() => setInput(prev => prev + emoji)}
-                                className="text-[10px] px-1.5 py-0.5 rounded bg-zinc-800/40 hover:bg-zinc-700/50 transition-colors"
+                                className="text-[10px] px-2 py-1 rounded-full bg-black/40 backdrop-blur-md border border-white/5 hover:bg-zinc-800/50 transition-colors text-white/70"
                             >
                                 {emoji}
                             </button>

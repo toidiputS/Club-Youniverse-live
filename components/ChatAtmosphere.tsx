@@ -64,7 +64,7 @@ export const ChatAtmosphere: React.FC<ChatAtmosphereProps> = ({
 
     let animationFrameId: number;
     const particles: Particle[] = [];
-    const particleCount = 45; // Increased significantly for 'CGEI intensity'
+    const particleCount = 70; // High density for 'CGEI' immersion
     
     // Initialize particles
     const initParticles = () => {
@@ -78,15 +78,31 @@ export const ChatAtmosphere: React.FC<ChatAtmosphereProps> = ({
 
     const createParticle = (w: number, h: number): Particle => {
       const colors = getMoodParticleColors(displayMood);
+      
+      // Determine particle type based on mood
+      let type: 'circle' | 'heart' | 'rain' | 'emoji' = 'circle';
+      let content = '';
+      
+      if (displayMood === 'love' && Math.random() > 0.3) type = 'heart';
+      else if (displayMood === 'sad' && Math.random() > 0.4) type = 'rain';
+      else if (['happy', 'playful', 'excited'].includes(displayMood) && Math.random() > 0.6) {
+        type = 'emoji';
+        const emojis = displayMood === 'happy' ? ['😊', '✨', '⭐'] : 
+                      displayMood === 'playful' ? ['🎮', '🎈', '🍭'] : ['🔥', '⚡', '🎉'];
+        content = emojis[Math.floor(Math.random() * emojis.length)];
+      }
+
       return {
         x: Math.random() * w,
         y: Math.random() * h,
-        size: Math.random() * 3 + 1,
-        speedY: Math.random() * 0.3 + 0.1,
+        size: type === 'rain' ? Math.random() * 4 + 2 : Math.random() * 4 + 1,
+        speedY: type === 'rain' ? Math.random() * 2 + 3 : Math.random() * 0.4 + 0.1, // Rain falls fast
         speedX: (Math.random() - 0.5) * 0.2,
         color: colors[Math.floor(Math.random() * colors.length)],
-        opacity: Math.random() * 0.5 + 0.2,
-        pulse: Math.random() * Math.PI * 2
+        opacity: Math.random() * 0.6 + 0.2,
+        pulse: Math.random() * Math.PI * 2,
+        type,
+        content
       };
     };
 
@@ -99,35 +115,81 @@ export const ChatAtmosphere: React.FC<ChatAtmosphereProps> = ({
       color: string;
       opacity: number;
       pulse: number;
+      type: 'circle' | 'heart' | 'rain' | 'emoji';
+      content?: string;
     }
+
+    const drawHeart = (ctx: CanvasRenderingContext2D, x: number, y: number, size: number) => {
+      ctx.beginPath();
+      const topCurveHeight = size * 0.3;
+      ctx.moveTo(x, y + topCurveHeight);
+      // top left curve
+      ctx.bezierCurveTo(x, y, x - size / 2, y, x - size / 2, y + topCurveHeight);
+      // bottom left curve
+      ctx.bezierCurveTo(x - size / 2, y + (size + topCurveHeight) / 2, x, y + (size + topCurveHeight) / 2, x, y + size);
+      // bottom right curve
+      ctx.bezierCurveTo(x, y + (size + topCurveHeight) / 2, x + size / 2, y + (size + topCurveHeight) / 2, x + size / 2, y + topCurveHeight);
+      // top right curve
+      ctx.bezierCurveTo(x + size / 2, y, x, y, x, y + topCurveHeight);
+      ctx.fill();
+    };
 
     const animate = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       
       particles.forEach((p) => {
         // Move particle
-        p.y -= p.speedY * (1 + moodState.intensity * 2);
-        p.x += p.speedX;
+        // Rain falls down, others float up
+        if (p.type === 'rain') {
+           p.y += p.speedY * (1 + moodState.intensity);
+           p.x += p.speedX + (moodState.intensity * 0.5); // Slanted rain
+        } else {
+           p.y -= p.speedY * (1 + moodState.intensity * 2);
+           p.x += p.speedX;
+        }
+        
         p.pulse += 0.02;
         
         // Wrap around
-        if (p.y < -10) {
-          p.y = canvas.height + 10;
+        if (p.y < -20) {
+          p.y = canvas.height + 20;
+          p.x = Math.random() * canvas.width;
+        } else if (p.y > canvas.height + 20) {
+          p.y = -20;
           p.x = Math.random() * canvas.width;
         }
-        if (p.x < -10) p.x = canvas.width + 10;
-        if (p.x > canvas.width + 10) p.x = -10;
+        if (p.x < -20) p.x = canvas.width + 20;
+        if (p.x > canvas.width + 20) p.x = -20;
         
-        // Draw with pulse effect
-        const pulseSize = p.size + Math.sin(p.pulse) * 0.5;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, pulseSize, 0, Math.PI * 2);
-        ctx.fillStyle = p.color.replace('1)', `${p.opacity * (0.5 + moodState.intensity * 0.5)})`);
-        ctx.fill();
+        // Final opacity
+        const alpha = p.opacity * (0.4 + moodState.intensity * 0.6);
+        ctx.fillStyle = p.color.replace('1)', `${alpha})`);
         
-        // Glow effect
-        ctx.shadowBlur = 10;
-        ctx.shadowColor = p.color;
+        // Draw based on type
+        if (p.type === 'heart') {
+          drawHeart(ctx, p.x, p.y, p.size * 3);
+        } else if (p.type === 'rain') {
+          ctx.beginPath();
+          ctx.moveTo(p.x, p.y);
+          ctx.lineTo(p.x + 2, p.y + p.size * 4);
+          ctx.lineWidth = 1.5;
+          ctx.strokeStyle = p.color.replace('1)', `${alpha * 0.5})`);
+          ctx.stroke();
+        } else if (p.type === 'emoji' && p.content) {
+          ctx.font = `${p.size * 5}px Arial`;
+          ctx.fillText(p.content, p.x, p.y);
+        } else {
+          const pulseSize = p.size + Math.sin(p.pulse) * 0.5;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, pulseSize, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        
+        // Glow effect for all but rain
+        if (p.type !== 'rain') {
+          ctx.shadowBlur = moodState.intensity * 15;
+          ctx.shadowColor = p.color;
+        }
       });
       
       animationFrameId = requestAnimationFrame(animate);

@@ -6,7 +6,6 @@
 import React, { useEffect, useState } from 'react';
 import { detectMood, type MoodType, getMoodColors } from '../utils/emotionEngine';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Star } from 'lucide-react';
 
 // --- Particle Definitions ---
 const KEYWORD_MAP: Record<string, string> = {
@@ -60,8 +59,13 @@ export const ChatMoodBubble: React.FC<ChatMoodBubbleProps> = ({
   const isDjOrAdmin = isAdmin || isDj || username === "DJ Python" || username === "SYSTEM PROTOCOL";
 
   return (
-    <div className="animate-in fade-in slide-in-from-bottom-1 duration-300 w-full flex flex-col">
-      <div className={`flex flex-col gap-0.5 w-fit max-w-[85%] ${isDjOrAdmin ? 'items-start mr-auto' : 'items-end ml-auto'}`}>
+    <motion.div 
+      initial={{ opacity: 0, scale: 0.8, y: 20 }}
+      animate={{ opacity: 1, scale: 1, y: 0 }}
+      transition={{ type: 'spring', damping: 20, stiffness: 300 }}
+      className="w-full flex flex-col pointer-events-none mb-2"
+    >
+      <div className={`flex flex-col gap-0.5 w-fit max-w-[85%] pointer-events-auto ${isDjOrAdmin ? 'items-start mr-auto' : 'items-end ml-auto'}`}>
         {/* Username */}
         <div className={`flex items-center gap-2 px-1 w-full ${isDjOrAdmin ? 'justify-start' : 'justify-end'}`}>
           <span className={`text-[7px] font-bold uppercase tracking-wider ${isDjOrAdmin ? 'text-purple-400/80' : 'text-zinc-500'}`}>
@@ -140,7 +144,6 @@ export const ChatMoodBubble: React.FC<ChatMoodBubbleProps> = ({
           </div>
 
           {/* THE COLOR SHADOW / AURA */}
-          {/* THE COLOR SHADOW / AURA - INTENSIFIED */}
           {currentMood !== 'neutral' && (
             <div 
               className="absolute inset-0 rounded-[inherit] opacity-60 animate-pulse pointer-events-none blur-xl"
@@ -157,7 +160,7 @@ export const ChatMoodBubble: React.FC<ChatMoodBubbleProps> = ({
           </div>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 };
 
@@ -184,36 +187,7 @@ export const SystemMessage: React.FC<{ message: string; timestamp?: number }> = 
   );
 };
 
-/**
- * SystemPromo - Promotional card for chat
- */
-export const SystemPromo: React.FC<{ 
-  title: string; 
-  subtitle: string; 
-  actionLabel: string; 
-  onClick: () => void 
-}> = ({ title, subtitle, actionLabel, onClick }) => {
-  return (
-    <div className="w-full py-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
-      <div className="mx-3 p-4 bg-linear-to-br from-purple-900/40 to-pink-900/30 border border-white/10 rounded-2xl flex flex-col items-center text-center space-y-3 relative overflow-hidden group">
-        <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
-        <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center border border-white/10">
-          <Star size={20} className="text-yellow-400 fill-yellow-400" />
-        </div>
-        <div>
-          <h4 className="text-[11px] font-black text-white uppercase tracking-widest">{title}</h4>
-          <p className="text-[9px] font-medium text-white/50 uppercase tracking-wider mt-1">{subtitle}</p>
-        </div>
-        <button
-          onClick={onClick}
-          className="w-full py-2 bg-white text-black text-[9px] font-black uppercase tracking-widest rounded-lg hover:bg-yellow-400 transition-all active:scale-95"
-        >
-          {actionLabel}
-        </button>
-      </div>
-    </div>
-  );
-};
+
 
 /**
  * Helper to get mood color hex

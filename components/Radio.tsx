@@ -117,7 +117,8 @@ export const Radio: React.FC<RadioProps> = ({ onNavigate, profile, minimal = fal
                     
                     {/* Vignette */}
                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(0,0,0,0.8)_100%)] pointer-events-none z-5" />
-                    <div className="absolute inset-x-0 bottom-0 h-48 bg-linear-to-t from-black to-transparent pointer-events-none z-10" />
+                    {/* Smooth floor vignette - lightened for full bleed */}
+                    <div className="absolute inset-x-0 bottom-0 h-48 bg-linear-to-t from-black/40 to-transparent pointer-events-none z-10" />
 
                     {/* YOUNIVERSAL DANCE FLOOR - Increased z-index to 15, ensure pointer-events: auto when enabled */}
                     <AnimatePresence>
@@ -319,9 +320,9 @@ export const Radio: React.FC<RadioProps> = ({ onNavigate, profile, minimal = fal
                         )}
                     </AnimatePresence>
 
-                    {/* MOBILE BOTTOM CHAT - more transparent to blend with dance floor */}
-                    <div className="lg:hidden fixed bottom-14 left-0 right-0 z-50 bg-black/40 backdrop-blur-md border-t border-white/10 pb-safe-bottom">
-                        <div className="h-[40vh] max-h-[280px]">
+                    {/* MOBILE BOTTOM CHAT - fully transparent floating bubbles */}
+                    <div className="lg:hidden fixed bottom-14 left-0 right-0 z-50 pb-safe-bottom pointer-events-none">
+                        <div className="h-[45vh] max-h-[320px] pointer-events-none">
                             <TheChat profile={profile} transparent={true} />
                         </div>
                     </div>
