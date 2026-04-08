@@ -108,16 +108,13 @@ export const NowPlay: React.FC = () => {
                     )}
                 </div>
 
-                {/* Info */}
+                {/* Info - Hidden as per user request (visible in tickers) */}
                 <div className="flex flex-col min-w-0 grow">
-                    <h2 className="text-[11px] sm:text-[13px] font-black text-white leading-tight uppercase tracking-wide truncate">
-                        {nowPlaying.title}
-                    </h2>
                     <div className="flex items-center gap-2 mt-0.5">
-                        <span className="text-[8px] sm:text-[9px] font-bold uppercase tracking-wider text-white/50 truncate">
-                            {nowPlaying.artistName}
+                        <span className="text-[10px] font-black text-purple-400">
+                            RATE THIS NODE
                         </span>
-                        <span className="text-[8px] font-bold text-purple-400">
+                        <span className="text-[8px] font-bold text-white/40">
                             {(liveRating.count > 0 ? (liveRating.sum / liveRating.count).toFixed(1) : (nowPlaying.stars || 0).toString())}/10⭐
                         </span>
                     </div>
@@ -139,9 +136,9 @@ export const NowPlay: React.FC = () => {
                         <button
                             key={star}
                             onClick={() => handleStarVote(star)}
-                            className="text-[10px] transition-colors hover:scale-110"
+                            className={`text-[10px] transition-all hover:scale-125 active:scale-150 ${votedStar === star ? 'scale-150 relative z-10' : ''}`}
                         >
-                            <span className={votedStar >= star ? 'text-yellow-400' : 'text-zinc-700'}>⭐</span>
+                            <span className={votedStar >= star ? 'text-yellow-400 drop-shadow-[0_0_8px_rgba(250,204,21,0.6)]' : 'text-zinc-700'}>⭐</span>
                         </button>
                     ))}
                 </div>

@@ -65,9 +65,9 @@ export const ChatMoodBubble: React.FC<ChatMoodBubbleProps> = ({
       transition={{ type: 'spring', damping: 20, stiffness: 300 }}
       className="w-full flex flex-col pointer-events-none mb-2"
     >
-      <div className={`flex flex-col gap-0.5 w-fit max-w-[85%] pointer-events-auto ${isDjOrAdmin ? 'items-start mr-auto' : 'items-end ml-auto'}`}>
+      <div className={`flex flex-col gap-0.5 w-fit max-w-[85%] pointer-events-auto ${isDjOrAdmin ? 'items-end ml-auto' : 'items-start mr-auto'}`}>
         {/* Username */}
-        <div className={`flex items-center gap-2 px-1 w-full ${isDjOrAdmin ? 'justify-start' : 'justify-end'}`}>
+        <div className={`flex items-center gap-2 px-1 w-full ${isDjOrAdmin ? 'justify-end' : 'justify-start'}`}>
           <span className={`text-[7px] font-bold uppercase tracking-wider ${isDjOrAdmin ? 'text-purple-400/80' : 'text-zinc-500'}`}>
             {username}
           </span>
@@ -85,12 +85,12 @@ export const ChatMoodBubble: React.FC<ChatMoodBubbleProps> = ({
         <div
           className={`
             relative px-4 py-2 w-fit min-w-[24px] transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)]
-            bg-[#111111]/80 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.5)] border border-white/5
+            bg-[#111111]/60 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.5)] border border-white/5
             ${isCurrentUser 
-              ? 'border-r-purple-500/30' 
+              ? 'border-l-purple-500/30' 
               : isMention
-                ? 'border-l-purple-500/50 shadow-[0_0_50px_rgba(168,85,247,0.3)]'
-                : `border-l-white/10`
+                ? 'border-r-purple-500/50 shadow-[0_0_50px_rgba(168,85,247,0.3)]'
+                : `border-r-white/10`
             }
             group overflow-hidden
           `}
@@ -98,7 +98,7 @@ export const ChatMoodBubble: React.FC<ChatMoodBubbleProps> = ({
             boxShadow: currentMood !== 'neutral' 
               ? `0 0 40px ${getMoodColorHex(currentMood)}30` 
               : '0 4px 20px rgba(0,0,0,0.4)',
-            borderRadius: isDjOrAdmin ? '4px 16px 16px 16px' : '16px 4px 16px 16px',
+            borderRadius: isDjOrAdmin ? '16px 4px 16px 16px' : '4px 16px 16px 16px',
             background: currentMood !== 'neutral' 
               ? `linear-gradient(135deg, #111 0%, ${getMoodColorHex(currentMood)}25 100%)`
               : '#111',
@@ -155,7 +155,7 @@ export const ChatMoodBubble: React.FC<ChatMoodBubbleProps> = ({
           )}
 
           {/* Message Text */}
-          <div className={`relative z-10 text-[11px] font-black leading-snug tracking-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)] ${isDjOrAdmin ? 'text-left text-purple-200' : 'text-right text-zinc-100'}`}>
+          <div className={`relative z-10 text-[11px] font-black leading-snug tracking-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)] ${isDjOrAdmin ? 'text-right text-purple-200' : 'text-left text-zinc-100'}`}>
             {message}
           </div>
         </div>

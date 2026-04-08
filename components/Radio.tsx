@@ -33,6 +33,23 @@ export const Radio: React.FC<RadioProps> = ({ onNavigate, profile, minimal = fal
   const [showProfile, setShowProfile] = useState(false);
   const [showPool, setShowPool] = useState(false);
 
+  // Presence Broadcast
+  React.useEffect(() => {
+    if (!profile?.name) return;
+    
+    const announce = async (type: 'entered' | 'left') => {
+        const { supabase } = await import("../services/supabaseClient");
+        await supabase.channel('club-chat').send({
+            type: 'broadcast',
+            event: 'status',
+            payload: { type, user: profile.name }
+        });
+    };
+
+    announce('entered');
+    return () => { announce('left'); };
+  }, [profile?.name]);
+
   const parsedLyrics = useMemo((): Partial<ChoreographedLine>[] => {
     if (!context?.nowPlaying?.lyrics) return [];
     const raw = context.nowPlaying.lyrics;
@@ -322,9 +339,9 @@ export const Radio: React.FC<RadioProps> = ({ onNavigate, profile, minimal = fal
                         )}
                     </AnimatePresence>
 
-                    {/* MOBILE BOTTOM CHAT - fully transparent floating bubbles */}
-                    <div className="lg:hidden fixed bottom-[88px] left-0 right-0 z-50 pb-safe-bottom pointer-events-none">
-                        <div className="h-[45vh] max-h-[320px] pointer-events-none">
+                    {/* MOBILE FULL OVERLAY CHAT - fully transparent floating bubbles */}
+                    <div className="lg:hidden fixed inset-0 z-50 pointer-events-none pb-[88px]">
+                        <div className="h-full pointer-events-none flex flex-col">
                             <TheChat profile={profile} transparent={true} />
                         </div>
                     </div>

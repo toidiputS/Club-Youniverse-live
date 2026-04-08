@@ -46,6 +46,16 @@ export const TheChat: React.FC<TheChatProps> = ({ profile, transparent }) => {
             .on('broadcast', { event: 'new_message' }, ({ payload }) => {
                 addChatMessage(payload);
             })
+            .on('broadcast', { event: 'status' }, ({ payload }) => {
+                const { type, user } = payload;
+                addChatMessage({
+                    id: `status-${Date.now()}-${Math.random()}`,
+                    user: { name: "SYSTEM PROTOCOL", isDj: true },
+                    text: `${user} ${type === 'entered' ? 'entered the club' : 'left the club'}`,
+                    timestamp: Date.now(),
+                    isStatus: true // New flag for styling
+                } as any);
+            })
             .subscribe();
 
         return () => { supabase.removeChannel(channel); };
@@ -174,7 +184,7 @@ export const TheChat: React.FC<TheChatProps> = ({ profile, transparent }) => {
                 {/* Chat Messages */}
                 <div
                     ref={scrollRef}
-                    className="flex flex-col grow overflow-y-auto px-3 scrollbar-hide min-h-0"
+                    className="flex flex-col grow overflow-y-auto px-3 scrollbar-hide min-h-0 pointer-events-none"
                     style={{ maskImage: 'linear-gradient(to bottom, transparent, black 20px)', WebkitMaskImage: 'linear-gradient(to bottom, transparent, black 20px)' }}
                 >
                     <div className="mt-auto flex flex-col space-y-2 pt-2 pb-4 items-stretch">
@@ -190,7 +200,17 @@ export const TheChat: React.FC<TheChatProps> = ({ profile, transparent }) => {
                             </div>
                         )}
                         
-                        {chatMessages.map((msg) => {
+                        {chatMessages.map((msg: any) => {
+                            if (msg.isStatus) {
+                                return (
+                                    <div key={msg.id} className="flex justify-center py-1 opacity-40">
+                                        <span className="text-[7px] font-bold uppercase tracking-widest text-white/60 bg-white/5 px-2 py-0.5 rounded-full">
+                                            {msg.text}
+                                        </span>
+                                    </div>
+                                );
+                            }
+
                             if (isSystemMessage(msg)) {
                                 return (
                                     <SystemMessage 
@@ -207,7 +227,7 @@ export const TheChat: React.FC<TheChatProps> = ({ profile, transparent }) => {
                                     message={msg.text}
                                     username={msg.user.name}
                                     isAdmin={msg.user.isAdmin || msg.user.isDj}
-isCurrentUser={isCurrentUser(msg)}
+                                    isCurrentUser={isCurrentUser(msg)}
                                     timestamp={msg.timestamp}
                                 />
                             );
@@ -227,7 +247,7 @@ isCurrentUser={isCurrentUser(msg)}
                                 value={input}
                                 onChange={(e) => setInput(e.target.value)}
                                 placeholder="@dj..."
-                                className={`w-full ${transparent ? 'bg-black/40' : 'bg-black/60'} backdrop-blur-xl border border-white/10 rounded-full py-2.5 px-4 pr-12 text-[11px] text-white/90 placeholder-white/30 focus:outline-none focus:ring-1 focus:ring-purple-500/50 shadow-2xl transition-all`}
+                                className={`w-full ${transparent ? 'bg-black/20' : 'bg-black/40'} backdrop-blur-xl border border-white/5 rounded-full py-2 px-4 pr-12 text-[11px] text-white/90 placeholder-white/20 focus:outline-none focus:ring-1 focus:ring-purple-500/30 shadow-2xl transition-all`}
                             />
                             <button
                                 type="submit"
