@@ -1,67 +1,67 @@
 /**
  * @file Ticker Component - The breaking news marquee for Club Youniverse.
+ * Merged into a single-row Universal Marquee to maximize dance floor visibility.
  */
 
 import React, { useContext } from "react";
 import { RadioContext } from "../contexts/AudioPlayerContext";
+import { NowPlay } from "./NowPlay";
 
 export const Ticker: React.FC = () => {
-  const context = useContext(RadioContext);
-  if (!context) return null;
+    const context = useContext(RadioContext);
+    if (!context) return null;
 
-  const { tickerText, djBanter } = context;
+    const { tickerText, leaderboardText, djBanter } = context;
 
-  return (
-    <>
-      {/* 2. THE DUAL TICKER CONTAINER */}
-      <div className="relative w-full flex flex-col z-50 pb-safe-bottom bg-black">
+    // Combine all feeds into one long continuous stream
+    const universalFeed = `${tickerText} • ${leaderboardText} • ${djBanter} • [STATION STATUS: OPTIMAL] • [SEASON OF SOUND: ACTIVE]`;
 
-        {/* Top Ticker: Club Knowledge (Slow, Technical, Zinc) */}
-        <div className="w-full bg-black/60 backdrop-blur-xl border-t border-white/5 h-10 flex items-center overflow-hidden">
-          <div className="shrink-0 bg-white/5 px-4 h-full flex items-center justify-center border-r border-white/5">
-            <span className="text-[9px] font-black text-white/40 uppercase tracking-[0.4em] whitespace-nowrap">System Feed</span>
-          </div>
-          <div className="grow items-center relative">
-            <div className="whitespace-nowrap flex gap-16 sm:gap-48 animate-marquee-slow absolute top-1/2 -translate-y-1/2">
-              <span className="text-sm font-black text-zinc-500 tracking-[0.15em] uppercase">{tickerText}</span>
-              <span className="text-sm font-black text-zinc-500 tracking-[0.15em] uppercase">{tickerText}</span>
-              <span className="text-sm font-black text-zinc-500 tracking-[0.15em] uppercase">{tickerText}</span>
+    return (
+        <div className="fixed bottom-0 left-0 right-0 z-50 flex flex-col pointer-events-none">
+            {/* 1. HUD ROW - Perspectives persist on top */}
+            <div className="pointer-events-auto">
+                <NowPlay />
             </div>
-          </div>
-        </div>
 
-        {/* Bottom Ticker: DJ Banter (Largest, Spaced, Playful) */}
-        <div className="w-full bg-purple-900/80 backdrop-blur-md border-t border-purple-500/20 h-14 flex items-center overflow-hidden">
-          <div className="shrink-0 bg-purple-600/30 px-4 h-full flex items-center justify-center border-r border-purple-500/20 shadow-[0_0_15px_rgba(168,85,247,0.3)]">
-            <span className="text-[9px] font-black text-purple-300 uppercase tracking-[0.5em] whitespace-nowrap">DJ Python</span>
-          </div>
-          <div className="grow items-center relative">
-            <div className="whitespace-nowrap flex gap-16 sm:gap-48 animate-marquee-fast absolute top-1/2 -translate-y-1/2">
-              <span className="text-sm font-black text-white tracking-[0.25em] uppercase drop-shadow-lg">{djBanter}</span>
-              <span className="text-sm font-black text-white tracking-[0.25em] uppercase drop-shadow-lg">{djBanter}</span>
-              <span className="text-sm font-black text-white tracking-[0.25em] uppercase drop-shadow-lg">{djBanter}</span>
+            {/* 2. UNIVERSAL MARQUEE - Single row for everything */}
+            <div className="h-5 bg-black/95 backdrop-blur-md border-t border-purple-500/30 flex items-center pointer-events-auto relative overflow-hidden">
+                {/* Visual Accent: Left Side Data Label */}
+                <div className="absolute left-0 top-0 bottom-0 bg-purple-600/20 px-2 flex items-center border-r border-purple-500/20 z-10 transition-colors">
+                    <span className="text-[8px] font-black tracking-tighter text-purple-400 uppercase">UNIV_FEED</span>
+                </div>
+
+                {/* Scrolling Stream */}
+                <div className="flex h-full items-center whitespace-nowrap px-4 pl-16">
+                    <div className="animate-marquee inline-block">
+                        <span className="text-[10px] font-black tracking-widest text-white uppercase italic opacity-80 py-1">
+                            {universalFeed}
+                        </span>
+                        <span className="text-[10px] font-black tracking-widest text-white uppercase italic opacity-80 ml-[20vw] py-1">
+                            {universalFeed}
+                        </span>
+                    </div>
+                </div>
+
+                {/* Visual Accent: Right Side Status */}
+                <div className="absolute right-0 top-0 bottom-0 px-3 flex items-center bg-black/50 border-l border-white/5 backdrop-blur-sm z-10">
+                    <div className="flex items-center gap-1.5">
+                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                        <span className="text-[9px] font-black text-emerald-500 tracking-widest uppercase">LIVE</span>
+                    </div>
+                </div>
             </div>
-          </div>
+
+            <style>{`
+                @keyframes marquee {
+                    0% { transform: translateX(0); }
+                    100% { transform: translateX(-50%); }
+                }
+                .animate-marquee {
+                    display: inline-block;
+                    animation: marquee 40s linear infinite;
+                    will-change: transform;
+                }
+            `}</style>
         </div>
-
-      </div>
-
-      <style>{`
-        @keyframes marquee {
-            0% { transform: translate(0, -50%); }
-            100% { transform: translate(-33.33%, -50%); }
-        }
-        .animate-marquee-slow {
-            animation: marquee 80s linear infinite;
-            display: inline-flex;
-            width: max-content;
-        }
-        .animate-marquee-fast {
-            animation: marquee 40s linear infinite;
-            display: inline-flex;
-            width: max-content;
-        }
-      `}</style>
-    </>
-  );
+    );
 };

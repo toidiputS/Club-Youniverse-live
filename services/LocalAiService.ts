@@ -47,6 +47,10 @@ export class LocalAiService {
                 })
             });
 
+            if (!response.ok) {
+                throw new Error(`LM Studio returned ${response.status}: ${response.statusText}`);
+            }
+
             const data = await response.json();
             clearTimeout(timeoutId);
             return data.choices?.[0]?.message?.content || `The crowd has spoken! Up next: ${winner.title}.`;
@@ -56,6 +60,24 @@ export class LocalAiService {
             console.debug("Reason:", e);
             console.groupEnd();
             return `The crowd has spoken! Up next: ${winner.title} by ${winner.artistName}.`;
+        }
+    }
+
+    /**
+     * Ticker Banter: Extremely short, high-impact messages for the marquee.
+     */
+    static async generateDjBanter(context: string): Promise<string> {
+        try {
+            // Updated prompt for extreme density
+            const prompt = `You are THE ARCHITECT, a sleek AI DJ for Club Youniverse.
+            Generate ONE EXTREMELY SHORT sentence (max 10 words) responding to this context: ${context}.
+            Tone: Sleek, cyberpunk, slightly arrogant. NO EMOJIS.
+            Example: "Fate has claimed the airwaves. Synchronization complete."`;
+
+            const response = await this.queryAi(prompt);
+            return response.trim().toUpperCase(); // Capitalized for ticker aesthetic
+        } catch (error) {
+            return "FREQUENCY STABLE. PROCEED.";
         }
     }
 
@@ -94,6 +116,39 @@ export class LocalAiService {
             console.debug("Reason:", e);
             console.groupEnd();
             return "This track is hitting different right now.";
+        }
+    }
+    /**
+     * Internal helper for AI queries.
+     */
+    private static async queryAi(prompt: string, modelType: string = "system"): Promise<string> {
+        const isLocalHost = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+        if (!isLocalHost) return "";
+
+        try {
+            const response = await fetch(LM_STUDIO_URL, {
+                method: "POST",
+                mode: "cors",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": "Bearer no-key"
+                },
+                body: JSON.stringify({
+                    model: import.meta.env?.VITE_LM_MODEL || "nemotron",
+                    messages: [
+                        { role: "system", content: `You are a ${modelType} for Club Youniverse.` },
+                        { role: "user", content: prompt }
+                    ],
+                    temperature: 0.8,
+                    max_tokens: 50
+                })
+            });
+
+            if (!response.ok) return "";
+            const data = await response.json();
+            return data.choices?.[0]?.message?.content || "";
+        } catch (e) {
+            return "";
         }
     }
 }

@@ -180,14 +180,17 @@ export class GlobalBroadcastManager {
     // If data is empty, it means the condition failed (someone else won the race)
     if (!error && data && data.length > 0) {
       // console.debug("👑 Leadership claimed successfully.");
+      const wasAlreadyLeader = this.isLeaderLocal;
       this.isLeaderLocal = true;
       this.state.leaderId = this.userId;
       this.emit("leaderIdChanged", this.userId);
       this.emit("leaderChanged", true);
       
-      // Ensure we only have ONE loop
-      this.stopConductorLoop();
-      this.startConductorLoop();
+      // Ensure we only have ONE loop and ONLY restart if we weren't already leading
+      if (!wasAlreadyLeader) {
+        this.stopConductorLoop();
+        this.startConductorLoop();
+      }
       
       await this.fetchAndSync();
       return true;
@@ -265,11 +268,13 @@ export class GlobalBroadcastManager {
           .update({ last_heartbeat: new Date().toISOString() })
           .eq("leader_id", this.userId);
       } else if (this.isLeaderLocal) {
-        // I thought I was leader, but DB says otherwise
-        console.log("📉 Leadership lost to:", remoteLeaderId);
-        this.isLeaderLocal = false;
-        this.stopConductorLoop();
-        this.emit("leaderChanged", false);
+        // Only consider leadership lost if there's actually a different leader assigned
+        if (remoteLeaderId && remoteLeaderId !== this.userId) {
+          console.log("📉 Leadership lost to:", remoteLeaderId);
+          this.isLeaderLocal = false;
+          this.stopConductorLoop();
+          this.emit("leaderChanged", false);
+        }
       }
     } catch (e) {
       console.error("Election error:", e);
@@ -570,6 +575,7 @@ export class GlobalBroadcastManager {
     });
     this.audioElement.addEventListener("ended", async () => {
       this.state.isPlaying = false;
+      this.emit("playbackStateChanged", false); // EXPLICIT
       this.emit("songEnded", this.state.nowPlaying);
 
       // LEADER LOGIC: Handle song end and transition
@@ -588,6 +594,29 @@ export class GlobalBroadcastManager {
           await this.setNowPlaying(nextSong);
         }
       }
+    });
+
+    // SYNC FIX: Listen to hardware/browser-driven volume changes
+    this.audioElement.addEventListener("volumechange", () => {
+        const newVol = this.audioElement.volume;
+        const newMuted = this.audioElement.muted;
+
+        let changed = false;
+        if (this.state.volume !== newVol) {
+            this.state.volume = newVol;
+            this.emit("volumeChanged", newVol);
+            changed = true;
+        }
+        if (this.state.isMuted !== newMuted) {
+            this.state.isMuted = newMuted;
+            this.emit("mutedChanged", newMuted);
+            changed = true;
+        }
+
+        if (changed) {
+            this.saveState();
+            // console.debug(`🔊 Hardware Volume Sync: Vol=${newVol.toFixed(2)}, Muted=${newMuted}`);
+        }
     });
     this.audioElement.addEventListener("error", (e) => {
       const errorDetails = this.audioElement.error;
@@ -703,13 +732,25 @@ export class GlobalBroadcastManager {
     if (!hasCorrectSrc) {
       console.log(`🎵 Setting audio source for: ${song.title}`);
       this.audioElement.src = song.audioUrl;
+      
+      // SYNC HARDENING: Explicitly re-apply volume and muted state after src change
+      // Many browsers reset these properties when assigning a new src.
+      this.audioElement.volume = this.state.volume;
+      this.audioElement.muted = this.state.isMuted;
 
       // SYNC FIX: Wait for metadata before seeking to the offset
       const onMetadataLoaded = () => {
-        if (startOffset > 0) {
-          console.log(`➡️ Syncing to global time: +${startOffset.toFixed(1)}s`);
-          this.audioElement.currentTime = startOffset;
-        }
+        // SYNC HARDENING: Some browsers reset volume/muted after load()
+        // We re-apply here with a tiny delay to ensure they "stick"
+        setTimeout(() => {
+            this.audioElement.volume = this.state.volume;
+            this.audioElement.muted = this.state.isMuted;
+            
+            if (startOffset > 0) {
+                console.log(`➡️ Syncing to global time: +${startOffset.toFixed(1)}s`);
+                this.audioElement.currentTime = startOffset;
+            }
+        }, 100);
         this.audioElement.removeEventListener("loadedmetadata", onMetadataLoaded);
       };
       this.audioElement.addEventListener("loadedmetadata", onMetadataLoaded);
@@ -739,10 +780,15 @@ export class GlobalBroadcastManager {
         this.play().catch((e) => {
           if (e.name === 'NotAllowedError') {
             this.emit("autoplayBlocked", true);
+          } else if (e.name === 'AbortError') {
+            // Interrupted by a newer setNowPlaying or load() call - safe to ignore
+            return;
           } else {
             console.warn("Simple resume failed, forcing reload:", e);
             this.audioElement.load();
-            this.play().catch((e2) => console.error("Force play failed:", e2));
+            this.play().catch((e2) => {
+              if (e2.name !== 'AbortError') console.error("Force play failed:", e2);
+            });
           }
         });
       }
@@ -935,9 +981,9 @@ export class GlobalBroadcastManager {
           this.audioElement.load();
         }
         
-        // Force volume and unmuted for debug
-        this.audioElement.volume = 1;
-        this.audioElement.muted = false;
+        // REMOVED: Force volume/mute for debug (it was overwriting user preferences)
+        // this.audioElement.volume = 1;
+        // this.audioElement.muted = false;
         
         await this.audioElement.play();
         this.state.isPlaying = true;
@@ -999,6 +1045,41 @@ export class GlobalBroadcastManager {
     this.audioElement.muted = muted;
     this.saveState();
     this.emit("mutedChanged", muted);
+  }
+  
+  public async castVote(stars: number) {
+    if (!this.state.nowPlaying) return;
+    
+    // Update local state for immediate UI feedback
+    const updatedSong = { 
+      ...this.state.nowPlaying, 
+      userRating: stars,
+      liveStarsSum: (this.state.nowPlaying.liveStarsSum || 0) + stars,
+      liveStarsCount: (this.state.nowPlaying.liveStarsCount || 0) + 1
+    };
+    this.state.nowPlaying = updatedSong;
+    this.emit("nowPlayingChanged", updatedSong);
+
+    // Persist to DB
+    try {
+      const { data: current } = await supabase
+        .from("songs")
+        .select("live_stars_sum, live_stars_count")
+        .eq("id", updatedSong.id)
+        .single();
+        
+      if (current) {
+        await supabase
+          .from("songs")
+          .update({
+            live_stars_sum: (current.live_stars_sum || 0) + stars,
+            live_stars_count: (current.live_stars_count || 0) + 1
+          })
+          .eq("id", updatedSong.id);
+      }
+    } catch (e) {
+      console.error("Failed to cast live vote:", e);
+    }
   }
 
   public on(event: string, callback: EventCallback) {

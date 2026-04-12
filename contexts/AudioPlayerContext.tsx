@@ -32,11 +32,15 @@ interface RadioContextType {
   chatMessages: ChatMessage[];
   profile: Profile | null;
   tickerText: string;
+  leaderboardText: string;
   djBanter: string;
-  vjEnabled: boolean;
   danceFloorEnabled: boolean;
   sentimentBurst: string | null;
-
+  twitchChannel: string | null;
+  vjEnabled: boolean;
+  setVjEnabled: (enabled: boolean) => void;
+  liveRating: { sum: number; count: number };
+  castVote: (stars: number) => void;
 
   // Actions
   setVolume: (vol: number) => void;
@@ -46,8 +50,8 @@ interface RadioContextType {
   setProfile: React.Dispatch<React.SetStateAction<Profile | null>>;
   setTickerText: (text: string) => void;
   setDjBanter: (text: string) => void;
-  setVjEnabled: (enabled: boolean) => void;
   setDanceFloorEnabled: (enabled: boolean) => void;
+  setTwitchChannel: (channel: string | null) => void;
 
 
   // Admin/System Actions (Leader only)
@@ -79,10 +83,12 @@ export const RadioProvider: React.FC<{
   const [isMuted, setIsMutedState] = useState(broadcastManager.isMuted());
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [tickerText, setTickerText] = useState("Welcome to Club Youniverse. Vote in The Box to help shape the station.");
+  const [leaderboardText, setLeaderboardText] = useState("🏆 LEADERBOARD: INITIALIZING STANDINGS...");
   const [djBanter, setDjBanter] = useState("DJ Python is loading up the decks... Please stand by.");
-  const [vjEnabled, setVjEnabled] = useState(false);
   const [danceFloorEnabled, setDanceFloorEnabledLocal] = useState(false);
   const [sentimentBurst, setSentimentBurst] = useState<string | null>(null);
+  const [twitchChannel, setTwitchChannelLocal] = useState<string | null>(null);
+  const [vjEnabled, setVjEnabled] = useState(true);
 
   const [leaderId, setLeaderId] = useState<string | null>(broadcastManager.getLeaderId());
 
@@ -122,6 +128,11 @@ export const RadioProvider: React.FC<{
     broadcastManager.sendSiteCommand("dance_floor", { enabled });
   }, [broadcastManager]);
 
+  const setTwitchChannel = useCallback((channel: string | null) => {
+    setTwitchChannelLocal(channel);
+    broadcastManager.sendSiteCommand("twitch", { channel });
+  }, [broadcastManager]);
+
   const setNowPlaying = useCallback((song: Song | null) => {
     broadcastManager.setNowPlaying(song);
   }, [broadcastManager]);
@@ -156,6 +167,11 @@ export const RadioProvider: React.FC<{
         setChatMessages(prev => [...prev, cmd.payload].slice(-50));
       } else if (cmd?.type === "dance_floor") {
         setDanceFloorEnabledLocal(!!cmd.payload?.enabled);
+      } else if (cmd?.type === "news_brief") {
+        setTickerText("📡 CONNECTING TO GLOBAL NEWS RECEPTORS... ANALYZING RSS FEEDS...");
+        setDjBanter("DJ Python is aggregating local cluster data for a news brief. Stand by.");
+      } else if (cmd?.type === "twitch") {
+        setTwitchChannelLocal(cmd.payload?.channel || null);
       }
     });
 
@@ -180,11 +196,13 @@ export const RadioProvider: React.FC<{
       const currentNowPlaying = broadcastManager.getNowPlaying();
       
       // Rotate through information types
-      const cycle = tickerIndex % 3;
+      const cycle = tickerIndex % 4;
       if (cycle === 0) {
         nextText = await PersistentRadioService.getBoxStatusSummary();
       } else if (cycle === 1 && currentNowPlaying) {
         nextText = PersistentRadioService.getNowPlayingFact(currentNowPlaying);
+      } else if (cycle === 2) {
+        nextText = await PersistentRadioService.getLeaderboardSummary();
       } else {
         nextText = `SYSTEM HINT: ${hints[Math.floor(Math.random() * hints.length)]}`;
       }
@@ -240,6 +258,7 @@ export const RadioProvider: React.FC<{
     chatMessages,
     profile,
     tickerText,
+    leaderboardText,
     djBanter,
     setVolume,
     setMuted,
@@ -261,22 +280,31 @@ export const RadioProvider: React.FC<{
     setNowPlaying,
     setNextSong,
     leaderId,
-    vjEnabled,
-    setVjEnabled,
+    twitchChannel,
+    setTwitchChannel,
     danceFloorEnabled,
     setDanceFloorEnabled,
     sentimentBurst,
+    vjEnabled, 
+    setVjEnabled,
+    liveRating: {
+      sum: nowPlaying?.liveStarsSum || 0,
+      count: nowPlaying?.liveStarsCount || 0
+    },
+    castVote: (stars: number) => broadcastManager.castVote(stars),
     claimLeadership: () => broadcastManager.claimLeadership(),
-
     releaseLeadership: () => broadcastManager.releaseLeadership(),
   }), [
     nowPlaying, nextSong, radioState, isLeader, isPlaying,
-    currentTime, volume, isMuted, chatMessages, profile, tickerText, djBanter,
+    tickerText,
+    leaderboardText,
+    djBanter,
     setVolume, setMuted, togglePlay, addChatMessage, setProfile, setTickerText, setDjBanter,
     setTickerText, setRadioState, setNowPlaying, setNextSong, leaderId,
-    vjEnabled, setVjEnabled,
+    twitchChannel, setTwitchChannel,
     danceFloorEnabled, setDanceFloorEnabled,
-    sentimentBurst
+    sentimentBurst,
+    vjEnabled, setVjEnabled
   ]);
 
 

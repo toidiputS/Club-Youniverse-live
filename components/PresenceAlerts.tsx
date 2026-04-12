@@ -9,6 +9,7 @@ interface AlertMessage {
     name: string;
     avatarUrl?: string;
     action: 'JOIN' | 'LEAVE';
+    isSmoke?: boolean;
     timestamp: number;
 }
 
@@ -18,7 +19,6 @@ export const PresenceAlerts: React.FC<{ profile: Profile }> = ({ profile }) => {
 
     useEffect(() => {
         if (!context) return;
-        const { addChatMessage } = context;
 
         // 1. Create the Presence channel
         const channel = supabase.channel('club-presence', {
@@ -28,6 +28,32 @@ export const PresenceAlerts: React.FC<{ profile: Profile }> = ({ profile }) => {
                 },
             },
         });
+
+        // Ref to track users who are "smoking" so we can suppress their leave alert
+        const smokers = new Set<string>();
+
+        // Listen for Smoke Break broadcasts to suppress standard leave alerts
+        const chatChannel = supabase.channel('presence-helper')
+            .on('broadcast', { event: 'status' }, ({ payload }) => {
+                if (payload.type === 'smoke') {
+                    smokers.add(payload.user);
+                    // Add a special "Smoke" alert if we want them to show up in popups
+                    setAlerts((prev) => [
+                        ...prev,
+                        {
+                            id: `smoke-${payload.user}-${Date.now()}`,
+                            userId: payload.userId || 'unknown',
+                            name: payload.user,
+                            action: 'LEAVE' as any, // We'll handle 'SMOKE' specially in UI
+                            isSmoke: true,
+                            timestamp: Date.now(),
+                        },
+                    ]);
+                    // Auto-remove from suppression after 5s (enough time for presence leave to fire)
+                    setTimeout(() => smokers.delete(payload.user), 5000);
+                }
+            })
+            .subscribe();
 
         // 2. Listen for Presence changes (Join / Leave)
         channel
@@ -50,22 +76,20 @@ export const PresenceAlerts: React.FC<{ profile: Profile }> = ({ profile }) => {
                             timestamp: Date.now(),
                         },
                     ]);
-
-                    // Add to chat feed
-                    addChatMessage({
-                        id: `presence-join-${presence.presence_ref}-${Date.now()}`,
-                        user: { name: "SYSTEM PROTOCOL", isAdmin: true },
-                        text: `${name.toUpperCase()} ENTERED THE CLUB`,
-                        timestamp: Date.now()
-                    });
                 });
             })
             .on('presence', { event: 'leave' }, ({ leftPresences }) => {
                 leftPresences.forEach((presence: any) => {
-                    // Don't alert if we are the ones leaving (we shouldn't see it anyway)
+                    // Don't alert if we are the ones leaving
                     if (presence.user_id === profile.user_id) return;
 
                     const name = presence.name || "A Listener";
+
+                    // Suppress if the user just broadcasted a smoke break
+                    if (smokers.has(name)) {
+                        console.log(`[Presence] Suppressing leave alert for ${name} (Smoke Break)`);
+                        return;
+                    }
 
                     // Add to popup alerts
                     setAlerts((prev) => [
@@ -79,14 +103,6 @@ export const PresenceAlerts: React.FC<{ profile: Profile }> = ({ profile }) => {
                             timestamp: Date.now(),
                         },
                     ]);
-
-                    // Add to chat feed
-                    addChatMessage({
-                        id: `presence-leave-${presence.presence_ref}-${Date.now()}`,
-                        user: { name: "SYSTEM PROTOCOL", isAdmin: true },
-                        text: `${name.toUpperCase()} LEFT THE CLUB`,
-                        timestamp: Date.now()
-                    });
                 });
             })
             .subscribe(async (status) => {
@@ -96,7 +112,6 @@ export const PresenceAlerts: React.FC<{ profile: Profile }> = ({ profile }) => {
                         user_id: profile.user_id,
                         name: profile.name,
                         avatar_url: profile.avatar_url,
-                        // Supabase auto-assigns presence_ref, but we include it in the type
                         presence_ref: '',
                     };
                     await channel.track(presenceData);
@@ -112,6 +127,7 @@ export const PresenceAlerts: React.FC<{ profile: Profile }> = ({ profile }) => {
         return () => {
             clearInterval(cleanupInterval);
             supabase.removeChannel(channel);
+            supabase.removeChannel(chatChannel);
         };
     }, [profile.user_id, profile.name, profile.avatar_url, context]);
 
@@ -135,8 +151,11 @@ export const PresenceAlerts: React.FC<{ profile: Profile }> = ({ profile }) => {
                         <span className="text-[10px] font-black text-white truncate uppercase tracking-wider leading-tight">
                             {alert.name}
                         </span>
-                        <span className={`text-[8px] font-bold uppercase tracking-widest leading-none ${alert.action === 'JOIN' ? 'text-green-400' : 'text-red-400'}`}>
-                            {alert.action === 'JOIN' ? 'Entered the club' : 'Left the club'}
+                        <span className={`text-[8px] font-bold uppercase tracking-widest leading-none ${
+                            alert.isSmoke ? 'text-purple-400' :
+                            alert.action === 'JOIN' ? 'text-green-400' : 'text-red-400'
+                        }`}>
+                            {alert.isSmoke ? 'Smoke break' : alert.action === 'JOIN' ? 'Entered the club' : 'Left the club'}
                         </span>
                     </div>
                 </div>

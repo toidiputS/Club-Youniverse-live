@@ -2,42 +2,46 @@
  * @file Radio Component - Rebuilt for Club Youniverse SPA architecture.
  */
 
-import React, { useContext, useMemo, useState } from "react";
+import React, { useContext, useState } from "react";
 import { RadioContext } from "../contexts/AudioPlayerContext";
 import { TheBox } from "./TheBox";
 import { ThePool } from "./ThePool";
-import { NowPlay } from "./NowPlay";
 import { Header } from "./Header";
 import { TheChat } from "./TheChat";
 import { UserProfileCard } from "./UserProfileCard";
 import { motion, AnimatePresence } from "framer-motion";
 import { AudioVisualizer } from "./AudioVisualizer";
-import { LyricVisualizer } from "./LyricVisualizer";
-import CosmicCanvas from "./Youniversal/CosmicCanvas";
-import { YouniversalLeaderboard } from "./Youniversal/Leaderboard";
-import { useGameStore } from "./Youniversal/useGameStore";
-import type { Profile, ChoreographedLine, View } from "../types";
-import { X, Music } from "lucide-react";
+import { DjHud } from "./DjHud";
+import { ChatAtmosphere } from "./ChatAtmosphere";
+import CosmicCanvas from "./DanceFloor/CosmicCanvas";
+import { useGameStore } from "./DanceFloor/useGameStore";
+import type { Profile, View } from "../types";
+import { X } from "lucide-react";
 
 interface RadioProps {
   onNavigate: (view: View) => void;
   onSignOut: () => void;
   profile: Profile;
   minimal?: boolean;
+  noGame?: boolean;
 }
 
-export const Radio: React.FC<RadioProps> = ({ onNavigate, profile, minimal = false }) => {
+export const Radio: React.FC<RadioProps> = ({ onNavigate, profile, minimal = false, noGame = false }) => {
   const context = useContext(RadioContext);
-  if (!context) return null;
-  const { sentimentBurst } = context;
   const [showProfile, setShowProfile] = useState(false);
   const [showPool, setShowPool] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+
+  const connect = useGameStore(s => s.connect);
+  const disconnect = useGameStore(s => s.disconnect);
+
+  const isSmoking = React.useRef(false);
 
   // Presence Broadcast
   React.useEffect(() => {
     if (!profile?.name) return;
     
-    const announce = async (type: 'entered' | 'left') => {
+    const announce = async (type: 'entered' | 'left' | 'smoke') => {
         const { supabase } = await import("../services/supabaseClient");
         await supabase.channel('club-chat').send({
             type: 'broadcast',
@@ -47,64 +51,56 @@ export const Radio: React.FC<RadioProps> = ({ onNavigate, profile, minimal = fal
     };
 
     announce('entered');
-    return () => { announce('left'); };
+    return () => { 
+        if (!isSmoking.current) {
+            announce('left');
+        }
+    };
   }, [profile?.name]);
 
-  const parsedLyrics = useMemo((): Partial<ChoreographedLine>[] => {
-    if (!context?.nowPlaying?.lyrics) return [];
-    const raw = context.nowPlaying.lyrics;
-    
-    if (Array.isArray(raw)) return raw;
-
-    if (typeof raw === 'string' && raw.trim().startsWith('[')) {
-        try {
-            return JSON.parse(raw);
-        } catch (e) {
-            console.warn("Failed to parse lyrics");
-        }
-    }
-
-    return typeof raw === 'string' 
-      ? raw.split('\n').filter(line => line.trim()).map((line, i) => ({
-          id: `auto-${i}`,
-          time: i * 5,
-          text: line.trim()
-        }))
-      : [];
-  }, [context?.nowPlaying?.lyrics]);
-
-  const connect = useGameStore(s => s.connect);
-  const disconnect = useGameStore(s => s.disconnect);
+  const handleSmokeNavigate = async () => {
+    const { supabase } = await import("../services/supabaseClient");
+    await supabase.channel('club-chat').send({
+        type: 'broadcast',
+        event: 'status',
+        payload: { type: 'smoke', user: profile.name }
+    });
+    isSmoking.current = true;
+    onNavigate("sidewalk");
+  };
 
   React.useEffect(() => {
-    if (context?.danceFloorEnabled) {
+    if (context?.danceFloorEnabled && !noGame) {
       connect();
     } else {
       disconnect();
     }
-  }, [context?.danceFloorEnabled, connect, disconnect]);
+  }, [context?.danceFloorEnabled, connect, disconnect, noGame]);
 
   if (!context) return null;
 
-  return (
-    <div className="h-full w-full relative flex flex-col bg-black overflow-hidden pt-safe-top pb-safe-bottom">
-        <div className="h-full w-full relative flex z-20 overflow-hidden">
-            {/* Main Content Area */}
-            <div className="grow relative flex flex-col min-w-0 h-full overflow-hidden">
-                {/* Atmosphere Layer */}
-                <div className="absolute inset-0 z-0">
+    return (
+        <ChatAtmosphere 
+            messages={context.chatMessages.map(m => ({ text: m.text }))}
+            showMoodBadge={true}
+            showParticles={true}
+        >
+            <div className="h-full w-full relative flex flex-col lg:flex-row bg-transparent overflow-hidden select-none">
+                
+                {/* 1. ATMOSPHERE & BACKGROUND LAYER (Full Site Bleed) */}
+                <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
                     {context.nowPlaying && (
-                        <div className="absolute inset-0 pointer-events-none opacity-60 mix-blend-overlay">
+                        <div className="absolute inset-0 opacity-40 mix-blend-overlay grayscale">
                             {context.nowPlaying.coverArtUrl?.endsWith('.mp4') ? (
                                 <video 
                                     src={context.nowPlaying.coverArtUrl} 
                                     autoPlay muted loop playsInline
-                                    className="w-full h-full object-cover grayscale brightness-50"
+                                    className="w-full h-full object-cover"
                                 />
                             ) : (
                                 <img 
                                     src={context.nowPlaying.coverArtUrl || `https://picsum.photos/seed/${context.nowPlaying.id}/1000`} 
-                                    className="w-full h-full object-cover grayscale brightness-50" 
+                                    className="w-full h-full object-cover" 
                                     alt="" 
                                 />
                             )}
@@ -112,13 +108,18 @@ export const Radio: React.FC<RadioProps> = ({ onNavigate, profile, minimal = fal
                     )}
 
                     <AnimatePresence mode="wait">
-                        {context.vjEnabled && context.nowPlaying && parsedLyrics.length > 0 ? (
-                            <motion.div key="vj" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0">
-                                <LyricVisualizer 
-                                    currentTime={context.currentTime}
-                                    isPlaying={context.isPlaying}
-                                    lyrics={parsedLyrics}
-                                    volume={context.volume}
+                        {context.twitchChannel ? (
+                            <motion.div 
+                                key="twitch" 
+                                initial={{ opacity: 0 }} 
+                                animate={{ opacity: 1 }} 
+                                exit={{ opacity: 0 }} 
+                                className="absolute inset-0 bg-black"
+                            >
+                                <iframe
+                                    src={`https://player.twitch.tv/?channel=${context.twitchChannel}&parent=${window.location.hostname}&muted=true&autoplay=true`}
+                                    className="w-full h-full border-none opacity-40 grayscale"
+                                    allowFullScreen
                                 />
                             </motion.div>
                         ) : (
@@ -132,222 +133,123 @@ export const Radio: React.FC<RadioProps> = ({ onNavigate, profile, minimal = fal
                         )}
                     </AnimatePresence>
                     
-                    {/* Vignette */}
-                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(0,0,0,0.8)_100%)] pointer-events-none z-5" />
-                    {/* Smooth floor vignette - lightened for full bleed */}
-                    <div className="absolute inset-x-0 bottom-0 h-48 bg-linear-to-t from-black/40 to-transparent pointer-events-none z-10" />
-
-                    {/* YOUNIVERSAL DANCE FLOOR - Increased z-index to 15, ensure pointer-events: auto when enabled */}
-                    <AnimatePresence>
-                        {context.danceFloorEnabled && (
-                            <motion.div
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                exit={{ opacity: 0 }}
-                                className="absolute inset-0 z-15 pointer-events-auto"
-                            >
-                                <CosmicCanvas />
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
-                </div>
-                
-                {/* 1. ATMOSPHERIC OVERLAY (Generative VJ Layer) */}
-                <div className="absolute inset-0 pointer-events-none overflow-hidden z-20">
-                    <AnimatePresence>
-                        {sentimentBurst === 'love' && (
-                            <motion.div 
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                exit={{ opacity: 0 }}
-                                className="absolute inset-0 bg-red-600/10 backdrop-blur-[2px] flex items-center justify-center"
-                            >
-                                {[...Array(16)].map((_, i) => (
-                                    <motion.div
-                                        key={i}
-                                        initial={{ y: 200, x: (Math.random() - 0.5) * 800, opacity: 0, scale: 0.2 }}
-                                        animate={{ y: -600, opacity: [0, 0.5, 0], scale: [0.2, 1.2, 0.4] }}
-                                        transition={{ duration: 5, repeat: Infinity, delay: i * 0.25 }}
-                                        className="absolute text-red-500/20 blur-[1px] text-5xl"
-                                    >
-                                        ❤️
-                                    </motion.div>
-                                ))}
-                            </motion.div>
-                        )}
-                        {sentimentBurst === 'fire' && (
-                            <motion.div 
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: [0, 0.3, 0.1, 0.4, 0] }}
-                                exit={{ opacity: 0 }}
-                                transition={{ duration: 0.15, repeat: 12 }}
-                                className="absolute inset-0 bg-orange-600/15 mix-blend-color-dodge z-30"
-                            >
-                                 <div className="absolute inset-0 bg-[linear-gradient(transparent_0%,rgba(255,50,0,0.1)_50%,transparent_100%)] animate-scanline" />
-                            </motion.div>
-                        )}
-                        {sentimentBurst === 'cosmic' && (
-                            <motion.div 
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                exit={{ opacity: 0 }}
-                                transition={{ duration: 1.5 }}
-                                className="absolute inset-0 bg-purple-900/10"
-                            >
-                                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(168,85,247,0.1),transparent_80%)]" />
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
+                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(0,0,0,0.7)_100%)] z-5" />
                 </div>
 
-                {/* HEADER - Increased z-index to 50 for priority */}
+                {/* DANCE FLOOR (CGEI Background) */}
+                <AnimatePresence>
+                    {context.danceFloorEnabled && !noGame && (
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="absolute inset-0 z-1 pointer-events-auto"
+                        >
+                            <CosmicCanvas />
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
+                {/* 2. MAIN CONTENT AREA (Left on Desktop, Full on Mobile) */}
+                <div className="relative z-10 flex flex-col grow h-full overflow-hidden pointer-events-none">
+                    {/* Header */}
+                    {!minimal && (
+                        <div className="flex-none pointer-events-auto">
+                            <Header 
+                                onNavigate={onNavigate} 
+                                profile={profile} 
+                                onProfileClick={() => setShowProfile(true)}
+                                onSmokeClick={handleSmokeNavigate}
+                            />
+                        </div>
+                    )}
+
+                    {/* Spacer / Center Area */}
+                    <div className="grow" />
+                </div>
+
+                {/* 3. SIDEBAR (Right on Desktop) */}
                 {!minimal && (
-                    <div className="flex-none z-50 pt-safe-top">
-                        <Header 
-                            onNavigate={onNavigate} 
-                            profile={profile} 
-                            onProfileClick={() => setShowProfile(true)}
-                            onPoolClick={() => setShowPool(true)}
-                        />
+                    <div className="relative z-20 flex-none w-full lg:w-[400px] h-full lg:h-full flex flex-col border-l border-white/5 bg-transparent pointer-events-none lg:pointer-events-auto">
+                        {/* Chat (Grow) - Now truly flexible */}
+                        <div className="grow relative pointer-events-auto min-h-0">
+                            <TheChat profile={profile} transparent={true} noAtmosphere={true} />
+                        </div>
+
+                        {/* The Box (Bottom of Sidebar) */}
+                        <div className="flex-none px-1.5 pb-ticker pt-1.5 pointer-events-auto">
+                            <div className="bg-black/20 backdrop-blur-xl border border-white/5 rounded-xl overflow-hidden shadow-2xl">
+                                <TheBox />
+                            </div>
+                        </div>
                     </div>
                 )}
 
-                {/* DANCE FLOOR AREA - HUD and foreground controls */}
-                <div className="grow relative flex flex-col justify-end pointer-events-none">
-                    {/* Now Playing - Force pointer-events: auto for internal buttons */}
-                    {!minimal && (
-                        <div className="px-3 pb-3 z-40 pointer-events-auto">
-                            <NowPlay />
+                {/* NAVIGATION SIDE TABS (Floating Pills under primary targets) */}
+                {!minimal && (
+                    <>
+                        {/* POOL TAB (Left side, under Logo) */}
+                        <div className="fixed left-0 top-32 z-100 pointer-events-auto">
+                            <button 
+                                onClick={() => setShowPool(true)}
+                                className="flex flex-col items-center gap-2 py-6 px-1 bg-zinc-950 border border-l-0 border-white/10 rounded-r-xl hover:bg-purple-600/20 text-white/40 hover:text-white transition-all group"
+                            >
+                                <span className="[writing-mode:vertical-lr] rotate-180 text-[7px] font-black uppercase tracking-[0.4em]">Pool</span>
+                            </button>
+                        </div>
+
+                        {/* SETTINGS TAB (Right side, under Identity) */}
+                        <div className="fixed right-0 top-32 z-100 pointer-events-auto lg:hidden">
+                            <button 
+                                onClick={() => setShowSettings(true)}
+                                className="flex flex-col items-center gap-2 py-6 px-1 bg-zinc-950 border border-r-0 border-white/10 rounded-l-xl hover:bg-zinc-800 text-white/40 hover:text-white transition-all group"
+                            >
+                                <span className="[writing-mode:vertical-lr] text-[7px] font-black uppercase tracking-[0.4em]">Settings</span>
+                            </button>
+                        </div>
+                        
+                        {/* Desktop Settings Tab is always reachable if needed, but since we have a sidebar now, maybe just keep it floating for mobile only or for easy access */}
+                        <div className="hidden lg:block fixed right-0 top-32 z-100 pointer-events-auto">
+                            <button 
+                                onClick={() => setShowSettings(true)}
+                                className="flex flex-col items-center gap-2 py-6 px-1 bg-zinc-950 border border-r-0 border-white/10 rounded-l-xl hover:bg-zinc-800 text-white/40 hover:text-white transition-all group lg:min-w-[24px]"
+                            >
+                                <span className="[writing-mode:vertical-lr] text-[7px] font-black uppercase tracking-[0.4em]">Control</span>
+                            </button>
+                        </div>
+                    </>
+                )}
+
+                {/* EXTERNAL SLIDERS / MODALS */}
+                <AnimatePresence>
+                    {showProfile && (
+                        <div className="fixed inset-0 z-300">
+                            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowProfile(false)} />
+                            <motion.div initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }} transition={{ type: "spring", damping: 25 }} className="absolute right-0 top-0 bottom-0 w-full max-w-[420px] bg-zinc-950 border-l border-white/10 shadow-2xl overflow-hidden">
+                                <UserProfileCard userId={profile.user_id} onClose={() => setShowProfile(false)} isCurrentUser={true} />
+                            </motion.div>
                         </div>
                     )}
-                </div>
-            </div>
 
-            {/* DESKTOP SIDEBAR: CHAT + POOL - Now an absolute overlay to blend with dance floor */}
-            {!minimal && (
-                <div className="hidden lg:flex absolute right-0 top-0 bottom-0 w-[320px] flex-col pointer-events-auto bg-black/20 backdrop-blur-md border-l border-white/5 z-30">
-                    {/* LEADERBOARD - TOP */}
-                    <AnimatePresence>
-                        {context.danceFloorEnabled && (
-                            <motion.div 
-                                initial={{ opacity: 0, height: 0 }}
-                                animate={{ opacity: 1, height: "auto" }}
-                                exit={{ opacity: 0, height: 0 }}
-                                className="overflow-hidden"
-                            >
-                                <div className="p-3 border-b border-white/5">
-                                    <YouniversalLeaderboard />
+                    {showPool && (
+                        <div className="fixed inset-0 z-300">
+                            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowPool(false)} />
+                            <motion.div initial={{ x: "-100%" }} animate={{ x: 0 }} exit={{ x: "-100%" }} transition={{ type: "spring", damping: 25 }} className="absolute left-0 top-0 bottom-0 w-full max-w-[420px] bg-zinc-950 border-r border-white/10 flex flex-col shadow-2xl">
+                                <div className="flex items-center justify-between p-4 border-b border-white/5 pt-safe-top">
+                                    <span className="text-[10px] font-black uppercase tracking-widest text-white/40">Storage Pool</span>
+                                    <button onClick={() => setShowPool(false)} className="p-2 hover:text-purple-400 opacity-30"><X size={20} /></button>
+                                </div>
+                                <div className="grow overflow-y-auto">
+                                    <ThePool />
                                 </div>
                             </motion.div>
-                        )}
-                    </AnimatePresence>
-
-                    {/* CHAT FEED */}
-                    <div className="grow overflow-hidden">
-                        <TheChat profile={profile} transparent={true} />
-                    </div>
-
-                    {/* THE BOX */}
-                    <div className="flex-none p-3 border-t border-white/5 bg-black/20">
-                        <TheBox />
-                    </div>
-                </div>
-            )}
-
-            {/* MOBILE SIDE DRAWS */}
-            {!minimal && (
-                <>
-                    {/* MOBILE PROFILE DRAWER - Right */}
-                    <AnimatePresence>
-                        {showProfile && (
-                            <>
-                                <motion.div
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
-                                    exit={{ opacity: 0 }}
-                                    className="lg:hidden fixed inset-0 bg-black/60 z-60"
-                                    onClick={() => setShowProfile(false)}
-                                />
-                                <motion.div
-                                    initial={{ x: "100%" }}
-                                    animate={{ x: 0 }}
-                                    exit={{ x: "100%" }}
-                                    transition={{ type: "spring", damping: 25, stiffness: 200 }}
-                                    className="lg:hidden fixed right-0 top-0 bottom-0 w-[85%] max-w-[360px] bg-black/95 backdrop-blur-xl z-70 border-l border-white/10"
-                                >
-                                    <div className="flex flex-col h-full pt-safe-top">
-                                        <div className="flex items-center justify-between p-4 border-b border-white/5">
-                                            <span className="text-[11px] font-black uppercase tracking-widest text-white/50">Profile</span>
-                                            <button onClick={() => setShowProfile(false)} className="p-2 text-white/40 hover:text-white">
-                                                <X size={20} />
-                                            </button>
-                                        </div>
-                                        <div className="grow overflow-y-auto p-4">
-                                            <UserProfileCard 
-                                                userId={profile.user_id}
-                                                onClose={() => setShowProfile(false)}
-                                                isCurrentUser={true}
-                                            />
-                                        </div>
-                                    </div>
-                                </motion.div>
-                            </>
-                        )}
-                    </AnimatePresence>
-
-                    {/* MOBILE POOL DRAWER - Left (Vote + Pool) */}
-                    <AnimatePresence>
-                        {showPool && (
-                            <>
-                                <motion.div
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
-                                    exit={{ opacity: 0 }}
-                                    className="fixed inset-0 bg-black/60 z-60"
-                                    onClick={() => setShowPool(false)}
-                                />
-                                <motion.div
-                                    initial={{ x: "-100%" }}
-                                    animate={{ x: 0 }}
-                                    exit={{ x: "-100%" }}
-                                    transition={{ type: "spring", damping: 25, stiffness: 200 }}
-                                    className="fixed left-0 top-0 bottom-0 w-[90%] max-w-[400px] bg-black/95 backdrop-blur-xl z-70 border-r border-white/10 flex flex-col"
-                                >
-                                    {/* Header */}
-                                    <div className="flex items-center justify-between p-4 border-b border-white/5 shrink-0 pt-safe-top">
-                                        <div className="flex items-center gap-2">
-                                            <Music size={16} className="text-purple-400" />
-                                            <span className="text-[11px] font-black uppercase tracking-widest text-white/50">Song Pool</span>
-                                        </div>
-                                        <button onClick={() => setShowPool(false)} className="p-2 text-white/40 hover:text-white">
-                                            <X size={20} />
-                                        </button>
-                                    </div>
-                                    
-                                    {/* Vote Section */}
-                                    <div className="p-3 border-b border-white/5 shrink-0">
-                                        <span className="text-[9px] font-black uppercase tracking-widest text-white/30 mb-2 block">Vote for Next</span>
-                                        <TheBox />
-                                    </div>
-                                    
-                                    {/* Scrollable Pool */}
-                                    <div className="grow overflow-y-auto pb-safe-bottom">
-                                        <ThePool />
-                                    </div>
-                                </motion.div>
-                            </>
-                        )}
-                    </AnimatePresence>
-
-                    {/* MOBILE FULL OVERLAY CHAT - fully transparent floating bubbles */}
-                    <div className="lg:hidden fixed inset-0 z-50 pointer-events-none pb-[88px]">
-                        <div className="h-full pointer-events-none flex flex-col">
-                            <TheChat profile={profile} transparent={true} />
                         </div>
-                    </div>
-                </>
-            )}
-        </div>
-    </div>
-  );
+                    )}
+                </AnimatePresence>
+
+                {/* Setings Panel (Station Control) */}
+                <DjHud isOpen={showSettings} setIsOpen={setShowSettings} />
+            </div>
+        </ChatAtmosphere>
+    );
 };

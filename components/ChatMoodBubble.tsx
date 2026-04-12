@@ -63,7 +63,7 @@ export const ChatMoodBubble: React.FC<ChatMoodBubbleProps> = ({
       initial={{ opacity: 0, scale: 0.8, y: 20 }}
       animate={{ opacity: 1, scale: 1, y: 0 }}
       transition={{ type: 'spring', damping: 20, stiffness: 300 }}
-      className="w-full flex flex-col pointer-events-none mb-2"
+      className="w-full flex flex-col pointer-events-none mb-1"
     >
       <div className={`flex flex-col gap-0.5 w-fit max-w-[85%] pointer-events-auto ${isDjOrAdmin ? 'items-end ml-auto' : 'items-start mr-auto'}`}>
         {/* Username */}
@@ -81,11 +81,10 @@ export const ChatMoodBubble: React.FC<ChatMoodBubbleProps> = ({
                style={{ color: colors.text.replace('text-', '') }} />
         </div>
 
-        {/* Message - Frosted Mood Shard Style */}
         <div
           className={`
-            relative px-4 py-2 w-fit min-w-[24px] transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)]
-            bg-[#111111]/60 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.5)] border border-white/5
+            relative px-2 py-1 w-fit min-w-[24px] transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)]
+            bg-black/20 backdrop-blur-md shadow-[0_8px_32px_rgba(0,0,0,0.5)] border border-white/5
             ${isCurrentUser 
               ? 'border-l-purple-500/30' 
               : isMention
@@ -100,8 +99,8 @@ export const ChatMoodBubble: React.FC<ChatMoodBubbleProps> = ({
               : '0 4px 20px rgba(0,0,0,0.4)',
             borderRadius: isDjOrAdmin ? '16px 4px 16px 16px' : '4px 16px 16px 16px',
             background: currentMood !== 'neutral' 
-              ? `linear-gradient(135deg, #111 0%, ${getMoodColorHex(currentMood)}25 100%)`
-              : '#111',
+              ? `linear-gradient(135deg, rgba(0,0,0,0.2) 0%, ${getMoodColorHex(currentMood)}15 100%)`
+              : 'rgba(0,0,0,0.2)',
           }}
         >
           {/* 1. GENERATIVE NOISE LAYER */}

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../services/supabaseClient';
+import { Upload } from 'lucide-react';
 import type { Song } from '../types';
 
 interface EditSongModalProps {
@@ -14,6 +15,10 @@ export const EditSongModal: React.FC<EditSongModalProps> = ({ song, onClose, onS
     const [genre, setGenre] = useState(song.genre || 'Other');
     const [lyrics, setLyrics] = useState(song.lyrics as string || '');
     const [coverArtFile, setCoverArtFile] = useState<File | null>(null);
+    const [sunoUrl, setSunoUrl] = useState(song.sunoUrl || '');
+    const [downloadUrl, setDownloadUrl] = useState(song.downloadUrl || '');
+    const [audioUrl, setAudioUrl] = useState(song.audioUrl || '');
+    const [audioFile, setAudioFile] = useState<File | null>(null);
     const [isSaving, setIsSaving] = useState(false);
 
     // Close on escape key
@@ -31,6 +36,7 @@ export const EditSongModal: React.FC<EditSongModalProps> = ({ song, onClose, onS
 
         try {
             let finalCoverArtUrl = song.coverArtUrl;
+            let finalAudioUrl = audioUrl;
 
             // 1. Upload new cover art if provided
             if (coverArtFile) {
@@ -51,24 +57,50 @@ export const EditSongModal: React.FC<EditSongModalProps> = ({ song, onClose, onS
                 finalCoverArtUrl = publicUrl;
             }
 
-            // 2. Update Database Record
-            const updates = {
+            // 1b. Upload new audio if provided
+            if (audioFile) {
+                const fileExt = audioFile.name.split('.').pop();
+                const fileName = `${song.id}_audio_${Date.now()}.${fileExt}`;
+                const filePath = `nodes/${fileName}`;
+
+                const { error: uploadError } = await supabase.storage
+                    .from('songs')
+                    .upload(filePath, audioFile, { upsert: true });
+
+                if (uploadError) throw uploadError;
+
+                const { data: { publicUrl } } = supabase.storage
+                    .from('songs')
+                    .getPublicUrl(filePath);
+
+                finalAudioUrl = publicUrl;
+            }
+
+            // 2. Upsert Database Record
+            const dataToSave = {
+                id: song.id.startsWith('new-') ? undefined : song.id,
                 title,
                 artist_name: artistName,
                 genre,
                 lyrics,
+                audio_url: finalAudioUrl,
                 cover_art_url: finalCoverArtUrl,
+                suno_url: sunoUrl,
+                // download_url: downloadUrl, // TODO: Add download_url column to Supabase 'songs' table
+                status: song.status || 'pool',
+                uploader_id: song.uploaderId || 'system'
             };
 
-            const { error } = await supabase
+            const { error, data: savedData } = await supabase
                 .from('songs')
-                .update(updates)
-                .eq('id', song.id);
+                .upsert(dataToSave, { onConflict: 'id' })
+                .select()
+                .single();
 
             if (error) throw error;
 
             // 3. Notify Parent Component
-            onSave({ title, artistName, genre, lyrics, coverArtUrl: finalCoverArtUrl });
+            onSave(savedData as any);
             onClose();
 
         } catch (error: any) {
@@ -85,7 +117,7 @@ export const EditSongModal: React.FC<EditSongModalProps> = ({ song, onClose, onS
                 className="w-full max-w-md bg-zinc-950 border border-purple-500/30 rounded-3xl shadow-[0_0_50px_rgba(168,85,247,0.15)] overflow-hidden"
                 onClick={(e) => e.stopPropagation()}
             >
-                <div className="p-6 border-b border-white/5 bg-white/[0.02]">
+                <div className="p-6 border-b border-white/5 bg-white/2">
                     <h2 className="text-lg font-black text-white uppercase tracking-widest">Edit Node</h2>
                     <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mt-1">Configure metadata and visual assets</p>
                 </div>
@@ -114,8 +146,8 @@ export const EditSongModal: React.FC<EditSongModalProps> = ({ song, onClose, onS
                         </div>
 
                         <div className="grow min-w-0 flex flex-col gap-1">
-                            <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest">Asset Upload</span>
-                            <span className="text-[8px] text-zinc-600">Supports JPG, PNG, and MP4 (Canvas)</span>
+                            <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest">Visual Asset Upload</span>
+                            <span className="text-[8px] text-zinc-600">Supports JPG, PNG, and MP4 (Max 10s Video)</span>
                             {coverArtFile && (
                                 <span className="text-[8px] text-purple-400 mt-2 truncate bg-purple-500/10 px-2 py-1 rounded w-fit border border-purple-500/20">
                                     Selected: {coverArtFile.name}
@@ -128,56 +160,102 @@ export const EditSongModal: React.FC<EditSongModalProps> = ({ song, onClose, onS
 
                     {/* Form Fields */}
                     <div className="space-y-4">
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 ml-1">Track Title</label>
+                                <input
+                                    type="text"
+                                    value={title}
+                                    onChange={(e) => setTitle(e.target.value)}
+                                    required
+                                    className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white text-sm font-bold focus:outline-none focus:border-purple-500/50 transition-all font-mono"
+                                    placeholder="Track Title"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 ml-1">Artist / Identity</label>
+                                <input
+                                    type="text"
+                                    value={artistName}
+                                    onChange={(e) => setArtistName(e.target.value)}
+                                    required
+                                    className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white text-sm font-bold focus:outline-none focus:border-purple-500/50 transition-all font-mono"
+                                    placeholder="Artist"
+                                />
+                            </div>
+                        </div>
+
                         <div>
-                            <label className="block text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 ml-1">Title</label>
+                            <label className="block text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 ml-1">Audio Source URL (MP3/WAV)</label>
+                            <div className="flex gap-2">
+                                <input
+                                    type="url"
+                                    value={audioUrl}
+                                    onChange={(e) => setAudioUrl(e.target.value)}
+                                    className="grow bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-emerald-400 text-xs font-bold focus:outline-none focus:border-emerald-500/50 transition-all font-mono"
+                                    placeholder="https://cdn.com/song.mp3"
+                                />
+                                <label className="shrink-0 cursor-pointer bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-xl px-4 flex items-center justify-center hover:bg-emerald-500 hover:text-white transition-all group">
+                                    <Upload size={14} className="group-hover:scale-110 transition-transform" />
+                                    <input
+                                        type="file"
+                                        accept="audio/*"
+                                        onChange={(e) => setAudioFile(e.target.files?.[0] || null)}
+                                        className="hidden"
+                                    />
+                                </label>
+                            </div>
+                            {audioFile && (
+                                <p className="text-[8px] text-emerald-400 mt-2 ml-1 animate-pulse">✓ Ready to sync: {audioFile.name}</p>
+                            )}
+                        </div>
+
+                        <div>
+                            <label className="block text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 ml-1">Suno / External Meta Link</label>
                             <input
-                                type="text"
-                                value={title}
-                                onChange={(e) => setTitle(e.target.value)}
-                                required
-                                className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white text-sm font-bold focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/50 transition-all placeholder-white/20"
-                                placeholder="Track Title"
+                                type="url"
+                                value={sunoUrl}
+                                onChange={(e) => setSunoUrl(e.target.value)}
+                                className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-purple-400 text-xs font-bold focus:outline-none focus:border-purple-500/50 transition-all font-mono"
+                                placeholder="https://suno.com/song/..."
                             />
                         </div>
 
                         <div>
-                            <label className="block text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 ml-1">Artist Name</label>
+                            <label className="block text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 ml-1">
+                                Download Node Link <span className="text-zinc-600">(Requires Schema Update)</span>
+                            </label>
                             <input
-                                type="text"
-                                value={artistName}
-                                onChange={(e) => setArtistName(e.target.value)}
-                                required
-                                className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white text-sm font-bold focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/50 transition-all placeholder-white/20"
-                                placeholder="Artist Name"
+                                type="url"
+                                value={downloadUrl}
+                                onChange={(e) => setDownloadUrl(e.target.value)}
+                                className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-blue-400 text-xs font-bold focus:outline-none focus:border-blue-500/50 transition-all font-mono"
+                                placeholder="Direct .mp3 Link"
                             />
                         </div>
 
                         <div>
-                            <label className="block text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 ml-1">Genre Classification</label>
+                            <label className="block text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 ml-1">Sector Class</label>
                             <select
                                 value={genre}
                                 onChange={(e) => setGenre(e.target.value)}
-                                className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-purple-400 text-sm font-bold uppercase tracking-widest focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/50 transition-all appearance-none cursor-pointer"
+                                className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-purple-400 text-sm font-bold uppercase tracking-widest focus:outline-none focus:border-purple-500/50 transition-all appearance-none cursor-pointer font-mono"
                             >
                                 <option value="House">House</option>
                                 <option value="Techno">Techno</option>
-                                <option value="Trance">Trance</option>
-                                <option value="Drum & Bass">Drum & Bass</option>
                                 <option value="Synthwave">Synthwave</option>
                                 <option value="Cyberpunk">Cyberpunk</option>
-                                <option value="Hip Hop">Hip Hop</option>
-                                <option value="Pop">Pop</option>
                                 <option value="Other">Other</option>
                             </select>
                         </div>
 
                         <div>
-                            <label className="block text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 ml-1">Lyrical VJ Protocol (JSON/Text)</label>
+                            <label className="block text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 ml-1">Synchronized Lyrics / Protocol</label>
                             <textarea
                                 value={lyrics}
                                 onChange={(e) => setLyrics(e.target.value)}
-                                placeholder="Paste lyrics for visual synchronization..."
-                                className="w-full h-40 bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white text-[11px] font-bold focus:outline-none focus:border-purple-500/50 transition-all placeholder-white/20 resize-none custom-scrollbar"
+                                placeholder="Paste lyrics here for the VJ engine to synchronize..."
+                                className="w-full h-32 bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white text-[11px] font-bold focus:outline-none focus:border-purple-500/50 transition-all resize-none shadow-inner custom-scrollbar"
                             />
                         </div>
                     </div>

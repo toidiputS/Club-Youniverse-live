@@ -1,13 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../services/supabaseClient';
-import type { Profile, Song } from '../types';
+import type { Song } from '../types';
+import { PersistentRadioService } from '../services/PersistentRadioService';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-    X, Edit2, Check, Globe, 
-    Music, Heart, BarChart3, Shield,
-    HardDrive, Zap, 
-    AtSign // Fallback for Twitter
+    Shield, 
+    Music, 
+    Edit2, 
+    X,
+    Zap,
+    Sparkles,
+    Lock,
+    Globe,
+    AtSign,
+    Check,
+    Heart,
+    BarChart3,
+    HardDrive
 } from 'lucide-react';
+import { StripeService } from '../services/StripeService';
 
 interface UserProfileCardProps {
     userId: string;
@@ -16,7 +27,6 @@ interface UserProfileCardProps {
 }
 
 export const UserProfileCard: React.FC<UserProfileCardProps> = ({ userId, onClose, isCurrentUser }) => {
-    const [profile, setProfile] = useState<Profile | null>(null);
     const [uploads, setUploads] = useState<Song[]>([]);
     const [favorites, setFavorites] = useState<Song[]>([]);
     const [activeTab, setActiveTab] = useState<'uploads' | 'favorites' | 'stats'>('uploads');
@@ -24,6 +34,8 @@ export const UserProfileCard: React.FC<UserProfileCardProps> = ({ userId, onClos
     
     // Editing State
     const [isEditing, setIsEditing] = useState(false);
+    // Profile State
+    const [profile, setProfile] = useState<any>(null);
     const [editForm, setEditForm] = useState({
         name: '',
         tagline: '',
@@ -56,10 +68,11 @@ export const UserProfileCard: React.FC<UserProfileCardProps> = ({ userId, onClos
         const { data: uploadData } = await supabase
             .from('songs')
             .select('*')
-            .eq('uploader_id', userId)
-            .order('created_at', { ascending: false });
+            .eq('uploader_id', userId);
 
-        if (uploadData) setUploads(uploadData as Song[]);
+        if (uploadData) {
+            setUploads(uploadData.map(PersistentRadioService.mapDbToApp));
+        }
 
         // 3. Fetch Favorites
         const { data: favData } = await supabase
@@ -72,7 +85,7 @@ export const UserProfileCard: React.FC<UserProfileCardProps> = ({ userId, onClos
 
         if (favData) {
             const favSongs = favData.map((f: any) => f.songs).filter(Boolean);
-            setFavorites(favSongs as Song[]);
+            setFavorites(favSongs.map(PersistentRadioService.mapDbToApp));
         }
 
         setIsLoading(false);
@@ -127,7 +140,7 @@ export const UserProfileCard: React.FC<UserProfileCardProps> = ({ userId, onClos
     const averageRating = uploads.length > 0 ? (uploads.reduce((sum, song) => sum + (song.stars || 0), 0) / uploads.length).toFixed(1) : '0.0';
 
     return (
-        <div className="absolute inset-0 z-50 flex flex-col bg-[#050505] overflow-y-auto custom-scrollbar">
+        <div className="absolute inset-0 z-50 flex flex-col bg-[#050505] overflow-y-auto custom-scrollbar pb-ticker">
             {/* Animated Background Mesh */}
             <div className="absolute inset-0 z-0 opacity-30 pointer-events-none">
                 <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-linear-to-br from-purple-600/20 to-transparent blur-[120px] rounded-full animate-pulse" />
@@ -135,22 +148,15 @@ export const UserProfileCard: React.FC<UserProfileCardProps> = ({ userId, onClos
             </div>
 
             {/* Header / Layout Wrapper */}
-            <div className="relative z-10 flex flex-col min-h-full max-w-6xl mx-auto w-full pb-20">
+            <div className="relative z-10 flex flex-col min-h-full max-w-6xl mx-auto w-full">
                 
                 {/* 1. PREMIUM COVER AREA */}
-                <div className="relative h-48 md:h-64 overflow-hidden rounded-b-[40px] border-b border-white/10 group">
+                <div className="relative h-56 md:h-72 overflow-hidden rounded-b-[40px] group">
                     <div className="absolute inset-0 bg-linear-to-br from-purple-900 via-zinc-950 to-blue-900 opacity-60" />
                     <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?q=80&w=2070&auto=format&fit=crop')] bg-cover bg-center mix-blend-overlay opacity-30 group-hover:scale-105 transition-transform duration-[20s] linear" />
                     
-                    {/* Floating Particles/Atmosphere */}
-                    <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                        <div className="absolute top-1/4 left-1/4 w-2 h-2 bg-purple-500 rounded-full blur-sm animate-pulse" />
-                        <div className="absolute top-3/4 left-1/2 w-1 h-1 bg-blue-400 rounded-full blur-[1px] animate-ping" />
-                        <div className="absolute top-1/2 right-1/4 w-3 h-3 bg-purple-400/20 rounded-full blur-md" />
-                    </div>
-
                     {/* TOP BAR OVERLAY */}
-                    <div className="absolute top-0 left-0 right-0 p-6 flex items-center justify-between z-20">
+                    <div className="absolute top-0 left-0 right-0 p-6 pt-12 md:pt-16 flex items-center justify-between z-20">
                         <div className="flex items-center gap-2">
                              <div className="px-3 py-1 bg-black/40 backdrop-blur-md border border-white/10 rounded-full text-[9px] font-black uppercase tracking-widest text-white/60">
                                  Node ID: {userId.slice(0, 8)}
@@ -165,111 +171,139 @@ export const UserProfileCard: React.FC<UserProfileCardProps> = ({ userId, onClos
                     </div>
                 </div>
 
-                <div className="px-6 md:px-12 -mt-20 relative z-20">
-                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
+                <div className="px-6 md:px-12 -mt-16 md:-mt-24 relative z-20">
+                    <div className="flex flex-col gap-12 items-start">
                         
-                        {/* LEFT: Avatar & Main Bio */}
-                        <div className="lg:col-span-4 flex flex-col items-center lg:items-start text-center lg:text-left space-y-6">
+                        {/* MAIN: Avatar & Identity Header */}
+                        <div className="w-full flex flex-col items-center text-center space-y-8">
+                            
+                            {/* IDENTITY TITLE */}
+                            <div className="w-full space-y-2">
+                                {isEditing ? (
+                                    <input 
+                                        value={editForm.name}
+                                        onChange={e => setEditForm({...editForm, name: e.target.value})}
+                                        className="w-full bg-white/5 border border-purple-500/50 rounded-xl px-4 py-2 text-2xl font-black uppercase text-white text-center focus:outline-none"
+                                    />
+                                ) : (
+                                    <h1 className="text-3xl md:text-4xl font-black text-white tracking-tighter uppercase leading-[0.9] drop-shadow-2xl">
+                                        {profile.name}
+                                    </h1>
+                                )}
+                                
+                                {isEditing ? (
+                                    <input 
+                                        placeholder="Add a tagline..."
+                                        value={editForm.tagline}
+                                        onChange={e => setEditForm({...editForm, tagline: e.target.value})}
+                                        className="w-full mt-2 bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-xs text-purple-400 focus:outline-none"
+                                    />
+                                ) : (
+                                    <p className="text-[10px] font-black text-purple-400 uppercase tracking-[0.4em]">
+                                        {profile.tagline || "Frequency Tuner"}
+                                    </p>
+                                )}
+                            </div>
+
                             <div className="relative group">
-                                <div className="w-48 h-48 rounded-[40px] overflow-hidden border-4 border-[#050505] shadow-[0_20px_50px_rgba(0,0,0,0.5)] bg-zinc-900 relative">
+                                <div className="w-48 h-48 rounded-[40px] overflow-hidden shadow-[0_30px_60px_rgba(0,0,0,0.8)] bg-zinc-900 relative">
                                     <img
                                         src={profile.avatar_url || `https://api.dicebear.com/7.x/pixel-art/svg?seed=${userId}`}
                                         alt={profile.name}
                                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                                     />
-                                    <div className="absolute inset-0 bg-purple-600/20 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity cursor-pointer">
-                                        <Edit2 size={24} className="text-white drop-shadow-lg" />
-                                    </div>
-                                </div>
-                                {/* Live Badge */}
-                                <div className="absolute -top-2 -left-2 px-3 py-1 bg-green-500 rounded-full flex items-center gap-1.5 shadow-[0_0_20px_rgba(34,197,94,0.4)]">
-                                    <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />
-                                    <span className="text-[8px] font-black text-white uppercase tracking-tighter">Live Node</span>
-                                </div>
-                                <div className="absolute -bottom-2 -right-2 w-14 h-14 bg-zinc-950 border-2 border-white/10 rounded-2xl flex items-center justify-center shadow-2xl">
-                                    <Shield size={24} className={profile.is_admin ? "text-red-500" : "text-purple-500"} />
+                                    {isCurrentUser && (
+                                        <div className="absolute inset-0 bg-purple-600/20 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity cursor-pointer">
+                                            <Edit2 size={24} className="text-white drop-shadow-lg" />
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 
-                            <div className="space-y-4 w-full">
-                                <div>
-                                    {isEditing ? (
-                                        <input 
-                                            value={editForm.name}
-                                            onChange={e => setEditForm({...editForm, name: e.target.value})}
-                                            className="w-full bg-white/5 border border-purple-500/50 rounded-xl px-4 py-2 text-2xl font-black uppercase text-white focus:outline-none"
-                                        />
-                                    ) : (
-                                        <h1 className="text-4xl font-black text-white tracking-tighter uppercase leading-none">{profile.name}</h1>
-                                    )}
-                                    
-                                    {isEditing ? (
-                                        <input 
-                                            placeholder="Add a tagline..."
-                                            value={editForm.tagline}
-                                            onChange={e => setEditForm({...editForm, tagline: e.target.value})}
-                                            className="w-full mt-2 bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-xs text-purple-400 focus:outline-none"
-                                        />
-                                    ) : (
-                                        <p className="text-xs font-black text-purple-400 uppercase tracking-[0.2em] mt-2">
-                                            {profile.tagline || "Frequency Tuner"}
-                                        </p>
-                                    )}
-                                </div>
+                            {/* Status Badges */}
+                            <div className="flex gap-2 -mt-4">
+                                {profile.is_admin && (
+                                    <div className="px-3 py-1 bg-red-500/10 border border-red-500/20 rounded-full text-[8px] font-black text-red-500 uppercase tracking-widest">
+                                        System Admin
+                                    </div>
+                                )}
+                                {profile.is_first_100 && (
+                                    <div className="px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full text-[8px] font-black text-emerald-500 uppercase tracking-widest">
+                                        Founder (0/100)
+                                    </div>
+                                )}
+                                {profile.is_premium ? (
+                                    <div className="px-3 py-1 bg-purple-500 border border-purple-400 rounded-full text-[8px] font-black text-white uppercase tracking-widest shadow-lg shadow-purple-500/20 flex items-center gap-1.5">
+                                        <Zap size={8} /> AX Premium
+                                    </div>
+                                ) : (
+                                    !profile.is_admin && !profile.is_first_100 && (
+                                        <button 
+                                            onClick={() => StripeService.createCheckoutSession(profile.user_id, 'price_1TLJs7Q4KbuvG3PnbS9W0Idz')}
+                                            className="px-3 py-1 bg-zinc-900 border border-white/10 rounded-full text-[8px] font-black text-white/40 uppercase tracking-widest hover:text-white hover:border-purple-500/50 transition-all flex items-center gap-1.5 group/btn"
+                                        >
+                                            <Lock size={8} className="group-hover/btn:hidden" />
+                                            <Sparkles size={8} className="hidden group-hover/btn:block text-purple-400" />
+                                            Upgrade to AX Premium
+                                        </button>
+                                    )
+                                )}
+                            </div>
 
+                            <div className="space-y-4 w-full px-4">
                                 {isEditing ? (
                                     <textarea 
                                         placeholder="Write your transmission history..."
                                         value={editForm.bio}
                                         onChange={e => setEditForm({...editForm, bio: e.target.value})}
-                                        className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-sm text-zinc-400 h-32 focus:outline-none focus:border-purple-500/50 resize-none"
+                                        className="w-full bg-white/5 border border-purple-500/20 rounded-2xl p-6 text-[12px] text-zinc-400 h-32 focus:outline-none focus:border-purple-500/50 resize-none font-mono shadow-inner"
                                     />
                                 ) : (
-                                    <p className="text-sm font-medium text-zinc-400 leading-relaxed max-w-sm">
+                                    <p className="text-[11px] font-bold text-zinc-500 leading-relaxed max-w-sm mx-auto uppercase tracking-tight">
                                         {profile.bio || "No bio set. Probably making beats in the basement."}
                                     </p>
                                 )}
 
-                                <div className="flex flex-wrap justify-center lg:justify-start gap-4">
+                                <div className="flex flex-wrap justify-center gap-3">
                                     {isEditing ? (
                                         <div className="w-full space-y-2">
-                                            <div className="flex items-center gap-2 bg-white/5 rounded-lg px-3 py-2 border border-white/10">
-                                                <Globe size={14} className="text-zinc-500" />
+                                            <div className="flex items-center gap-2 bg-black border border-white/5 rounded-xl px-4 py-3">
+                                                <Globe size={12} className="text-zinc-600" />
                                                 <input 
                                                     placeholder="Website URL"
                                                     value={editForm.website_url}
                                                     onChange={e => setEditForm({...editForm, website_url: e.target.value})}
-                                                    className="bg-transparent border-none text-[11px] text-white focus:outline-none grow"
+                                                    className="bg-transparent border-none text-[10px] text-white focus:outline-none grow font-mono"
                                                 />
                                             </div>
-                                            <div className="flex items-center gap-2 bg-white/5 rounded-lg px-3 py-2 border border-white/10">
-                                                <AtSign size={14} className="text-zinc-500" />
+                                            <div className="flex items-center gap-2 bg-black border border-white/5 rounded-xl px-4 py-3">
+                                                <AtSign size={12} className="text-zinc-600" />
                                                 <input 
                                                     placeholder="@twitter"
                                                     value={editForm.twitter_handle}
                                                     onChange={e => setEditForm({...editForm, twitter_handle: e.target.value})}
-                                                    className="bg-transparent border-none text-[11px] text-white focus:outline-none grow"
+                                                    className="bg-transparent border-none text-[10px] text-white focus:outline-none grow font-mono"
                                                 />
                                             </div>
                                         </div>
                                     ) : (
-                                        <>
+                                        <div className="flex items-center gap-2">
                                             {profile.website_url && (
-                                                <a href={profile.website_url} target="_blank" rel="noreferrer" className="p-3 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-colors">
-                                                    <Globe size={16} className="text-zinc-400" />
+                                                <a href={profile.website_url} target="_blank" rel="noreferrer" className="px-4 py-2 bg-white/5 border border-white/10 rounded-full hover:bg-purple-500/10 hover:border-purple-500/30 transition-all text-[9px] font-black uppercase tracking-widest text-white/40 hover:text-purple-400 flex items-center gap-2">
+                                                    <Globe size={10} /> Site
                                                 </a>
                                             )}
                                             {profile.twitter_handle && (
-                                                <a href={`https://twitter.com/${profile.twitter_handle.replace('@', '')}`} target="_blank" rel="noreferrer" className="p-3 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-colors">
-                                                    <AtSign size={16} className="text-blue-400" />
+                                                <a href={`https://twitter.com/${profile.twitter_handle.replace('@', '')}`} target="_blank" rel="noreferrer" className="px-4 py-2 bg-blue-500/5 border border-blue-500/10 rounded-full hover:bg-blue-500/20 hover:border-blue-500/40 transition-all text-[9px] font-black uppercase tracking-widest text-blue-400/60 hover:text-blue-400 flex items-center gap-2">
+                                                    <AtSign size={10} /> Transmission
                                                 </a>
                                             )}
-                                        </>
+                                        </div>
                                     )}
                                 </div>
 
                                 {isCurrentUser && (
-                                    <div className="pt-4">
+                                    <div className="pt-4 max-w-sm mx-auto">
                                         {isEditing ? (
                                             <div className="flex gap-2">
                                                 <button 
@@ -298,18 +332,18 @@ export const UserProfileCard: React.FC<UserProfileCardProps> = ({ userId, onClos
                             </div>
                         </div>
 
-                        {/* RIGHT: Stats & Content Tabs */}
-                        <div className="lg:col-span-8 space-y-8 min-h-0 flex flex-col">
+                        {/* CONTENT SECTOR: Stats & Navigation Tabs */}
+                        <div className="w-full space-y-8 min-h-0 flex flex-col">
                             
                             {/* STATS STRIP */}
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <div className="grid grid-cols-2 gap-3">
                                 {[
                                     { label: 'Transmissions', val: uploads.length, icon: Music, color: 'text-white' },
                                     { label: 'Reputation', val: totalVotes, icon: Zap, color: 'text-yellow-400' },
                                     { label: 'Favorites', val: favorites.length, icon: Heart, color: 'text-red-400' },
                                     { label: 'Station Rating', val: averageRating, icon: BarChart3, color: 'text-purple-400' },
                                 ].map((s, i) => (
-                                    <div key={i} className="p-4 bg-white/5 border border-white/5 rounded-2xl flex flex-col gap-1 group hover:bg-white/10 transition-all">
+                                    <div key={i} className="p-4 bg-white/5 rounded-2xl flex flex-col gap-1 group hover:bg-white/10 transition-all shadow-lg">
                                         <div className="flex items-center justify-between mb-2">
                                             <s.icon size={12} className="text-white/20" />
                                             <div className="w-1 h-1 rounded-full bg-white/10 group-hover:bg-purple-500 transition-colors" />
@@ -345,6 +379,11 @@ export const UserProfileCard: React.FC<UserProfileCardProps> = ({ userId, onClos
 
                             {/* TAB CONTENT */}
                             <div className="grow pr-2 pb-12">
+                                <div className="mb-4">
+                                    <span className="text-[10px] font-black text-purple-500 uppercase tracking-[0.3em]">
+                                        {activeTab === 'uploads' ? 'Active Storage Nodes' : activeTab === 'favorites' ? 'Stored Signals' : 'Global Analytics'}
+                                    </span>
+                                </div>
                                 <AnimatePresence mode="wait">
                                     {activeTab === 'uploads' && (
                                         <motion.div 
@@ -352,7 +391,7 @@ export const UserProfileCard: React.FC<UserProfileCardProps> = ({ userId, onClos
                                             initial={{ opacity: 0, y: 10 }}
                                             animate={{ opacity: 1, y: 0 }}
                                             exit={{ opacity: 0, y: -10 }}
-                                            className="grid grid-cols-1 md:grid-cols-2 gap-4"
+                                            className="grid grid-cols-1 gap-4"
                                         >
                                             {uploads.length === 0 ? (
                                                  <div className="col-span-full py-12 flex flex-col items-center justify-center border-2 border-dashed border-white/5 rounded-3xl opacity-40">
@@ -363,9 +402,9 @@ export const UserProfileCard: React.FC<UserProfileCardProps> = ({ userId, onClos
                                                 uploads.map(song => (
                                                     <div key={song.id} className="group bg-[#080808] border border-white/5 rounded-2xl p-4 flex gap-4 items-center hover:bg-zinc-900 transition-all cursor-pointer relative overflow-hidden">
                                                         <div className="absolute inset-0 bg-linear-to-r from-purple-500/0 to-purple-500/5 transition-all" />
-                                                        <img src={song.coverArtUrl || `https://picsum.photos/seed/${song.id}/100`} alt="" className="w-20 h-20 rounded-xl object-cover bg-zinc-950 z-10 shadow-lg shadow-black" />
+                                                        <img src={song.coverArtUrl || `https://picsum.photos/seed/${song.id}/100`} alt="" className="w-16 h-16 md:w-20 md:h-20 rounded-xl object-cover bg-zinc-950 z-10 shadow-lg shadow-black" />
                                                         <div className="grow min-w-0 z-10 flex flex-col gap-1">
-                                                            <h3 className="text-xs font-black text-white truncate uppercase tracking-tight">{song.title}</h3>
+                                                            <h3 className="text-sm font-black text-white truncate uppercase tracking-tight">{song.title}</h3>
                                                             <p className="text-[9px] font-bold text-zinc-500 uppercase truncate mb-2">{song.artistName}</p>
                                                             <div className="flex items-center gap-3">
                                                                 <div className="flex items-center gap-1.5 px-2 py-0.5 bg-yellow-500/10 rounded-full border border-yellow-500/20">
@@ -388,7 +427,7 @@ export const UserProfileCard: React.FC<UserProfileCardProps> = ({ userId, onClos
                                             initial={{ opacity: 0, y: 10 }}
                                             animate={{ opacity: 1, y: 0 }}
                                             exit={{ opacity: 0, y: -10 }}
-                                            className="grid grid-cols-1 md:grid-cols-2 gap-4"
+                                            className="grid grid-cols-1 gap-4"
                                         >
                                             {favorites.length === 0 ? (
                                                  <div className="col-span-full py-12 flex flex-col items-center justify-center border-2 border-dashed border-white/5 rounded-3xl opacity-40">
@@ -399,9 +438,9 @@ export const UserProfileCard: React.FC<UserProfileCardProps> = ({ userId, onClos
                                                 favorites.map(song => (
                                                     <div key={song.id} className="group bg-[#080808] border border-red-500/5 rounded-2xl p-4 flex gap-4 items-center hover:bg-zinc-900 transition-all cursor-pointer relative overflow-hidden">
                                                         <div className="absolute inset-0 bg-linear-to-r from-red-500/0 to-red-500/5 transition-all" />
-                                                        <img src={song.coverArtUrl || `https://picsum.photos/seed/${song.id}/100`} alt="" className="w-20 h-20 rounded-xl object-cover bg-zinc-950 z-10 shadow-lg shadow-black" />
+                                                        <img src={song.coverArtUrl || `https://picsum.photos/seed/${song.id}/100`} alt="" className="w-16 h-16 md:w-20 md:h-20 rounded-xl object-cover bg-zinc-950 z-10 shadow-lg shadow-black" />
                                                         <div className="grow min-w-0 z-10 flex flex-col gap-1">
-                                                            <h3 className="text-xs font-black text-white truncate uppercase tracking-tight">{song.title}</h3>
+                                                            <h3 className="text-sm font-black text-white truncate uppercase tracking-tight">{song.title}</h3>
                                                             <p className="text-[9px] font-bold text-zinc-500 uppercase truncate mb-2">{song.artistName}</p>
                                                             <div className="flex items-center gap-3">
                                                                 <div className="flex items-center gap-1.5 px-2 py-0.5 bg-red-500/10 rounded-full border border-red-500/20 text-red-500">

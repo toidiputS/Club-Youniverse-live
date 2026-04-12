@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Download } from 'lucide-react';
+import { Download, Music } from 'lucide-react';
 import type { Song } from '../types';
 
 interface SongCardPopOutProps {
@@ -83,10 +83,10 @@ export const SongCardPopOut: React.FC<SongCardPopOutProps> = ({ song, isOpen, on
                         initial={{ opacity: 0, scale: 0.9 }}
                         animate={{ opacity: 1, scale: 1 }}
                         exit={{ opacity: 0, scale: 0.9 }}
-                        className="fixed inset-0 flex items-center justify-center z-[101] pointer-events-none p-4 sm:p-6"
+                        className="fixed inset-0 flex items-center justify-center z-101 pointer-events-none p-4 sm:p-6"
                     >
                         <div className="w-full max-w-[400px] pointer-events-auto">
-                        <div className="w-full bg-[#0a0a0a] border border-white/10 rounded-[2rem] overflow-hidden shadow-[0_40px_100px_rgba(0,0,0,0.8)] relative">
+                        <div className="w-full bg-[#0a0a0a] border border-white/10 rounded-4xl overflow-hidden shadow-[0_40px_100px_rgba(0,0,0,0.8)] relative">
                             {/* Inner Glow */}
                             <div className="absolute inset-0 bg-linear-to-b from-purple-500/10 to-transparent pointer-events-none" />
 
@@ -95,7 +95,7 @@ export const SongCardPopOut: React.FC<SongCardPopOutProps> = ({ song, isOpen, on
                                 <img 
                                     src={song.coverArtUrl || `https://picsum.photos/seed/${song.id}/600`}
                                     alt={song.title}
-                                    className="w-full h-full object-cover rounded-[1.5rem] shadow-2xl"
+                                    className="w-full h-full object-cover rounded-3xl shadow-2xl"
                                 />
                                 
                                 {/* Play Count */}
@@ -153,14 +153,27 @@ export const SongCardPopOut: React.FC<SongCardPopOutProps> = ({ song, isOpen, on
                                     </div>
 
                                     {/* Edit Button */}
-                                    {onEdit && (
-                                        <button 
-                                            onClick={onEdit}
-                                            className="py-3 bg-white/10 border border-white/10 rounded-2xl font-black text-[10px] uppercase tracking-wider text-white/70 hover:bg-white/20 transition-all"
-                                        >
-                                            Edit Song (Lyrics/Cover)
-                                        </button>
-                                    )}
+                                    <div className="flex flex-col gap-2">
+                                        {song.sunoUrl && (
+                                            <a 
+                                                href={song.sunoUrl} 
+                                                target="_blank" 
+                                                rel="noopener noreferrer"
+                                                className="flex items-center justify-center gap-2 py-3 bg-[#fe6d00] rounded-2xl font-black text-[10px] uppercase tracking-wider text-white hover:bg-[#ff8c33] transition-all shadow-lg active:scale-95"
+                                            >
+                                                <Music size={14} />
+                                                Open in Suno
+                                            </a>
+                                        )}
+                                        {onEdit && (
+                                            <button 
+                                                onClick={onEdit}
+                                                className="py-3 bg-white/10 border border-white/10 rounded-2xl font-black text-[10px] uppercase tracking-wider text-white/70 hover:bg-white/20 transition-all"
+                                            >
+                                                Edit Song (Lyrics/Cover)
+                                            </button>
+                                        )}
+                                    </div>
 
                                     <button 
                                         onClick={onClose}

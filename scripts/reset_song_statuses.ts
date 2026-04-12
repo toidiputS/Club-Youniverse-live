@@ -12,11 +12,15 @@ async function resetSongStatuses() {
     .from("songs")
     .update({
       status: "pool",
+      stars: 0,
+      is_dsw: false,
+      live_stars_sum: 0,
+      live_stars_count: 0,
       box_appearance_count: 0,
       box_rounds_seen: 0,
       box_rounds_lost: 0,
     })
-    .neq("status", "graveyard"); // Don't touch graveyard songs
+    .neq("status", "now_playing"); // Leave the current song alone to avoid playback disruption
 
   if (error) {
     console.error("❌ Error:", error.message);

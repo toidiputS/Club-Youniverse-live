@@ -8,6 +8,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { RadioContext } from "../contexts/AudioPlayerContext";
 import { motion } from "framer-motion";
 import { Play, Pause, Volume2, Users, Music, Lock, ChevronRight, Sparkles } from "lucide-react";
+import { BillboardCounter } from "./BillboardCounter";
 
 interface ChatMessage {
   id: string;
@@ -61,12 +62,15 @@ export const Sidewalk: React.FC<SidewalkProps> = ({ onEnterClub, onSignIn }) => 
     }
   };
 
-  // Generate anonymous username
-  const [myUsername] = useState(() => {
+  // Get username from context if signed in, otherwise use anonymous
+  const myUsername = React.useMemo(() => {
+    if (context?.profile?.name && !context.profile.name.includes("Guest")) {
+      return context.profile.name;
+    }
     const name = ANONYMOUS_NAMES[Math.floor(Math.random() * ANONYMOUS_NAMES.length)];
     const num = Math.floor(Math.random() * 100) + 1;
     return `${name}_${num}`;
-  });
+  }, [context?.profile?.name]);
 
   // Load sample chat on mount
   useEffect(() => {
@@ -87,7 +91,7 @@ export const Sidewalk: React.FC<SidewalkProps> = ({ onEnterClub, onSignIn }) => 
         "the vibes out here are immaculate",
         "been listening for 2 hours straight",
         "love how every song is AI generated",
-        "the velvet rope is real yall",
+        "the club is jumping tonight",
         "someone get me an invite code 🙏",
         "AI dj said some wild stuff last night",
         "this is literally the future of radio"
@@ -542,6 +546,11 @@ export const Sidewalk: React.FC<SidewalkProps> = ({ onEnterClub, onSignIn }) => 
               </form>
             </div>
 
+            {/* HIGH FIDELITY BILLBOARD COUNTER */}
+            <div className="flex justify-center my-4 overflow-visible px-4">
+                <BillboardCounter />
+            </div>
+
             {/* Velvet Rope CTA */}
             <div 
               className="rounded-2xl p-6 border relative overflow-hidden"
@@ -568,7 +577,7 @@ export const Sidewalk: React.FC<SidewalkProps> = ({ onEnterClub, onSignIn }) => 
                     className="text-lg font-bold tracking-wider uppercase"
                     style={{ color: "#FFE600" }}
                   >
-                    The Velvet Rope
+                    Club Access
                   </span>
                 </div>
                 
@@ -581,10 +590,10 @@ export const Sidewalk: React.FC<SidewalkProps> = ({ onEnterClub, onSignIn }) => 
                 <div className="space-y-2 mb-6">
                   {[
                     "Vote on what plays next",
+                    "Full chat with all members",
                     "Play Youniversal on the dance floor",
-                    "Upload your own AI-generated tracks",
-                    "Access the DJ booth",
-                    "Full chat with all members"
+                    "AX Premium required for uploads",
+                    "Access the DJ booth"
                   ].map((benefit, i) => (
                     <div key={i} className="flex items-center gap-2 text-sm">
                       <Sparkles className="w-4 h-4 shrink-0" style={{ color: "#FFE600" }} />
@@ -595,8 +604,11 @@ export const Sidewalk: React.FC<SidewalkProps> = ({ onEnterClub, onSignIn }) => 
                 
                 {/* Price */}
                 <div className="mb-4">
-                  <span className="text-3xl font-black" style={{ color: "#FFFFFF" }}>$19.99</span>
-                  <span className="text-sm" style={{ color: "#8888AA" }}>/month</span>
+                  <span className="text-3xl font-black" style={{ color: "#FFFFFF" }}>$1.00</span>
+                  <span className="text-sm" style={{ color: "#8888AA" }}>/day entry</span>
+                  <div className="text-[10px] font-mono text-purple-400 mt-1 uppercase tracking-widest">
+                    Free for life for first 100
+                  </div>
                 </div>
                 
                 {/* CTA Button */}
@@ -609,7 +621,7 @@ export const Sidewalk: React.FC<SidewalkProps> = ({ onEnterClub, onSignIn }) => 
                     boxShadow: "0 0 30px rgba(255, 230, 0, 0.4)"
                   }}
                 >
-                  <Lock className="w-5 h-5" />
+                  <Sparkles className="w-5 h-5" />
                   ENTER THE CLUB
                   <ChevronRight className="w-5 h-5" />
                 </button>

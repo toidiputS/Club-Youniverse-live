@@ -11,7 +11,7 @@
 }
 
 .pb-safe-bottom {
-    padding-bottom: max(var(--safe-bottom), env(safe-area-bottom, 12px));
+    padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 .mt-safe-top {
@@ -22,9 +22,9 @@
     margin-bottom: env(safe-area-inset-bottom, 0px);
 }
 
-/* Custom Ticker Push-up Utility */
+/* Custom Ticker Push-up Utility (Matches unified HUD + Ticker stack height with extra clearance) */
 .pb-ticker {
-    padding-bottom: calc(3.5rem + env(safe-area-inset-bottom, 12px));
+    padding-bottom: calc(3.65rem + env(safe-area-inset-bottom, 0px));
 }
 
 /* Custom Futuristic Scrollbar */

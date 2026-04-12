@@ -22,12 +22,13 @@ export const SiteEffects: React.FC = () => {
                 }
 
                 const fx = cmd.payload?.fx;
+                const duration = cmd.payload?.duration || (fx === "Farewell" ? 60000 : 5000);
                 setActiveFx(fx);
 
                 // Auto-clear FX after duration
                 setTimeout(() => {
                     setActiveFx(null);
-                }, 5000);
+                }, duration);
             }
 
             if (cmd.type === "tts") {
@@ -139,6 +140,15 @@ export const SiteEffects: React.FC = () => {
             {activeFx === "Pixel" && (
                 <div className="fixed inset-0 z-100 pointer-events-none backdrop-blur-[2px] backdrop-contrast-200"
                     style={{ imageRendering: 'pixelated' }} />
+            )}
+
+            {/* Farewell Spectacle Effect */}
+            {activeFx === "Farewell" && (
+                <div className="fixed inset-0 z-100 pointer-events-none">
+                    <div className="absolute inset-0 bg-red-900/20 backdrop-invert mix-blend-difference animate-pulse-fx-slow" />
+                    <div className="absolute inset-0 backdrop-hue-rotate-180 transition-all duration-5000" />
+                    <div className="absolute inset-0 backdrop-blur-sm animate-pulse" />
+                </div>
             )}
 
             {/* Neon Effect */}

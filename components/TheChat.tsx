@@ -13,6 +13,7 @@ import type { ChatMessage, Profile } from "../types";
 interface TheChatProps {
     profile: Profile & { is_admin?: boolean };
     transparent?: boolean;
+    noAtmosphere?: boolean;
 }
 
 const DJ_BANTER = [
@@ -25,7 +26,7 @@ const DJ_BANTER = [
     "Visuals reacting to the mood... What's the frequency? 🌊"
 ];
 
-export const TheChat: React.FC<TheChatProps> = ({ profile, transparent }) => {
+export const TheChat: React.FC<TheChatProps> = ({ profile, transparent, noAtmosphere }) => {
     const context = useContext(RadioContext);
     if (!context) return null;
 
@@ -48,12 +49,17 @@ export const TheChat: React.FC<TheChatProps> = ({ profile, transparent }) => {
             })
             .on('broadcast', { event: 'status' }, ({ payload }) => {
                 const { type, user } = payload;
+                let statusText = '';
+                if (type === 'entered') statusText = `${user.toUpperCase()} ENTERED THE CLUB`;
+                else if (type === 'smoke') statusText = `${user.toUpperCase()} STEPPED OUT FOR A SMOKE`;
+                else statusText = `${user.toUpperCase()} LEFT THE CLUB`;
+
                 addChatMessage({
                     id: `status-${Date.now()}-${Math.random()}`,
                     user: { name: "SYSTEM PROTOCOL", isDj: true },
-                    text: `${user} ${type === 'entered' ? 'entered the club' : 'left the club'}`,
+                    text: statusText,
                     timestamp: Date.now(),
-                    isStatus: true // New flag for styling
+                    isStatus: true 
                 } as any);
             })
             .subscribe();
@@ -174,117 +180,122 @@ export const TheChat: React.FC<TheChatProps> = ({ profile, transparent }) => {
         return msg.user.name === "SYSTEM PROTOCOL" || msg.user.name === "DJ Python" || msg.id === 'system-alert';
     };
 
+    const content = (
+        <div className={`flex flex-col h-full overflow-hidden transition-all select-none ${noAtmosphere ? 'bg-transparent' : 'bg-[#0a0a0a]'}`}>
+            {/* Chat Messages */}
+            <div
+                ref={scrollRef}
+                className="flex flex-col grow overflow-y-auto px-3 scrollbar-hide min-h-0 pointer-events-none"
+                style={{ maskImage: 'linear-gradient(to bottom, transparent, black 20px)', WebkitMaskImage: 'linear-gradient(to bottom, transparent, black 20px)' }}
+            >
+                <div className="mt-auto flex flex-col space-y-1 pt-1 pb-1 items-stretch">
+                    {chatMessages.length === 0 && (
+                        <div className="flex flex-col items-center justify-center py-8 text-zinc-600">
+                            <span className="text-lg mb-2">🎵</span>
+                            <span className="text-[10px] font-medium uppercase tracking-wider">
+                                The chat is quiet...
+                            </span>
+                            <span className="text-[8px] text-zinc-700 mt-1">
+                                Be the first to drop a vibe
+                            </span>
+                        </div>
+                    )}
+                    
+                    {chatMessages.map((msg: any) => {
+                        if (msg.isStatus) {
+                            return (
+                                <div key={msg.id} className="flex justify-center py-1 opacity-40">
+                                    <span className="text-[7px] font-bold uppercase tracking-widest text-white/60 bg-white/5 px-2 py-0.5 rounded-full">
+                                        {msg.text}
+                                    </span>
+                                </div>
+                            );
+                        }
+
+                        if (isSystemMessage(msg)) {
+                            return (
+                                <SystemMessage 
+                                    key={msg.id} 
+                                    message={msg.text} 
+                                    timestamp={msg.timestamp}
+                                />
+                            );
+                        }
+
+                        return (
+                            <ChatMoodBubble
+                                key={msg.id}
+                                message={msg.text}
+                                username={msg.user.name}
+                                isAdmin={msg.user.isAdmin || msg.user.isDj}
+                                isCurrentUser={isCurrentUser(msg)}
+                                timestamp={msg.timestamp}
+                            />
+                        );
+                    })}
+                </div>
+            </div>
+
+            {/* Input Area - Floating Glass Pill */}
+            <form 
+                onSubmit={handleSend} 
+                className="pt-1 pb-2 px-3 bg-transparent pointer-events-none"
+            >
+                <div className="relative flex items-center gap-2 max-w-md mx-auto pointer-events-auto">
+                    <div className="grow relative flex items-center">
+                        <input
+                            type="text"
+                            value={input}
+                            onChange={(e) => setInput(e.target.value)}
+                            placeholder="@dj..."
+                            className={`w-full ${transparent ? 'bg-black/20' : 'bg-black/40'} backdrop-blur-xl border border-white/5 rounded-full py-2 px-4 pr-12 text-[11px] text-white/90 placeholder-white/20 focus:outline-none focus:ring-1 focus:ring-purple-500/30 shadow-2xl transition-all`}
+                        />
+                        <button
+                            type="submit"
+                            disabled={!input.trim()}
+                            className={`
+                                absolute right-1.5 p-1.5 rounded-full transition-all
+                                ${input.trim() 
+                                    ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/40' 
+                                    : 'bg-zinc-800/50 text-zinc-600 cursor-not-allowed'
+                                }
+                            `}
+                        >
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                
+                {/* Quick mood hints - Floating Pill Style */}
+                <div className="flex justify-center gap-1 mt-1.5 overflow-x-auto scrollbar-hide pointer-events-auto">
+                    {['❤️', '🔥', '😂', '😮', '✨', '🎵'].map((emoji) => (
+                        <button
+                            key={emoji}
+                            type="button"
+                            onClick={() => setInput(prev => prev + emoji)}
+                            className="text-[10px] px-2 py-1 rounded-full bg-black/40 backdrop-blur-md border border-white/5 hover:bg-zinc-800/50 transition-colors text-white/70"
+                        >
+                            {emoji}
+                        </button>
+                    ))}
+                </div>
+            </form>
+        </div>
+    );
+
+    if (noAtmosphere) return content;
+
     return (
         <ChatAtmosphere 
             messages={chatMessages.map(m => ({ text: m.text }))}
             showMoodBadge={true}
             showParticles={true}
         >
-            <div className="flex flex-col h-full overflow-hidden transition-all select-none">
-                {/* Chat Messages */}
-                <div
-                    ref={scrollRef}
-                    className="flex flex-col grow overflow-y-auto px-3 scrollbar-hide min-h-0 pointer-events-none"
-                    style={{ maskImage: 'linear-gradient(to bottom, transparent, black 20px)', WebkitMaskImage: 'linear-gradient(to bottom, transparent, black 20px)' }}
-                >
-                    <div className="mt-auto flex flex-col space-y-2 pt-2 pb-4 items-stretch">
-                        {chatMessages.length === 0 && (
-                            <div className="flex flex-col items-center justify-center py-8 text-zinc-600">
-                                <span className="text-lg mb-2">🎵</span>
-                                <span className="text-[10px] font-medium uppercase tracking-wider">
-                                    The chat is quiet...
-                                </span>
-                                <span className="text-[8px] text-zinc-700 mt-1">
-                                    Be the first to drop a vibe
-                                </span>
-                            </div>
-                        )}
-                        
-                        {chatMessages.map((msg: any) => {
-                            if (msg.isStatus) {
-                                return (
-                                    <div key={msg.id} className="flex justify-center py-1 opacity-40">
-                                        <span className="text-[7px] font-bold uppercase tracking-widest text-white/60 bg-white/5 px-2 py-0.5 rounded-full">
-                                            {msg.text}
-                                        </span>
-                                    </div>
-                                );
-                            }
-
-                            if (isSystemMessage(msg)) {
-                                return (
-                                    <SystemMessage 
-                                        key={msg.id} 
-                                        message={msg.text} 
-                                        timestamp={msg.timestamp}
-                                    />
-                                );
-                            }
-
-                            return (
-                                <ChatMoodBubble
-                                    key={msg.id}
-                                    message={msg.text}
-                                    username={msg.user.name}
-                                    isAdmin={msg.user.isAdmin || msg.user.isDj}
-                                    isCurrentUser={isCurrentUser(msg)}
-                                    timestamp={msg.timestamp}
-                                />
-                            );
-                        })}
-                    </div>
-                </div>
-
-                {/* Input Area - Floating Glass Pill */}
-                <form 
-                    onSubmit={handleSend} 
-                    className="pt-1 pb-3 px-3 bg-transparent pointer-events-none"
-                >
-                    <div className="relative flex items-center gap-2 max-w-md mx-auto pointer-events-auto">
-                        <div className="grow relative flex items-center">
-                            <input
-                                type="text"
-                                value={input}
-                                onChange={(e) => setInput(e.target.value)}
-                                placeholder="@dj..."
-                                className={`w-full ${transparent ? 'bg-black/20' : 'bg-black/40'} backdrop-blur-xl border border-white/5 rounded-full py-2 px-4 pr-12 text-[11px] text-white/90 placeholder-white/20 focus:outline-none focus:ring-1 focus:ring-purple-500/30 shadow-2xl transition-all`}
-                            />
-                            <button
-                                type="submit"
-                                disabled={!input.trim()}
-                                className={`
-                                    absolute right-1.5 p-1.5 rounded-full transition-all
-                                    ${input.trim() 
-                                        ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/40' 
-                                        : 'bg-zinc-800/50 text-zinc-600 cursor-not-allowed'
-                                    }
-                                `}
-                            >
-                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-                    
-                    {/* Quick mood hints - Floating Pill Style */}
-                    <div className="flex justify-center gap-1.5 mt-2 overflow-x-auto scrollbar-hide pointer-events-auto">
-                        {['❤️', '🔥', '😂', '😮', '✨', '🎵'].map((emoji) => (
-                            <button
-                                key={emoji}
-                                type="button"
-                                onClick={() => setInput(prev => prev + emoji)}
-                                className="text-[10px] px-2 py-1 rounded-full bg-black/40 backdrop-blur-md border border-white/5 hover:bg-zinc-800/50 transition-colors text-white/70"
-                            >
-                                {emoji}
-                            </button>
-                        ))}
-                    </div>
-                </form>
-            </div>
+            {content}
         </ChatAtmosphere>
     );
 };
 
 export default TheChat;
-

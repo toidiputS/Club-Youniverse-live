@@ -159,10 +159,115 @@ def send_site_command(command_type: str, text: str):
     except Exception as e:
         print(f"❌ Broadcast signal lost: {e}")
 
+# --- Pipeline Executor ---
+
+import subprocess
+
+def run_news_pipeline(phrase: str):
+    """Executes the 3-phase news pipeline."""
+    pipeline_dir = os.path.join(os.path.dirname(__file__), "..", "ai-dj-pipeline")
+    manifest_path = os.path.join(pipeline_dir, "episode_manifest.json")
+    script_path = os.path.join(pipeline_dir, "episode_script.txt")
+    audio_path = os.path.join(pipeline_dir, "episode_audio.mp3")
+
+    try:
+        # Phase 1: Aggregate
+        print("🌍 Phase 1: Aggregating News...")
+        subprocess.run(["python", os.path.join(pipeline_dir, "news_aggregator.py"), phrase, "--output", manifest_path], check=True)
+        
+        # Phase 2: Script
+        print("✍️ Phase 2: Generating Script...")
+        # Note: script_generator.py expects OPENAI_API_KEY in env
+        subprocess.run(["python", os.path.join(pipeline_dir, "script_generator.py"), "--manifest", manifest_path, "--output", script_path], check=True)
+        
+        # Phase 3: TTS
+        print("🎙️ Phase 3: Synthesizing Audio...")
+        subprocess.run(["python", os.path.join(pipeline_dir, "tts_pipeline.py"), "--script", script_path, "--output", audio_path], check=True)
+        
+        return audio_path
+    except Exception as e:
+        print(f"❌ Pipeline failed: {e}")
+        return None
+
+def upload_mp3_and_queue(file_path: str, title: str):
+    """Uploads an existing MP3 file to storage and queues it."""
+    if not os.path.exists(file_path):
+        print(f"❌ File not found: {file_path}")
+        return
+
+    with open(file_path, "rb") as f:
+        audio_bytes = f.read()
+
+    filename = f"news_{uuid.uuid4().hex[:8]}.mp3"
+    storage_path = f"ai_dj/{filename}"
+    
+    try:
+        # Upload
+        supabase.storage.from_("songs").upload(
+            file=audio_bytes,
+            path=storage_path,
+            file_options={"content-type": "audio/mpeg", "upsert": "true"}
+        )
+        public_url = supabase.storage.from_("songs").get_public_url(storage_path)
+        
+        # Insert
+        uploader_id = get_bot_user_id()
+        supabase.table("songs").insert({
+            "uploader_id": uploader_id,
+            "title": title,
+            "artist_name": "GLOBAL PULSE",
+            "source": "news_brief",
+            "audio_url": public_url,
+            "duration_sec": 120, # Estimated
+            "status": "next_play",
+            "cover_art_url": "https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=2072&auto=format&fit=crop",
+            "is_canvas": False
+        }).execute()
+        print(f"✅ Queued News Brief: {title}")
+    except Exception as e:
+        print(f"❌ News Upload/Queue failed: {e}")
+
 # --- Core Logic ---
 
 _LAST_ANNOUNCED_SONG_ID = None
+_LAST_PROCESSED_CMD_ID = None
 _LAST_HYPE_TIME = time.time()
+
+def check_for_commands():
+    """Checks for incoming site commands."""
+    global _LAST_PROCESSED_CMD_ID
+    try:
+        response = supabase.table("broadcasts").select("site_command").eq("id", "00000000-0000-0000-0000-000000000000").single().execute()
+        if not response.data: return
+            
+        cmd = response.data.get("site_command")
+        if not cmd: return
+            
+        cmd_id = cmd.get("id")
+        if cmd_id == _LAST_PROCESSED_CMD_ID: return
+        _LAST_PROCESSED_CMD_ID = cmd_id
+        
+        # Check staleness (don't process if older than 1 minute)
+        ts = cmd.get("timestamp", 0)
+        if (time.time() * 1000) - ts > 60000:
+            print(f"📡 Ignoring stale command: {cmd.get('type')}")
+            return
+
+        print(f"📡 Received Site Command: {cmd.get('type')}")
+        
+        if cmd.get("type") == "news_brief":
+            prompt = cmd.get("payload", {}).get("prompt", "EDM culture news update")
+            send_site_command("ticker", f"🚨 NEWS ALERT: Processing Global Brief for '{prompt.upper()}'...")
+            
+            audio_path = run_news_pipeline(prompt)
+            if audio_path:
+                upload_mp3_and_queue(audio_path, f"Global Pulse: {prompt}")
+                send_site_command("chat", f"✅ News brief for '{prompt}' is ready and queued for next play.")
+            else:
+                send_site_command("ticker", "❌ News brief generation failed. Reverting to standard station ops.")
+
+    except Exception as e:
+        print(f"❌ Command listener error: {e}")
 
 def check_current_song():
     """Contextual banter when the song shifts."""
@@ -244,6 +349,7 @@ def main():
     
     while True:
         try:
+            check_for_commands()
             check_current_song()
             check_for_dead_songs()
             check_hype_cycle()

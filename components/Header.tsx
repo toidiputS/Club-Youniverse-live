@@ -7,11 +7,11 @@ interface HeaderProps {
   onNavigate: (view: View) => void;
   profile: Profile;
   onProfileClick?: () => void;
-  onPoolClick?: () => void;
   onFeedbackClick?: () => void;
+  onSmokeClick?: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ onNavigate, profile, onProfileClick, onPoolClick, onFeedbackClick }) => {
+export const Header: React.FC<HeaderProps> = ({ profile, onProfileClick, onSmokeClick }) => {
   const context = useContext(RadioContext);
 
   const broadcastManager = getBroadcastManager();
@@ -30,7 +30,6 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate, profile, onProfileCl
   }, []);
 
   if (!context) return null;
-  const { vjEnabled, setVjEnabled } = context;
 
   const [inviteText, setInviteText] = useState("Invite");
 
@@ -59,102 +58,66 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate, profile, onProfileCl
   };
 
   return (
-    <header className="relative flex flex-col w-full pointer-events-none px-3 pt-3 pb-2 gap-2">
-      {/* SINGLE ROW - MOBILE FIRST */}
-      <div className="flex justify-between items-center w-full gap-2 pointer-events-auto">
+    <header className="relative flex flex-col w-full pointer-events-none z-100">
+      {/* PRIMARY HEADER ROW - Flush to corners */}
+      <div className="flex justify-between items-center w-full pointer-events-auto">
+        
+        {/* Left Section: Logo & Action */}
+        <div className="flex items-center gap-1.5 p-1.5">
+            {/* Logo - Navigation to Sidewalk (Smoke Break) */}
+            <div 
+            onClick={onSmokeClick}
+            className="w-10 h-10 bg-zinc-950/40 hover:bg-zinc-900 rounded-lg flex items-center justify-center border border-white/5 shrink-0 shadow-lg cursor-pointer transition-transform active:scale-95 group/logo relative"
+            style={{ boxShadow: `0 0 ${pulse * 15}px rgba(168, 85, 247, 0.1)` }}
+            >
+                <img src="/icons/favicon.svg" alt="Youniverse" className="w-6 h-6 object-contain opacity-60 group-hover/logo:opacity-100 transition-opacity" />
+                <span className="absolute left-0 top-11 w-max bg-black text-[6px] text-white/40 px-2 py-1 rounded border border-white/5 opacity-0 group-hover/logo:opacity-100 transition-opacity pointer-events-none uppercase tracking-widest font-black">Smoke Break (Exit)</span>
+            </div>
 
-        {/* Logo Button (Left) */}
-        <button
-          onClick={() => onNavigate("club")}
-          className="w-9 h-9 sm:w-10 sm:h-10 bg-zinc-950 rounded-xl flex items-center justify-center border border-white/5 shrink-0"
-          style={{ boxShadow: `0 0 ${pulse * 20}px rgba(168, 85, 247, 0.2)` }}
-        >
-          <img src="/icons/favicon.svg" alt="Youniverse" className="w-5 h-5 sm:w-6 sm:h-6 object-contain opacity-70" />
-        </button>
-
-        {/* Center Title - Mobile Club Youniverse */}
-        <div className="flex flex-col items-center">
-          <span className="text-[10px] sm:text-[11px] font-black text-white/60 tracking-[0.3em] uppercase hidden sm:block">Club Youniverse</span>
-          <span className="text-[9px] font-black text-white/40 tracking-widest sm:hidden">CLUB YOUNIVERSE</span>
+            {/* Invite Button */}
+            <button
+                onClick={handleInvite}
+                className="px-3 py-2 bg-zinc-950/20 hover:bg-zinc-800/40 border border-white/5 hover:border-white/10 text-white/40 hover:text-white rounded-lg text-[7px] font-black uppercase tracking-widest transition-all whitespace-nowrap flex items-center gap-2"
+            >
+                <div className="w-1 h-1 rounded-full bg-pink-500/60 group-hover:bg-pink-500 animate-pulse" />
+                {inviteText}
+            </button>
         </div>
 
-        {/* Mobile: Only VJ toggle, Desktop: Volume too */}
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setVjEnabled(!vjEnabled)}
-            className={`flex items-center gap-1.5 px-2 py-1 rounded-full border transition-all text-[8px] sm:text-[9px] font-black uppercase ${vjEnabled 
-              ? 'bg-purple-600/20 border-purple-500/40 text-purple-400' 
-              : 'bg-black/40 border-white/5 text-zinc-600'}`}
-          >
-            <div className={`w-1.5 h-1.5 rounded-full ${vjEnabled ? 'bg-purple-400 animate-pulse' : 'bg-zinc-800'}`} />
-            <span className="hidden xs:inline">VJ</span>
-          </button>
+        {/* Centered Title */}
+        <div className="absolute left-1/2 -translate-x-1/2 pointer-events-none opacity-40">
+          <span className="text-[8px] font-black tracking-[0.5em] uppercase whitespace-nowrap bg-clip-text text-transparent bg-linear-to-r from-white via-white/80 to-white/60">
+            Club Youniverse
+          </span>
+        </div>
 
-          {/* Desktop Volume */}
-          <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-black/40 rounded-full border border-white/5 w-28">
-            <button onClick={() => context.setMuted(!context.isMuted)} className="text-zinc-500 hover:text-white">
-              {context.isMuted || context.volume === 0 ? (
-                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" /></svg>
-              ) : (
-                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" /></svg>
-              )}
-            </button>
-            <div className="w-full h-1 bg-zinc-800 rounded-full relative">
-              <input type="range" min="0" max="1" step="0.01" value={context.volume} onChange={(e) => context.setVolume(parseFloat(e.target.value))} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
-              <div className="absolute inset-y-0 left-0 bg-purple-500" style={{ width: `${context.volume * 100}%` }} />
-            </div>
+        {/* Profile Identity (Flush Right Corner) */}
+        <div 
+          onClick={onProfileClick}
+          className="flex items-center gap-2 pointer-events-auto shrink-0 group cursor-pointer p-1.5"
+        >
+          <div className="flex flex-col items-end min-w-0 pr-1">
+             <span className="text-[9px] font-black text-white group-hover:text-white transition-colors uppercase tracking-widest">
+               {profile.name}
+             </span>
+             <span className="text-[6px] font-black text-white/30 tracking-[0.2em] uppercase -mt-0.5">
+                NODE-{profile.user_id.slice(0,4)}
+             </span>
+          </div>
+
+          <div className="w-10 h-10 rounded-lg bg-zinc-950/40 border border-white/5 overflow-hidden shadow-lg transition-all group-active:scale-95 shrink-0">
+            <img 
+              src={profile.avatar_url || `https://api.dicebear.com/7.x/pixel-art/svg?seed=${profile.user_id}`} 
+              alt="Avatar" 
+              className="w-full h-full object-cover grayscale opacity-40 group-hover:grayscale-0 group-hover:opacity-100 transition-all"
+            />
           </div>
         </div>
+      </div>
 
-        {/* Action Buttons (Right) */}
-        <div className="flex items-center gap-2 shrink-0">
-          <button
-            onClick={onPoolClick}
-            className="px-2 py-1.5 sm:px-3 sm:py-2 bg-purple-600/30 border border-purple-500/30 text-purple-400 rounded-full text-[7px] sm:text-[9px] font-black uppercase tracking-wider hover:bg-purple-500/50 transition-all"
-          >
-            Pool
-          </button>
-
-          <button
-            onClick={onFeedbackClick}
-            className="px-2 py-1.5 sm:px-3 sm:py-2 bg-yellow-500/20 border border-yellow-500/30 text-yellow-500 rounded-full text-[7px] sm:text-[9px] font-black uppercase tracking-wider hover:bg-yellow-500/50 transition-all"
-          >
-            Reward
-          </button>
-
-          <button
-            onClick={() => onNavigate("dj-booth")}
-            className="px-2 py-1.5 sm:px-3 sm:py-2 bg-white text-black rounded-full text-[7px] sm:text-[9px] font-black uppercase tracking-wider hover:bg-purple-500 hover:text-white transition-all"
-          >
-            DJ
-          </button>
-
-          <button
-            onClick={handleInvite}
-            className="px-3 py-2 sm:px-4 bg-linear-to-r from-purple-600 to-pink-600 text-white rounded-full text-[9px] sm:text-[10px] font-black uppercase tracking-wider transition-all border border-white/30"
-          >
-            {inviteText === "Invite" ? "✨" : ""} {inviteText}
-          </button>
-
-          {/* Desktop Profile */}
-          <button
-            onClick={() => onNavigate("profile")}
-            className="hidden sm:flex items-center gap-2 group"
-          >
-            <span className="text-[8px] font-black text-white/40 group-hover:text-white truncate max-w-[60px]">{profile.name}</span>
-            <div className="w-8 h-8 rounded-xl bg-zinc-950 border border-white/5 overflow-hidden">
-              <img src={profile.avatar_url || `https://api.dicebear.com/7.x/pixel-art/svg?seed=${profile.user_id}`} alt="Avatar" className="w-full h-full object-cover grayscale opacity-50 group-hover:grayscale-0 group-hover:opacity-100" />
-            </div>
-          </button>
-
-          {/* Mobile Profile Button */}
-          <button
-            onClick={onProfileClick}
-            className="sm:hidden w-8 h-8 rounded-xl bg-zinc-900 border border-white/5 overflow-hidden"
-          >
-            <img src={profile.avatar_url || `https://api.dicebear.com/7.x/pixel-art/svg?seed=${profile.user_id}`} alt="Avatar" className="w-full h-full object-cover opacity-60" />
-          </button>
-        </div>
+      {/* Subtle bottom border line */}
+      <div className="w-full px-4 transform -translate-y-2 opacity-20">
+        <div className="w-full h-px bg-white/20" />
       </div>
     </header>
   );

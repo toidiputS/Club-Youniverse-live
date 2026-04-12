@@ -64,7 +64,7 @@ export const ChatAtmosphere: React.FC<ChatAtmosphereProps> = ({
 
     let animationFrameId: number;
     const particles: Particle[] = [];
-    const particleCount = 70; // High density for 'CGEI' immersion
+    const particleCount = 120; // Massive density for full-screen "CGEI" immersion
     
     // Initialize particles
     const initParticles = () => {
@@ -79,16 +79,18 @@ export const ChatAtmosphere: React.FC<ChatAtmosphereProps> = ({
     const createParticle = (w: number, h: number): Particle => {
       const colors = getMoodParticleColors(displayMood);
       
-      // Determine particle type based on mood
+      // Determine particle type based on mood (with fallback to random CGEI icons for neutral)
       let type: 'circle' | 'heart' | 'rain' | 'emoji' = 'circle';
       let content = '';
       
-      if (displayMood === 'love' && Math.random() > 0.3) type = 'heart';
-      else if (displayMood === 'sad' && Math.random() > 0.4) type = 'rain';
-      else if (['happy', 'playful', 'excited'].includes(displayMood) && Math.random() > 0.6) {
+      const moodSelection = displayMood === 'neutral' ? (Math.random() > 0.7 ? ['love', 'happy', 'excited'][Math.floor(Math.random() * 3)] : 'neutral') : displayMood;
+
+      if (moodSelection === 'love' && Math.random() > 0.2) type = 'heart';
+      else if (moodSelection === 'sad' && Math.random() > 0.3) type = 'rain';
+      else if (['happy', 'playful', 'excited'].includes(moodSelection as any) && Math.random() > 0.4) {
         type = 'emoji';
-        const emojis = displayMood === 'happy' ? ['😊', '✨', '⭐'] : 
-                      displayMood === 'playful' ? ['🎮', '🎈', '🍭'] : ['🔥', '⚡', '🎉'];
+        const emojis = moodSelection === 'happy' ? ['😊', '✨', '⭐', '🌈'] : 
+                      moodSelection === 'playful' ? ['🎮', '🎈', '🍭', '🦄'] : ['🔥', '⚡', '🎉', '🚀'];
         content = emojis[Math.floor(Math.random() * emojis.length)];
       }
 
@@ -162,7 +164,7 @@ export const ChatAtmosphere: React.FC<ChatAtmosphereProps> = ({
         if (p.x > canvas.width + 20) p.x = -20;
         
         // Final opacity
-        const alpha = p.opacity * (0.4 + moodState.intensity * 0.6);
+        const alpha = p.opacity * (0.6 + moodState.intensity * 0.4);
         ctx.fillStyle = p.color.replace('1)', `${alpha})`);
         
         // Draw based on type
@@ -208,7 +210,7 @@ export const ChatAtmosphere: React.FC<ChatAtmosphereProps> = ({
   }, [showParticles, displayMood, moodState.intensity]);
 
   return (
-    <div className="relative w-full h-full overflow-hidden">
+    <div className="relative w-full h-full overflow-hidden bg-black">
       {/* Gradient Background - Transitions smoothly between moods */}
       <MoodGradient mood={displayMood} intensity={moodState.intensity} />
       
@@ -216,7 +218,7 @@ export const ChatAtmosphere: React.FC<ChatAtmosphereProps> = ({
       {showParticles && (
         <canvas 
           ref={particleCanvasRef}
-          className="absolute inset-0 w-full h-full pointer-events-none opacity-60"
+          className="absolute inset-0 w-full h-full pointer-events-none opacity-80"
           style={{ mixBlendMode: 'screen' }}
         />
       )}
@@ -258,8 +260,8 @@ const MoodGradient: React.FC<{ mood: MoodType; intensity: number }> = ({ mood, i
   };
 
   const gradient = gradientMap[mood] || gradientMap.neutral;
-  // Lowered default opacity from 0.3 to 0.1 to allow dance floor to shine through
-  const opacityFactor = Math.min(1, 0.1 + intensity * 0.4);
+  // Deepened base opacity for full-screen "CGEI" mode
+  const opacityFactor = Math.min(1, 0.4 + intensity * 0.6);
 
   return (
     <div 

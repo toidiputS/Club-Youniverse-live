@@ -76,7 +76,6 @@ export class PersistentRadioService {
                 .eq("id", currentSong.id);
         }
 
-
         // 2. Identify the winner from 'in_box'
         const { data: boxSongs } = await supabase
             .from("songs")
@@ -86,78 +85,58 @@ export class PersistentRadioService {
 
         if (boxSongs && boxSongs.length > 0) {
             const winner = boxSongs[0];
-            // Only include top 2 losers that have votes
-            const losers = boxSongs.slice(1, 3).filter(l => (l.upvotes || 0) > 0);
+            const losers = boxSongs.slice(1);
 
-            // Only announce if winner has votes or there's real competition
-            const hasVotes = (winner.upvotes || 0) > 0;
-            
-            if (hasVotes || losers.length > 0) {
-                console.log(`🏆 Winner: ${winner.title} (${winner.upvotes} votes)`);
+            console.log(`🏆 Winner: ${winner.title} (${winner.upvotes} votes)`);
 
-                // AI BANTER: Generate speech for the winner
+            // 3. Announce via DJ Banter (Ticker only)
+            if ((winner.upvotes || 0) > 0) {
                 try {
-                    const banter = await LocalAiService.generateDJSpeech(winner, losers);
-                    console.log("🎙️ DJ Banter:", banter);
-
-                    // Broadcast banter to all clients via Supabase Realtime
-                    await supabase.channel('club-chat').send({
+                    const banter = await LocalAiService.generateDjBanter(
+                        `A new song has won the vote: "${winner.title}" by ${winner.artist_name}. Welcome it to the airwaves!`
+                    );
+                    // We need a BroadcastManager reference. Since this is static, we'll use a site command via the broadcast channel directly.
+                    await supabase.channel('site_commands').send({
                         type: 'broadcast',
-                        event: 'new_message',
+                        event: 'siteCommandReceived',
                         payload: {
-                            id: `dj-${Date.now()}`,
-                            user: { name: "THE ARCHITECT", isAdmin: true },
-                            text: banter,
-                            timestamp: Date.now()
-                        } as ChatMessage
+                            type: 'dj_banter',
+                            timestamp: Date.now(),
+                            payload: { text: banter }
+                        }
                     });
-                } catch (e) {
-                    console.warn("AI Banter generation failed", e);
-                }
-            } else {
-                console.log(`🏆 Winner: ${winner.title} (no votes - skipping banter)`);
+                } catch (e) { console.warn("Winner announcement failed", e); }
             }
 
             // Process Winner
-            let winnerStars = Math.min(10, (winner.stars || 5) + 1);
-            let winnerDsw = winner.is_dsw;
-
+            let winnerStars = (winner.stars || 0) + 1;
             await supabase
                 .from("songs")
                 .update({
-                    stars: winnerDsw ? 0 : winnerStars,
-                    status: "next_play", // Move to next_play so the broadcast manager can pick it up
-                    upvotes: 0 // Reset votes for next time
+                    stars: winnerStars,
+                    status: "next_play",
+                    upvotes: 0
                 })
                 .eq("id", winner.id);
 
-            // Process Losers (only those with votes)
-            const losersToProcess = boxSongs.slice(1).filter(l => (l.upvotes || 0) > 0);
-            for (const loser of losersToProcess) {
-                console.log(`💀 Loser: ${loser.title} returning to pool.`);
-                let loserStars = Math.max(0, (loser.stars || 5) - 1);
-                let loserDsw = loser.is_dsw || (loserStars <= 0); // Becomes DSW if it hits 0
-                loserStars = loserDsw ? 0 : loserStars;
-
-                await supabase
-                    .from("songs")
-                    .update({
-                        status: "pool",
-                        stars: loserStars,
-                        is_dsw: loserDsw,
-                        upvotes: 0
-                    })
-                    .eq("id", loser.id);
+            // Process Losers
+            for (const loser of losers) {
+                if ((loser.upvotes || 0) > 0) {
+                    let loserStars = Math.max(0, (loser.stars || 0) - 1);
+                    await supabase
+                        .from("songs")
+                        .update({ status: "pool", stars: loserStars, upvotes: 0 })
+                        .eq("id", loser.id);
+                } else {
+                    await supabase
+                        .from("songs")
+                        .update({ status: "pool", upvotes: 0 })
+                        .eq("id", loser.id);
+                }
             }
-        } else {
-
-            console.log("⚠️ No songs in the box to pick from.");
         }
 
-        // 4. Populate a new box immediately
         await this.populateTheBox();
-
-        // 5. Return the winner so it can be played immediately
         return await this.cycleNextToNow();
     }
 
@@ -276,52 +255,52 @@ export class PersistentRadioService {
         const currSong = currentPlaying && currentPlaying.length > 0 ? currentPlaying[0] : null;
 
         if (currSong) {
-
-            let newStars = currSong.stars;
+            let newStars = currSong.stars || 0;
             let nextStatus = "pool";
             let isDsw = currSong.is_dsw;
+            let strikes = currSong.boxRoundsLost || 0;
 
             if (currSong.live_stars_count > 0) {
-
-                // If it's DSW, its base stars are 0, meaning any vote helps. But a song starts its rating scale at 1, technically.
-                // Actually the math `sum - count * stars` works beautifully: 
-                // A DSW has 0 stars. If it gets a 5 star vote, delta = 5 - (1 * 0) = +5. New Stars = 5! A pardon!
-                const delta = Math.round(currSong.live_stars_sum - (currSong.live_stars_count * currSong.stars));
-                newStars = Math.min(10, Math.max(0, currSong.stars + delta));
-                console.log(`⭐ Live Rating Math for ${currSong.title}: Old Stars: ${currSong.stars}, Delta: ${delta}, New Stars: ${newStars}`);
+                const avgVote = currSong.live_stars_sum / currSong.live_stars_count;
+                const delta = Math.round(avgVote - 5);
+                newStars = Math.max(0, newStars + delta);
+                console.log(`⭐ Live Rating Math for ${currSong.title}: Old Stars: ${currSong.stars}, Avg Vote: ${avgVote.toFixed(1)}, Delta: ${delta}, New Stars: ${newStars}`);
             }
 
-
-            if (currSong.is_dsw) {
-
-                // It was a Dead Song Walking. Did it get pardoned?
+            if (isDsw) {
                 if (newStars > 0) {
-
-                    console.log(`🕊️ THE PARDON! ${currSong.title} survived its farewell play with ${newStars} stars!`);
+                    console.log(`🕊️ THE PARDON! ${currSong.title} survived with ${newStars} points!`);
                     isDsw = false;
+                    strikes = 0; // Reset strikes
                     nextStatus = "pool";
                 } else {
-
-                    console.log(`🪦 Farewell, ${currSong.title}. Sending to Graveyard.`);
-                    nextStatus = "graveyard";
+                    strikes += 1; // Increment strike
+                    if (strikes >= 3) {
+                        console.log(`🪦 Farewell Spectacle Failed. Manual intervention required. ${currSong.title} stays in pool.`);
+                        nextStatus = "pool";
+                    } else {
+                        console.log(`🧟 DSW Play ${strikes}/3. ${currSong.title} stays in pool.`);
+                        nextStatus = "pool";
+                    }
                 }
             } else {
-
                 if (newStars <= 0) {
-
-                    isDsw = true;
-                    newStars = 0; // Lock at 0
                     console.log(`🧟 ${currSong.title} has become a Dead Song Walking.`);
+                    isDsw = true;
+                    strikes = 1; // First strike
+                    newStars = 0;
+                    nextStatus = "pool";
                 }
             }
 
-            // Retire it
+            // Update song in DB
             await supabase
                 .from("songs")
                 .update({
                     status: nextStatus,
                     stars: newStars,
                     is_dsw: isDsw,
+                    box_rounds_lost: strikes, // Using this as strike counter
                     live_stars_sum: 0,
                     live_stars_count: 0
                 })
@@ -349,9 +328,9 @@ export class PersistentRadioService {
                 .eq("id", nextUpSong.id);
 
 
-            // AI VJ: Pre-generate lyrics if missing
-            if (!nextUpSong.lyrics) {
-               this.prepareLyricsInBg(nextUpSong.id, nextUpSong.title, nextUpSong.artist_name, nextUpSong.duration_sec);
+            // Trigger Farewell Spectacle if it's the 3rd strike
+            if (nextUpSong.is_dsw && (nextUpSong.box_rounds_lost || 1) >= 3) {
+                await this.triggerFarewellSpectacle(nextUpSong);
             }
 
             return this.mapDbToApp({ ...nextUpSong, status: 'now_playing' });
@@ -360,34 +339,75 @@ export class PersistentRadioService {
             console.log("🎲 No next_play. Picking random from pool...");
             // If no next_play, pick RANDOM from pool directly (failsafe)
             // We fetch a larger batch and pick one randomly locally to avoid complex PG random SQL
-            const { data: poolSongs } = await supabase
+            const { data: songs } = await supabase
                 .from("songs")
                 .select("*")
-                .eq("status", "pool")
-                .limit(20);
+                .in("status", ["pool", "debut"]);
 
-if (poolSongs && poolSongs.length > 0) {
+            const available = songs?.filter(s => s.status === 'pool' || s.status === 'debut' || s.is_dsw) || [];
+            
+            // Prioritize a DSW song if it's been waiting (to give it its chance)
+            const dswNode = available.find(s => s.is_dsw);
+            let next: any;
+            
+            if (dswNode && Math.random() > 0.7) {
+                next = dswNode;
+            } else {
+                next = available[Math.floor(Math.random() * available.length)];
+            }
 
-                const randomSong = poolSongs[Math.floor(Math.random() * poolSongs.length)];
+            if (next) {
                 await supabase
                     .from("songs")
                     .update({
                         status: "now_playing",
                         last_played_at: new Date().toISOString()
                     })
-                    .eq("id", randomSong.id);
+                    .eq("id", next.id);
 
 
-                // AI VJ: Pre-generate lyrics if missing
-                if (!randomSong.lyrics) {
-                   this.prepareLyricsInBg(randomSong.id, randomSong.title, randomSong.artist_name, randomSong.duration_sec);
+                // Trigger Farewell Spectacle if it's the 3rd strike
+                if (next.is_dsw && (next.box_rounds_lost || 1) >= 3) {
+                    await this.triggerFarewellSpectacle(next);
                 }
 
-                return this.mapDbToApp({ ...randomSong, status: 'now_playing' });
+                return this.mapDbToApp({ ...next, status: 'now_playing' });
             }
 
         }
         return null;
+    }
+
+    /**
+     * Triggers the global spectacle for a song's final play.
+     */
+    static async triggerFarewellSpectacle(song: any) {
+        console.log(`🔴 FAREWELL SPECTACLE TRIGGERED for ${song.title}`);
+        
+        // 1. Broadcast site command for visual effects
+        await supabase.channel('club-chat').send({
+            type: 'broadcast',
+            event: 'siteCommandReceived',
+            payload: {
+                type: 'trigger_fx',
+                timestamp: Date.now(),
+                payload: { fx: 'Farewell' }
+            }
+        });
+
+        // 2. Special AI Banter
+        const banter = `Attention Club Youniverse. Node ${song.title.toUpperCase()} is officially over-indexed. The influence is zero. Go home song, you're drunk. This is your final transmission.`;
+        
+        await supabase.channel('club-chat').send({
+            type: 'broadcast',
+            event: 'new_message',
+            payload: {
+                id: `dsw-${Date.now()}`,
+                user: { name: "THE ARCHITECT", isAdmin: true },
+                text: banter,
+                timestamp: Date.now()
+            } as ChatMessage
+        });
     }
 
     /**
@@ -429,6 +449,7 @@ if (poolSongs && poolSongs.length > 0) {
             downvotes: dbSong.downvotes,
             lastPlayedAt: dbSong.last_played_at,
             sunoUrl: dbSong.suno_url,
+            downloadUrl: dbSong.download_url,
             createdAt: dbSong.created_at
         };
     }
@@ -460,7 +481,9 @@ if (poolSongs && poolSongs.length > 0) {
                 .from("songs")
                 .update({ 
                     upvotes: (current.upvotes || 0) + extraVotes,
-                    weekly_stars: (current.weekly_stars || 0) + extraVotes,
+                    // Safety check: only update weekly_stars if it exists in your schema
+                    // If you haven't run the migration yet, this avoids errors
+                    ...( (current as any).weekly_stars !== undefined ? { weekly_stars: ((current as any).weekly_stars || 0) + extraVotes } : {} ),
                     stars: (current.stars || 0) + extraVotes
                 })
                 .eq("id", targetSong.id);
@@ -496,6 +519,39 @@ if (poolSongs && poolSongs.length > 0) {
     static getNowPlayingFact(song: Song): string {
         const plays = song.playCount || 0;
         const influence = song.stars || 0;
-        return `NODE DATA: ${song.title.toUpperCase()} // PLAYS: ${plays} // INFLUENCE: ${influence}/10`;
+        if (song.isDsw) {
+            const strikes = song.boxRoundsLost || 1;
+            if (strikes >= 3) return `🔴 FAREWELL SPECTACLE: ${song.title.toUpperCase()} // FINAL CHANCE`;
+            return `🧟 DEAD SONG WALKING: ${song.title.toUpperCase()} // STRIKE ${strikes}/3`;
+        }
+        return `NODE DATA: ${song.title.toUpperCase()} // PLAYS: ${plays} // INFLUENCE: ${influence}`;
+    }
+
+    /**
+     * Leaderboard: Fetches a summary of player and song standings.
+     */
+    static async getLeaderboardSummary(): Promise<string> {
+        try {
+            const { data: topPlayers } = await supabase
+                .from('youniversal_leaderboard')
+                .select('name, wins')
+                .order('wins', { ascending: false })
+                .limit(1);
+            
+            const { data: topSongs } = await supabase
+                .from('songs')
+                .select('title, weekly_stars')
+                .order('weekly_stars', { ascending: false })
+                .limit(1);
+                
+            const player = topPlayers?.[0] ? `#1 ${topPlayers[0].name?.toUpperCase()} [${topPlayers[0].wins}]` : "NONE";
+            const songTitle = topSongs?.[0]?.title?.toUpperCase() || "NONE";
+            const songStars = topSongs?.[0]?.weekly_stars !== undefined ? ` [${topSongs[0].weekly_stars}]` : "";
+            const song = `${songTitle}${songStars}`;
+
+            return `TOP PLAYER: ${player} // TOP NODE: ${song}`;
+        } catch (e) {
+            return "SEASON OF SOUND: ARCHIVING STANDINGS...";
+        }
     }
 }

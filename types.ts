@@ -19,6 +19,10 @@ export interface Profile {
   is_premium: boolean;
   is_artist: boolean;
   is_admin?: boolean;
+  is_first_100?: boolean;
+  stripe_customer_id?: string;
+  current_streak?: number;
+  last_streak_update?: string;
   avatar_url?: string;
   phone_number?: string;
   roast_consent: boolean;
@@ -60,6 +64,8 @@ export interface Song {
   downvotes: number;
   lastPlayedAt: string;
   sunoUrl?: string;
+  downloadUrl?: string;
+  userRating?: number;
   createdAt: string;
 }
 

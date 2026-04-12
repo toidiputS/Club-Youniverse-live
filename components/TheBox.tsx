@@ -6,14 +6,54 @@ import React, { useContext, useState, useEffect } from "react";
 import { RadioContext } from "../contexts/AudioPlayerContext";
 import { supabase } from "../services/supabaseClient";
 import type { Song } from "../types";
+import { Info, Play, Square, Star } from "lucide-react";
 
 export const TheBox: React.FC = () => {
   const context = useContext(RadioContext);
-  if (!context) return null;
-
-  const { radioState } = context;
+  const { radioState = "POOL" } = context || {};
   const [candidates, setCandidates] = useState<Song[]>([]);
   const [votedId, setVotedId] = useState<string | null>(null);
+  const [previewId, setPreviewId] = useState<string | null>(null);
+  const [showStatsId, setShowStatsId] = useState<string | null>(null);
+  const audioRef = React.useRef<HTMLAudioElement | null>(null);
+
+  if (!context) return null;
+
+  // Preview Logic
+  const handlePreview = (e: React.MouseEvent, song: Song) => {
+    e.stopPropagation(); // Don't vote when clicking preview
+    
+    if (previewId === song.id) {
+        audioRef.current?.pause();
+        setPreviewId(null);
+        return;
+    }
+
+    if (audioRef.current) {
+        audioRef.current.pause();
+    }
+
+    const audio = new Audio(song.audioUrl);
+    audio.volume = 0.5;
+    audioRef.current = audio;
+    setPreviewId(song.id);
+    audio.play();
+
+    // Auto-stop after 15 seconds
+    setTimeout(() => {
+        if (audioRef.current === audio) {
+            audio.pause();
+            setPreviewId(null);
+        }
+    }, 15000);
+  };
+
+  // Cleanup audio on unmount
+  useEffect(() => {
+    return () => {
+        audioRef.current?.pause();
+    };
+  }, []);
 
   useEffect(() => {
     const fetchBox = async () => {
@@ -97,29 +137,31 @@ export const TheBox: React.FC = () => {
   return (
     <div className="flex flex-col w-full">
       {/* Voting Grid - Mobile Optimized (2 candidates only) */}
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-2">
         {/* Voting Candidates */}
         {[0, 1].map((idx) => {
           const song = candidates[idx];
           if (!song) return (
-            <div key={`empty-${idx}`} className="h-full min-h-[4rem] bg-zinc-900/40 border border-white/[0.03] rounded-xl flex items-center justify-center">
+            <div key={`empty-${idx}`} className="h-full min-h-16 bg-zinc-900/40 border border-white/3 rounded-xl flex items-center justify-center">
               <span className="text-[7px] font-black uppercase tracking-[0.2em] text-zinc-700 animate-pulse">Syncing...</span>
             </div>
           );
 
           return (
-            <button
+            <div
               key={song.id}
               onClick={() => handleVote(song.id)}
-              disabled={!!votedId}
-              className={`group relative flex flex-col p-1.5 rounded-xl border transition-all duration-300 overflow-hidden ${
+              className={`group relative flex flex-col p-0.5 sm:p-1 rounded-lg border transition-all duration-300 overflow-hidden cursor-pointer ${
                 votedId === song.id
                   ? 'border-purple-600 bg-zinc-900 ring-1 ring-purple-500/50'
-                  : 'border-white/[0.06] bg-zinc-950 hover:bg-zinc-900 hover:border-white/20'
+                  : 'border-white/6 bg-zinc-950 hover:bg-zinc-900 hover:border-white/20'
               }`}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => { if (e.key === 'Enter') handleVote(song.id); }}
             >
               {/* Thumbnail */}
-              <div className="relative h-12 sm:h-14 rounded-lg overflow-hidden mb-1 border border-white/5">
+              <div className="relative h-8 sm:h-10 rounded-md overflow-hidden mb-0.5 border border-white/5">
                 <img
                   src={song.coverArtUrl || `https://picsum.photos/seed/${song.id}/100`}
                   className={`w-full h-full object-cover transition-all duration-500 ${
@@ -128,38 +170,86 @@ export const TheBox: React.FC = () => {
                   alt={song.title}
                 />
 
-                {song.isDsw && (
-                  <div className="absolute top-0 left-0 px-1 py-0.5 rounded-br-lg bg-red-500 text-[5px] font-black text-white tracking-wider uppercase z-10">
-                    DSW
+                {/* Stats / Influence Badge */}
+                <div className="absolute bottom-0.5 left-0.5 flex items-center gap-1">
+                  <div className="px-0.5 py-0 rounded-md bg-black/60 backdrop-blur-md border border-white/10 flex items-center gap-0.5">
+                    <Star size={5} className="text-yellow-500 fill-yellow-500" />
+                    <span className="text-[5px] font-black text-white">{song.stars?.toFixed(0)}</span>
                   </div>
-                )}
+                </div>
 
                 {/* Vote Badge */}
-                <div className={`absolute top-1 right-1 px-1.5 py-0.5 rounded-full backdrop-blur-md border transition-all ${
+                <div className={`absolute top-0.5 right-0.5 px-1 py-0 rounded-full backdrop-blur-md border transition-all flex items-center gap-1 ${
                   votedId === song.id
                     ? 'bg-purple-600/90 border-purple-400'
                     : 'bg-black/60 border-white/10 group-hover:bg-purple-900/40 group-hover:border-purple-500/30'
-}`}>
-                  <span className={`text-[7px] font-black tracking-wider ${
+                }`}>
+                  <span className={`text-[6px] font-black tracking-wider ${
                     votedId === song.id ? 'text-white' : 'text-zinc-300 group-hover:text-purple-300'
                   }`}>
                     {votedId === song.id ? 'VOTED' : 'VOTE'}
                   </span>
+                  <div className="w-px h-1.5 bg-white/20" />
+                  <span className="text-[6px] font-black text-white/80">{song.upvotes || 0}</span>
                 </div>
+
+                {/* Preview Overlay */}
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1">
+                   <button 
+                     onClick={(e) => handlePreview(e, song)}
+                     className="p-1 rounded-full bg-white text-black hover:scale-110 transition-transform shadow-lg"
+                   >
+                     {previewId === song.id ? <Square size={6} fill="currentColor" /> : <Play size={6} fill="currentColor" />}
+                   </button>
+                   <button 
+                     onMouseEnter={() => setShowStatsId(song.id)}
+                     onMouseLeave={() => setShowStatsId(null)}
+                     onClick={(e) => { e.stopPropagation(); setShowStatsId(song.id === showStatsId ? null : song.id); }}
+                     className="p-1 rounded-full bg-zinc-900 text-white border border-white/10 hover:border-white/30"
+                   >
+                     <Info size={6} />
+                   </button>
+                </div>
+
+                {/* Stats Pop-out */}
+                {showStatsId === song.id && (
+                  <div className="absolute inset-0 z-20 bg-zinc-950/95 backdrop-blur-md p-1 flex flex-col justify-center border border-purple-500/30 rounded-lg animate-in fade-in zoom-in duration-200">
+                     <div className="flex-1 min-w-0 pr-1 pl-1 border-r border-white/6 flex items-center justify-between">
+                        <span className="text-[5px] font-black text-purple-400 uppercase tracking-widest">N-Data</span>
+                        <Star size={6} className="text-yellow-500" />
+                     </div>
+                     <div className="space-y-0.5">
+                        <div className="flex justify-between">
+                           <span className="text-[4px] text-zinc-500 uppercase">Plays</span>
+                           <span className="text-[4px] text-white font-bold">{song.playCount || 0}</span>
+                        </div>
+                        <div className="flex justify-between">
+                           <span className="text-[4px] text-zinc-500 uppercase">Seen</span>
+                           <span className="text-[4px] text-white font-bold">{song.boxAppearanceCount || 0}</span>
+                        </div>
+                        <div className="flex justify-between">
+                           <span className="text-[4px] text-zinc-500 uppercase">Strikes</span>
+                           <span className={`text-[4px] font-bold ${song.boxRoundsLost > 0 ? 'text-red-400' : 'text-zinc-500'}`}>
+                              {song.boxRoundsLost || 0}/3
+                           </span>
+                        </div>
+                     </div>
+                  </div>
+                )}
               </div>
 
               {/* Info */}
               <div className="w-full text-left px-0.5">
-                <h4 className={`text-[9px] font-black leading-tight truncate uppercase transition-colors ${
+                <h4 className={`text-[7px] sm:text-[8px] font-black leading-tight truncate uppercase transition-colors ${
                   votedId === song.id ? 'text-purple-300' : 'text-white'
                 }`}>
                   {song.title}
                 </h4>
-                <p className="text-zinc-600 text-[7px] font-bold truncate uppercase">
+                <p className="text-zinc-600 text-[5px] sm:text-[6px] font-bold truncate uppercase">
                   {song.artistName}
                 </p>
               </div>
-            </button>
+            </div>
           );
         })}
       </div>
