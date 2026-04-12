@@ -20,6 +20,7 @@ import { LoginScreen } from "./components/LoginScreen";
 import { supabase } from "./services/supabaseClient";
 import type { Session, Profile, View } from "./types";
 import { Analytics } from "@vercel/analytics/react";
+import { SpeedInsights } from "@vercel/speed-insights/react";
 import { AnimatePresence } from "framer-motion";
 import { TheDoor } from "./components/TheDoor";
 
@@ -174,6 +175,7 @@ const App: React.FC = () => {
     <ThemeProvider>
       <RadioProvider profile={activeProfile} setProfile={setProfile}>
         <Analytics />
+        <SpeedInsights />
         <TuneInOverlay />
 
         {/* 1. SIDEWALK VIEW (Public) */}
