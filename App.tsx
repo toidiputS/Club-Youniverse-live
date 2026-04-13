@@ -9,8 +9,9 @@ import { Loader } from "./components/Loader";
 import { AudioVisualizer } from "./components/AudioVisualizer";
 import { SiteEffects } from "./components/SiteEffects";
 import { Ticker } from "./components/Ticker";
+import { NowPlay } from "./components/NowPlay";
 import { TuneInOverlay } from "./components/TuneInOverlay";
-import { PresenceAlerts } from "./components/PresenceAlerts";
+
 import { FeedbackOverlay } from "./components/FeedbackOverlay";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { UserProfileCard } from './components/UserProfileCard';
@@ -291,10 +292,11 @@ const App: React.FC = () => {
 
                     {/* FULL WIDTH BOTTOM TICKERS */}
                     <div className="fixed bottom-0 left-0 w-full z-40">
+                      <NowPlay />
                       <Ticker />
                     </div>
                     
-                    <PresenceAlerts profile={profile!} />
+                    {/* Removed PresenceAlerts due to noise/spam as requested by user */}
                     
                     <AnimatePresence>
                       {showFeedback && (

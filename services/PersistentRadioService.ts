@@ -105,10 +105,35 @@ export class PersistentRadioService {
                 console.warn("📰 News generation response invalid:", data);
             }
         } catch (e) {
-            console.error("📰 News generation failed:", e);
+            if (e instanceof TypeError && e.message === "Failed to fetch") {
+                console.log("📰 News service is currently offline. Skipping hourly update.");
+            } else {
+                console.error("📰 News generation error:", e);
+            }
         } finally {
             this.isGeneratingNews = false;
         }
+    }
+
+    static async triggerManualNews() {
+        if (this.isGeneratingNews) return;
+        this.isGeneratingNews = true;
+        this.lastNewsTime = Date.now(); // Reset timer so it doesn't auto-trigger immediately after
+        await this.generateAndQueueNews();
+    }
+
+    static async triggerManualBanter() {
+        try {
+            const banter = await LocalAiService.generateDjBanter("The DJ was manually requested to address the crowd.");
+            await supabase.from("broadcasts").update({
+                site_command: {
+                    type: 'dj_banter',
+                    timestamp: Date.now(),
+                    payload: { text: banter },
+                    id: Math.random().toString(36).substring(2, 15)
+                }
+            }).eq("id", "00000000-0000-0000-0000-000000000000");
+        } catch (e) { console.warn("Manual banter failed", e); }
     }
 
     /**

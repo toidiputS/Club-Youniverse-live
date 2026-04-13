@@ -19,10 +19,12 @@ interface GuestManagerProps {
     isOpen: boolean;
     onClose: () => void;
     adminProfile: Profile;
+    onOpenProfile?: (userId: string) => void;
 }
 
-export const GuestManager: React.FC<GuestManagerProps> = ({ isOpen, onClose, adminProfile }) => {
-    const isAdmin = adminProfile?.is_admin || adminProfile?.role === 'owner' || adminProfile?.role === 'admin' || adminProfile?.role === 'bouncer' || adminProfile?.email === 'itstraderbaby@gmail.com';
+export const GuestManager: React.FC<GuestManagerProps> = ({ isOpen, onClose, adminProfile, onOpenProfile }) => {
+    const isOwner = adminProfile?.role === 'owner' || adminProfile?.email === 'itstraderbaby@gmail.com';
+    const isStaff = adminProfile?.is_admin || isOwner || adminProfile?.role === 'admin' || adminProfile?.role === 'bouncer';
     const [guests, setGuests] = useState<Profile[]>([]);
     const [searchQuery, setSearchQuery] = useState("");
     const [loading, setLoading] = useState(true);
@@ -53,7 +55,7 @@ export const GuestManager: React.FC<GuestManagerProps> = ({ isOpen, onClose, adm
         }
     }, [isOpen]);
 
-    const handleAction = async (type: 'warning' | 'timeout' | 'kick' | 'ban', guest: Profile) => {
+    const handleAction = async (type: 'warning' | 'timeout' | 'kick' | 'ban' | 'bouncer', guest: Profile) => {
         const bm = getBroadcastManager();
         
         if (type === 'warning') {
@@ -91,6 +93,17 @@ export const GuestManager: React.FC<GuestManagerProps> = ({ isOpen, onClose, adm
                 alert(`${guest.name} HAS BEEN BANNED.`);
                 fetchGuests();
             }
+        } else if (type === 'bouncer') {
+            const newRole = guest.role === 'bouncer' ? 'listener' : 'bouncer';
+            const { error } = await supabase
+                .from('profiles')
+                .update({ role: newRole })
+                .eq('user_id', guest.user_id);
+            
+            if (!error) {
+                alert(`${guest.name} IS NOW A ${newRole.toUpperCase()}.`);
+                fetchGuests();
+            }
         }
     };
 
@@ -98,16 +111,23 @@ export const GuestManager: React.FC<GuestManagerProps> = ({ isOpen, onClose, adm
     const handleSendDM = async () => {
         if (!selectedGuest || !dmText.trim()) return;
         
-        const bm = getBroadcastManager();
-        await bm.sendSiteCommand("user_action", {
-            userId: selectedGuest.user_id,
-            action: 'dm',
-            from: adminProfile.name,
-            text: dmText
-        });
-        
-        setDmText("");
-        alert(`MESSAGE SENT TO ${selectedGuest.name}`);
+        console.log(`📤 Initializing transmission to ${selectedGuest.name}...`);
+        try {
+            const bm = getBroadcastManager();
+            await bm.sendSiteCommand("user_action", {
+                userId: selectedGuest.user_id,
+                action: 'dm',
+                from: adminProfile?.name || adminProfile?.email || 'Admin',
+                text: dmText
+            });
+            
+            console.log("✅ Transmission broadcast successful.");
+            setDmText("");
+            alert(`TRANSMISSION COMPLETE. MESSAGE DELIVERED TO ${selectedGuest.name.toUpperCase()}.`);
+        } catch (err) {
+            console.error("❌ Transmission failed:", err);
+            alert("TRANSMISSION ERROR. SYSTEM OFFLINE.");
+        }
     };
 
     const filteredGuests = guests.filter(g => 
@@ -186,17 +206,20 @@ export const GuestManager: React.FC<GuestManagerProps> = ({ isOpen, onClose, adm
                                         onClick={() => setSelectedGuest(selectedGuest?.user_id === guest.user_id ? null : guest)}
                                     >
                                         <div className="flex items-center gap-4">
-                                            <div className="w-10 h-10 rounded-xl bg-black border border-white/5 overflow-hidden shrink-0">
+                                            <button 
+                                                onClick={(e) => { e.stopPropagation(); onOpenProfile?.(guest.user_id); }}
+                                                className="w-10 h-10 rounded-xl bg-black border border-white/5 overflow-hidden shrink-0 hover:border-red-500/50 transition-all active:scale-90"
+                                            >
                                                 <img src={guest.avatar_url || `https://api.dicebear.com/7.x/pixel-art/svg?seed=${guest.user_id}`} className="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-opacity" />
-                                            </div>
+                                            </button>
                                             <div className="grow min-w-0">
                                                 <div className="flex items-center gap-2">
                                                     <span className="text-[11px] font-black text-white uppercase tracking-wider truncate">{guest.name}</span>
                                                     {guest.role && (
                                                         <span className={`text-[6px] font-black px-1.5 py-0.5 rounded uppercase ${
-                                                            guest.role === 'owner' ? 'bg-purple-500/20 text-purple-400' : 
-                                                            guest.role === 'admin' ? 'bg-red-500/20 text-red-400' :
-                                                            guest.role === 'bouncer' ? 'bg-orange-500/20 text-orange-400' :
+                                                            guest.role === 'owner' ? 'bg-purple-500/20 text-purple-400 animate-pulse shadow-[0_0_8px_rgba(168,85,247,0.3)]' : 
+                                                            guest.role === 'admin' ? 'bg-red-500/20 text-red-400 animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.3)]' :
+                                                            guest.role === 'bouncer' ? 'bg-orange-500/20 text-orange-400 animate-pulse shadow-[0_0_8px_rgba(249,115,22,0.3)]' :
                                                             guest.role === 'vip' ? 'bg-amber-500/20 text-amber-400' :
                                                             'bg-zinc-800 text-zinc-500'
                                                         }`}>
@@ -220,36 +243,58 @@ export const GuestManager: React.FC<GuestManagerProps> = ({ isOpen, onClose, adm
                                                     className="overflow-hidden mt-4 pt-4 border-t border-white/5 space-y-4"
                                                 >
                                                     {/* Action Buttons */}
-                                                    {isAdmin && (
-                                                        <div className="grid grid-cols-4 gap-2">
+                                                    {isStaff && (
+                                                        <div className="grid grid-cols-5 gap-1.5">
                                                             <button 
                                                                 onClick={(e) => { e.stopPropagation(); handleAction('warning', guest); }}
-                                                                className="flex flex-col items-center gap-2 p-3 bg-zinc-950 rounded-xl border border-white/5 hover:border-amber-500/40 text-amber-500/60 hover:text-amber-400 transition-all group/btn"
+                                                                className="flex flex-col items-center gap-2 p-2.5 bg-zinc-950 rounded-xl border border-white/5 hover:border-amber-500/40 text-amber-500/60 hover:text-amber-400 transition-all group/btn"
+                                                                title="Issue Warning"
                                                             >
                                                                 <AlertTriangle size={14} />
                                                                 <span className="text-[6px] font-black uppercase">Warn</span>
                                                             </button>
                                                             <button 
                                                                 onClick={(e) => { e.stopPropagation(); handleAction('timeout', guest); }}
-                                                                className="flex flex-col items-center gap-2 p-3 bg-zinc-950 rounded-xl border border-white/5 hover:border-orange-500/40 text-orange-500/60 hover:text-orange-400 transition-all group/btn"
+                                                                className="flex flex-col items-center gap-2 p-2.5 bg-zinc-950 rounded-xl border border-white/5 hover:border-orange-500/40 text-orange-500/60 hover:text-orange-400 transition-all group/btn"
+                                                                title="10m Timeout"
                                                             >
                                                                 <Clock size={14} />
                                                                 <span className="text-[6px] font-black uppercase">10m</span>
                                                             </button>
                                                             <button 
                                                                 onClick={(e) => { e.stopPropagation(); handleAction('kick', guest); }}
-                                                                className="flex flex-col items-center gap-2 p-3 bg-zinc-950 rounded-xl border border-white/5 hover:border-red-500/40 text-red-500/60 hover:text-red-400 transition-all group/btn"
+                                                                className="flex flex-col items-center gap-2 p-2.5 bg-zinc-950 rounded-xl border border-white/5 hover:border-red-500/40 text-red-500/60 hover:text-red-400 transition-all group/btn"
+                                                                title="Kick from Room"
                                                             >
                                                                 <UserX size={14} />
                                                                 <span className="text-[6px] font-black uppercase">Kick</span>
                                                             </button>
                                                             <button 
                                                                 onClick={(e) => { e.stopPropagation(); handleAction('ban', guest); }}
-                                                                className="flex flex-col items-center gap-2 p-3 bg-zinc-950 rounded-xl border border-red-950/40 text-red-800 hover:bg-red-950/20 hover:text-red-600 transition-all group/btn"
+                                                                className="flex flex-col items-center gap-2 p-2.5 bg-zinc-950 rounded-xl border border-red-950/40 text-red-800 hover:bg-red-950/20 hover:text-red-600 transition-all group/btn"
+                                                                title="Permanent Ban"
                                                             >
                                                                 <Shield size={14} />
                                                                 <span className="text-[6px] font-black uppercase">Ban</span>
                                                             </button>
+
+                                                            {/* Bouncer Toggle - OWNER ONLY */}
+                                                            {isOwner && (
+                                                                <button 
+                                                                    onClick={(e) => { e.stopPropagation(); handleAction('bouncer', guest); }}
+                                                                    className={`flex flex-col items-center gap-2 p-2.5 rounded-xl border transition-all group/btn ${
+                                                                        guest.role === 'bouncer'
+                                                                        ? 'bg-orange-500/20 border-orange-500/40 text-orange-400'
+                                                                        : 'bg-zinc-950 border-white/5 text-zinc-600 hover:text-orange-400 hover:border-orange-500/20'
+                                                                    }`}
+                                                                    title={guest.role === 'bouncer' ? 'Remove Bouncer' : 'Appoint Bouncer'}
+                                                                >
+                                                                    <Shield size={14} className={guest.role === 'bouncer' ? 'fill-orange-400/20' : ''} />
+                                                                    <span className="text-[6px] font-black uppercase text-center leading-none mt-0.5">
+                                                                        BOUNCER
+                                                                    </span>
+                                                                </button>
+                                                            )}
                                                         </div>
                                                     )}
 
@@ -265,6 +310,12 @@ export const GuestManager: React.FC<GuestManagerProps> = ({ isOpen, onClose, adm
                                                                 value={dmText}
                                                                 onChange={(e) => setDmText(e.target.value)}
                                                                 onClick={(e) => e.stopPropagation()}
+                                                                onKeyDown={(e) => {
+                                                                    if (e.key === 'Enter') {
+                                                                        e.stopPropagation();
+                                                                        handleSendDM();
+                                                                    }
+                                                                }}
                                                                 className="grow bg-black border border-white/5 rounded-lg px-3 py-2 text-[10px] text-zinc-300 font-mono focus:outline-none focus:border-red-500/30"
                                                             />
                                                             <button 

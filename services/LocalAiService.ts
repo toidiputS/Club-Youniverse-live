@@ -148,7 +148,7 @@ export class LocalAiService {
             const data = await response.json();
             return data.choices?.[0]?.message?.content || "";
         } catch (e) {
-            return "";
+            return "SYNCING WITH ARCHIVE... STAND BY.";
         }
     }
 }

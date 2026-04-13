@@ -9,7 +9,9 @@
     "preview": "vite preview",
     "server": "npx ts-node --esm scripts/club-server.ts",
     "stripe": "npx ts-node --esm scripts/stripe-server.ts",
-    "dev:all": "start npm run dev & start npm run server & start npm run stripe"
+    "dev:all": "start npm run dev & start npm run server & start npm run stripe & start npm run dj & start npm run news",
+    "dj": "cd ai_dj && python dj_python.py",
+    "news": "cd ai-dj-pipeline && python dj_api.py"
   },
   "dependencies": {
     "@google/genai": "^1.28.0",

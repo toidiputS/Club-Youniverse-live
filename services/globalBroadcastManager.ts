@@ -56,6 +56,7 @@ export class GlobalBroadcastManager {
   private lastCommandId: string | null = null;
   private releasedAt: number = 0; // Timestamp of last voluntary release
   private siteCommandChannel: any = null; // Dedicated broadcast channel for ephemeral commands
+  private broadcastChannel: any = null; // Channel for database updates
 
   private constructor() {
     // CRITICAL: Check if there's already an audio element playing from a leaked instance
@@ -365,26 +366,36 @@ export class GlobalBroadcastManager {
     }
 
     // 2. Subscribe to Realtime DB changes (for state, songs, leadership)
-    supabase
+    if (this.broadcastChannel) {
+        supabase.removeChannel(this.broadcastChannel);
+    }
+
+    this.broadcastChannel = supabase
       .channel("public:broadcasts")
       .on(
         "postgres_changes",
         { event: "UPDATE", schema: "public", table: "broadcasts" },
         (_payload) => {
-          // console.log('📡 Global Trigger:', payload.new);
           this.fetchAndSync();
         },
       )
-      .subscribe((status) => {
-        console.log("📡 Broadcast Subscription Status:", status);
+      .subscribe((status, err) => {
+        console.log("📡 Broadcast Subscription Status:", status, err || "");
+        if (status === 'CHANNEL_ERROR') {
+          console.warn("📡 Broadcast channel failed. Retrying in 5s...");
+          setTimeout(() => this.initializeGlobalState(), 5000);
+        }
       });
 
     // 3. Subscribe to dedicated Broadcast channel for ephemeral site commands
+    if (this.siteCommandChannel) {
+        supabase.removeChannel(this.siteCommandChannel);
+    }
+
     this.siteCommandChannel = supabase
       .channel("site-commands")
       .on("broadcast", { event: "site_command" }, (payload: any) => {
         const cmd = payload.payload;
-        console.log("📡 Site Command received via broadcast channel:", cmd);
         if (cmd && cmd.id && cmd.id !== this.lastCommandId) {
           this.lastCommandId = cmd.id;
           
@@ -394,15 +405,16 @@ export class GlobalBroadcastManager {
 
           this.emit("siteCommandReceived", cmd);
           
-          // LEADER ACTION: Handle global commands
           if (this.isLeaderLocal && cmd.type === "skip") {
-              console.log("👑 Leader: Direct Skip Received via command.");
               this.handleStateTrigger('POOL');
           }
         }
       })
-      .subscribe((status: string) => {
-        console.log("📡 Site Command Channel Status:", status);
+      .subscribe((status: string, err: any) => {
+        console.log("📡 Site Command Channel Status:", status, err || "");
+        if (status === 'CHANNEL_ERROR') {
+            // Already handled by the broadcasts channel retry
+        }
       });
   }
 
@@ -413,10 +425,17 @@ export class GlobalBroadcastManager {
       .limit(1)
       .single();
 
-    if (data) this.syncStateFromRemote(data);
+    if (data) {
+        this.syncStateFromRemote(data);
+    } else {
+        // Keep existing state if we fail to fetch new state during a reconnection attempt
+        console.warn("📡 Using cached broadcast state due to fetch failure.");
+    }
   }
 
   private syncStateFromRemote(data: any) {
+    if (!data) return;
+    
     const remoteSong = data.current_song
       ? PersistentRadioService.mapDbToApp(data.current_song)
       : null;

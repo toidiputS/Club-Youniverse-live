@@ -19,6 +19,7 @@ export const EditSongModal: React.FC<EditSongModalProps> = ({ song, onClose, onS
     const [downloadUrl, setDownloadUrl] = useState(song.downloadUrl || '');
     const [audioUrl, setAudioUrl] = useState(song.audioUrl || '');
     const [audioFile, setAudioFile] = useState<File | null>(null);
+    const [durationSec, setDurationSec] = useState(song.durationSec || 0);
     const [isSaving, setIsSaving] = useState(false);
 
     // Close on escape key
@@ -29,6 +30,20 @@ export const EditSongModal: React.FC<EditSongModalProps> = ({ song, onClose, onS
         window.addEventListener('keydown', handleEsc);
         return () => window.removeEventListener('keydown', handleEsc);
     }, [onClose]);
+
+    // 🕵️ AUTO-PROBE: If duration is 0, try to fetch it from the audioUrl
+    useEffect(() => {
+        if ((durationSec <= 10 || durationSec === 180) && audioUrl && !audioFile) {
+            console.log(`🕵️ Probing duration for: ${title}`);
+            const audio = new Audio(audioUrl);
+            audio.onloadedmetadata = () => {
+                if (audio.duration && audio.duration > 0) {
+                    console.log(`✅ Probed duration: ${Math.round(audio.duration)}s`);
+                    setDurationSec(Math.round(audio.duration));
+                }
+            };
+        }
+    }, [audioUrl, durationSec, audioFile, title]);
 
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -85,8 +100,8 @@ export const EditSongModal: React.FC<EditSongModalProps> = ({ song, onClose, onS
                 lyrics,
                 audio_url: finalAudioUrl,
                 cover_art_url: finalCoverArtUrl,
+                duration_sec: durationSec,
                 suno_url: sunoUrl,
-                // download_url: downloadUrl, // TODO: Add download_url column to Supabase 'songs' table
                 status: song.status || 'pool',
                 uploader_id: song.uploaderId || 'system'
             };
@@ -200,13 +215,27 @@ export const EditSongModal: React.FC<EditSongModalProps> = ({ song, onClose, onS
                                     <input
                                         type="file"
                                         accept="audio/*"
-                                        onChange={(e) => setAudioFile(e.target.files?.[0] || null)}
+                                        onChange={(e) => {
+                                            const file = e.target.files?.[0] || null;
+                                            setAudioFile(file);
+                                            if (file) {
+                                                const url = URL.createObjectURL(file);
+                                                const audio = new Audio(url);
+                                                audio.onloadedmetadata = () => {
+                                                    setDurationSec(Math.round(audio.duration));
+                                                    URL.revokeObjectURL(url);
+                                                };
+                                            }
+                                        }}
                                         className="hidden"
                                     />
                                 </label>
                             </div>
                             {audioFile && (
-                                <p className="text-[8px] text-emerald-400 mt-2 ml-1 animate-pulse">✓ Ready to sync: {audioFile.name}</p>
+                                <p className="text-[8px] text-emerald-400 mt-2 ml-1 animate-pulse flex items-center gap-2">
+                                    <span>✓ Ready to sync: {audioFile.name}</span>
+                                    <span className="opacity-50">[{Math.floor(durationSec / 60)}:{(durationSec % 60).toString().padStart(2, '0')}]</span>
+                                </p>
                             )}
                         </div>
 

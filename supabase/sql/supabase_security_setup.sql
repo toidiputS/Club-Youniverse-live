@@ -16,8 +16,8 @@ DROP POLICY IF EXISTS "Allow authenticated update to broadcasts" ON public.broad
 CREATE POLICY "Allow authenticated update to broadcasts"
 ON public.broadcasts FOR UPDATE
 TO authenticated
-USING (true)
-WITH CHECK (true);
+USING ( (select auth.uid()) IS NOT NULL )
+WITH CHECK ( (select auth.uid()) IS NOT NULL );
 
 -- 3. Fix box_slots policies
 -- If it has RLS enabled but no policies, it's currently locked.
@@ -31,7 +31,8 @@ DROP POLICY IF EXISTS "Allow authenticated update to box_slots" ON public.box_sl
 CREATE POLICY "Allow authenticated update to box_slots"
 ON public.box_slots FOR UPDATE
 TO authenticated
-USING (true);
+USING ( (select auth.uid()) IS NOT NULL )
+WITH CHECK ( (select auth.uid()) IS NOT NULL );
 
 -- 4. Fix Function Search Path (set_updated_at)
 -- This prevents search_path attacks.

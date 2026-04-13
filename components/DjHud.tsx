@@ -23,6 +23,7 @@ import {
     Music
 } from "lucide-react";
 import { getBroadcastManager } from "../services/globalBroadcastManager";
+import { PersistentRadioService } from "../services/PersistentRadioService";
 import { VolumeControl } from "./VolumeControl";
 import { ThePool } from "./ThePool";
 
@@ -50,14 +51,24 @@ export const DjHud: React.FC<DjHudProps> = ({ isOpen, setIsOpen }) => {
     const [isSending, setIsSending] = useState(false);
     const [tempTwitch, setTempTwitch] = useState(twitchChannel || "");
     const [signalStrength, setSignalStrength] = useState(98);
+    const [aiStatus, setAiStatus] = useState<'IDLE' | 'NEWS_GEN' | 'BANTER_GEN' | 'ERROR'>('IDLE');
+    const [serviceHealth, setServiceHealth] = useState({ news: false, voicebox: false });
 
     useEffect(() => {
         setTempTwitch(twitchChannel || "");
     }, [twitchChannel]);
 
     useEffect(() => {
-        const interval = setInterval(() => {
+        const interval = setInterval(async () => {
             setSignalStrength(Math.floor(Math.random() * 5) + 95);
+            
+            // Check health of local Python service
+            try {
+                const res = await fetch('http://localhost:5050/health');
+                setServiceHealth(prev => ({ ...prev, news: res.ok }));
+            } catch {
+                setServiceHealth(prev => ({ ...prev, news: false }));
+            }
         }, 3000);
         return () => clearInterval(interval);
     }, []);
@@ -80,6 +91,24 @@ export const DjHud: React.FC<DjHudProps> = ({ isOpen, setIsOpen }) => {
 
     const updateTwitch = () => {
         setTwitchChannel(tempTwitch || null);
+    };
+
+    const triggerManualNews = async () => {
+        setAiStatus('NEWS_GEN');
+        try {
+            await PersistentRadioService.triggerManualNews();
+        } finally {
+            setAiStatus('IDLE');
+        }
+    };
+
+    const triggerManualBanter = async () => {
+        setAiStatus('BANTER_GEN');
+        try {
+            await PersistentRadioService.triggerManualBanter();
+        } finally {
+            setAiStatus('IDLE');
+        }
     };
 
     return (
@@ -225,6 +254,49 @@ export const DjHud: React.FC<DjHudProps> = ({ isOpen, setIsOpen }) => {
                                                         </div>
                                                     </div>
                                                 </div>
+                                            </div>
+                                        </section>
+
+                                        {/* AI Protocol Module */}
+                                        <section className="space-y-4">
+                                            <div className="flex justify-between items-end border-b border-white/5 pb-2">
+                                                <h3 className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                                                   <Cpu size={10} className="text-emerald-400" /> AI Broadcast Logic
+                                                </h3>
+                                                <span className={`text-[8px] font-mono ${serviceHealth.news ? 'text-emerald-400' : 'text-red-500 animate-pulse'}`}>
+                                                    {serviceHealth.news ? 'PYTHON_ONLINE' : 'PYTHON_OFFLINE'}
+                                                </span>
+                                            </div>
+
+                                            <div className="grid grid-cols-2 gap-3">
+                                                <button 
+                                                    onClick={triggerManualNews}
+                                                    disabled={aiStatus !== 'IDLE'}
+                                                    className={`group relative flex flex-col items-center justify-center p-4 rounded-2xl border transition-all ${
+                                                        aiStatus === 'NEWS_GEN' 
+                                                        ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' 
+                                                        : 'bg-zinc-900/40 border-white/5 text-zinc-500 hover:border-emerald-500/20 hover:text-emerald-400'
+                                                    }`}
+                                                >
+                                                    {aiStatus === 'NEWS_GEN' && <div className="absolute inset-0 bg-emerald-500/5 animate-pulse rounded-2xl" />}
+                                                    <Mic2 size={18} className={`mb-2 ${aiStatus === 'NEWS_GEN' ? 'animate-bounce' : ''}`} />
+                                                    <span className="text-[10px] font-black uppercase tracking-widest text-center">Trigger News</span>
+                                                    <span className="text-[7px] font-bold text-zinc-600 uppercase mt-1">Local Pipeline</span>
+                                                </button>
+
+                                                <button 
+                                                    onClick={triggerManualBanter}
+                                                    disabled={aiStatus !== 'IDLE'}
+                                                    className={`group relative flex flex-col items-center justify-center p-4 rounded-2xl border transition-all ${
+                                                        aiStatus === 'BANTER_GEN' 
+                                                        ? 'bg-purple-500/10 border-purple-500/30 text-purple-400' 
+                                                        : 'bg-zinc-900/40 border-white/5 text-zinc-500 hover:border-purple-500/20 hover:text-purple-400'
+                                                    }`}
+                                                >
+                                                    <Zap size={18} className={`mb-2 ${aiStatus === 'BANTER_GEN' ? 'animate-pulse' : ''}`} />
+                                                    <span className="text-[10px] font-black uppercase tracking-widest text-center">Trigger Banter</span>
+                                                    <span className="text-[7px] font-bold text-zinc-600 uppercase mt-1">Ticker Only</span>
+                                                </button>
                                             </div>
                                         </section>
 

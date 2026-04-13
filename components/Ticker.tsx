@@ -5,7 +5,6 @@
 
 import React, { useContext } from "react";
 import { RadioContext } from "../contexts/AudioPlayerContext";
-import { NowPlay } from "./NowPlay";
 
 export const Ticker: React.FC = () => {
     const context = useContext(RadioContext);
@@ -18,11 +17,6 @@ export const Ticker: React.FC = () => {
 
     return (
         <div className="fixed bottom-0 left-0 right-0 z-50 flex flex-col pointer-events-none">
-            {/* 1. HUD ROW - Perspectives persist on top */}
-            <div className="pointer-events-auto">
-                <NowPlay />
-            </div>
-
             {/* 2. UNIVERSAL MARQUEE - Single row for everything */}
             <div className="h-5 bg-black/95 backdrop-blur-md border-t border-purple-500/30 flex items-center pointer-events-auto relative overflow-hidden">
                 {/* Visual Accent: Left Side Data Label */}

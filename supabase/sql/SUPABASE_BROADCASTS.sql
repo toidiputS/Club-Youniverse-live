@@ -13,12 +13,14 @@ CREATE TABLE IF NOT EXISTS public.broadcasts (
 ALTER TABLE public.broadcasts ENABLE ROW LEVEL SECURITY;
 
 -- Allow anyone to read the broadcast state (it's a public radio)
+DROP POLICY IF EXISTS "Public broadcasts are viewable by everyone" ON public.broadcasts;
 CREATE POLICY "Public broadcasts are viewable by everyone"
 ON public.broadcasts FOR SELECT
 USING (true);
 
 -- Allow authenticated users (DJs/Admins) to update the broadcast
 -- In a real prod env, this might be restricted to specific DJ roles.
+DROP POLICY IF EXISTS "Authenticated users can update broadcast" ON public.broadcasts;
 CREATE POLICY "Authenticated users can update broadcast"
 ON public.broadcasts FOR ALL
 USING ((select auth.role()) = 'authenticated');

@@ -6,12 +6,15 @@ import { getChatMood, getMoodLabel } from "../utils/emotionEngine";
 import { motion } from "framer-motion";
 
 interface HeaderProps {
-  profile: Profile;
-  onProfileClick: () => void;
-  onSmokeClick: () => void;
-  onNavigate: (view: View) => void;
-  onFeedbackClick?: () => void;
+    profile: Profile;
+    onProfileClick: () => void;
+    onSmokeClick: () => void;
+    onGuestRegistryClick?: () => void;
+    onNavigate: (view: View) => void;
+    onFeedbackClick?: () => void;
 }
+
+import { Shield } from "lucide-react";
 
 const EmotionMeter: React.FC = () => {
     const context = useContext(RadioContext);
@@ -35,9 +38,15 @@ const EmotionMeter: React.FC = () => {
     );
 };
 
-export const Header: React.FC<HeaderProps> = ({ profile, onProfileClick, onSmokeClick }) => {
+export const Header: React.FC<HeaderProps> = ({ profile, onProfileClick, onSmokeClick, onGuestRegistryClick }) => {
   const context = useContext(RadioContext);
   const broadcastManager = getBroadcastManager();
+
+  const isStaff = profile?.is_admin || 
+                  profile?.role === 'owner' || 
+                  profile?.role === 'admin' || 
+                  profile?.role === 'bouncer' || 
+                  profile?.email === 'itstraderbaby@gmail.com';
 
   useEffect(() => {
     let handle: number;
@@ -117,21 +126,36 @@ export const Header: React.FC<HeaderProps> = ({ profile, onProfileClick, onSmoke
             </div>
         </div>
 
-        {/* Right: User Avatar (Profile Action) */}
-        <div 
-           onClick={(e) => {
-              e.stopPropagation();
-              onProfileClick();
-           }}
-           className="cursor-pointer active:scale-95 transition-transform z-10"
-        >
-          <div className="w-13 h-13 rounded-2xl bg-black/40 border border-white/10 overflow-hidden shadow-xl hover:border-cyan-500/30 transition-all drop-shadow-[0_0_12px_rgba(34,211,238,0.8)] hover:drop-shadow-[0_0_18px_rgba(6,182,212,1)]">
-            <img 
-              src={profile.avatar_url || `https://api.dicebear.com/7.x/pixel-art/svg?seed=${profile.user_id}`} 
-              alt="Profile" 
-              className="w-full h-full object-cover transition-all"
-            />
-          </div>
+        {/* Right: User Avatar & Admin Tools (Profile Action) */}
+        <div className="flex items-center gap-3 z-10">
+            {isStaff && (
+                <button 
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        onGuestRegistryClick?.();
+                    }}
+                    className="p-3 bg-red-950/40 border border-red-500/20 rounded-2xl text-red-500 hover:bg-red-500/20 hover:text-white transition-all shadow-[0_0_15px_rgba(239,68,68,0.2)] active:scale-95 group"
+                    title="Guest Registry"
+                >
+                    <Shield size={20} className="group-hover:animate-pulse" />
+                </button>
+            )}
+            
+            <div 
+               onClick={(e) => {
+                  e.stopPropagation();
+                  onProfileClick();
+               }}
+               className="cursor-pointer active:scale-95 transition-transform"
+            >
+              <div className="w-13 h-13 rounded-2xl bg-black/40 border border-white/10 overflow-hidden shadow-xl hover:border-cyan-500/30 transition-all drop-shadow-[0_0_12px_rgba(34,211,238,0.8)] hover:drop-shadow-[0_0_18px_rgba(6,182,212,1)]">
+                <img 
+                  src={profile.avatar_url || `https://api.dicebear.com/7.x/pixel-art/svg?seed=${profile.user_id}`} 
+                  alt="Profile" 
+                  className="w-full h-full object-cover transition-all"
+                />
+              </div>
+            </div>
         </div>
 
       </div>

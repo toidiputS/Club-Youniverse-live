@@ -31,7 +31,7 @@ interface RadioProps {
 
 export const Radio: React.FC<RadioProps> = ({ onNavigate, profile, minimal = false, noGame = false }) => {
   const context = useContext(RadioContext);
-  const [showProfile, setShowProfile] = useState(false);
+  const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
   const [showPool, setShowPool] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showGuestManager, setShowGuestManager] = useState(false);
@@ -41,12 +41,12 @@ export const Radio: React.FC<RadioProps> = ({ onNavigate, profile, minimal = fal
 
   const isSmoking = useRef(false);
 
-  // Authorization check for guest management
-  const canManageGuests = profile?.is_premium ||
-                          profile?.is_admin || 
+  // Authorization check for guest management - STAFF ONLY
+  const canManageGuests = profile?.is_admin || 
                           profile?.role === 'owner' || 
                           profile?.role === 'admin' || 
                           profile?.role === 'bouncer' || 
+                          profile?.role === 'vip' || 
                           profile?.email === 'itstraderbaby@gmail.com';
 
   // Presence Tracking (Supabase)
@@ -280,19 +280,25 @@ export const Radio: React.FC<RadioProps> = ({ onNavigate, profile, minimal = fal
                         <Header 
                             onNavigate={onNavigate} 
                             profile={profile} 
-                            onProfileClick={() => setShowProfile(true)}
+                            onProfileClick={() => setSelectedProfileId(profile.user_id)}
                             onSmokeClick={handleSmokeNavigate}
+                            onGuestRegistryClick={() => setShowGuestManager(prev => !prev)}
                         />
                     </div>
                 )}
 
                 {/* EXTERNAL SLIDERS / MODALS */}
                 <AnimatePresence>
-                    {showProfile && (
+                    {selectedProfileId && (
                         <div className="fixed inset-0 z-300">
-                            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowProfile(false)} />
+                            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setSelectedProfileId(null)} />
                             <motion.div initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }} transition={{ type: "spring", damping: 25 }} className="absolute right-0 top-0 bottom-0 w-full max-w-[420px] bg-zinc-950 border-l border-white/10 shadow-2xl overflow-hidden">
-                                <UserProfileCard userId={profile.user_id} onClose={() => setShowProfile(false)} isCurrentUser={true} />
+                                <UserProfileCard 
+                                    userId={selectedProfileId} 
+                                    onClose={() => setSelectedProfileId(null)} 
+                                    isCurrentUser={selectedProfileId === profile.user_id} 
+                                    viewerProfile={profile}
+                                />
                             </motion.div>
                         </div>
                     )}
@@ -318,6 +324,10 @@ export const Radio: React.FC<RadioProps> = ({ onNavigate, profile, minimal = fal
                     isOpen={showGuestManager} 
                     onClose={() => setShowGuestManager(false)} 
                     adminProfile={profile} 
+                    onOpenProfile={(id) => {
+                        setSelectedProfileId(id);
+                        setShowGuestManager(false);
+                    }}
                 />
 
                 {/* Setings Panel (Station Control) */}

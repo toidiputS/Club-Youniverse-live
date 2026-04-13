@@ -22,6 +22,7 @@ CREATE TABLE IF NOT EXISTS public.daily_passes (
 
 -- RLS for passes
 ALTER TABLE public.daily_passes ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Users can view their own passes" ON public.daily_passes;
 CREATE POLICY "Users can view their own passes" ON public.daily_passes
     FOR SELECT USING (auth.uid() = user_id);
 
@@ -34,7 +35,7 @@ BEGIN
     SELECT count(*) INTO taken_count FROM public.profiles WHERE is_first_100 = true;
     RETURN GREATEST(0, 100 - taken_count);
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 -- 4. Automatically assign First 100 status to new signups if spots available
 -- Note: This happens AFTER auth.users insert (via handle_new_user trigger in SUPABASE_SETUP)
@@ -56,4 +57,4 @@ BEGIN
   );
   RETURN new;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;

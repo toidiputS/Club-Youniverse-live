@@ -24,9 +24,15 @@ interface UserProfileCardProps {
     userId: string;
     onClose: () => void;
     isCurrentUser: boolean;
+    viewerProfile?: any;
 }
 
-export const UserProfileCard: React.FC<UserProfileCardProps> = ({ userId, onClose, isCurrentUser }) => {
+export const UserProfileCard: React.FC<UserProfileCardProps> = ({ 
+    userId, 
+    onClose, 
+    isCurrentUser,
+    viewerProfile 
+}) => {
     const [uploads, setUploads] = useState<Song[]>([]);
     const [favorites, setFavorites] = useState<Song[]>([]);
     const [activeTab, setActiveTab] = useState<'uploads' | 'favorites' | 'stats'>('uploads');
@@ -141,6 +147,17 @@ export const UserProfileCard: React.FC<UserProfileCardProps> = ({ userId, onClos
 
     return (
         <div className="absolute inset-0 z-50 flex flex-col bg-[#050505] overflow-y-auto custom-scrollbar pb-ticker">
+            {/* 1. FIXED TOP BAR (Always Visible) */}
+            <div className="fixed top-0 left-0 right-0 z-200 px-6 py-8 flex items-center justify-end pointer-events-none">
+                 <button 
+                    onClick={onClose}
+                    className="pointer-events-auto bg-red-600 hover:bg-red-500 text-white border border-red-500/30 rounded-2xl px-6 py-3 flex items-center gap-3 shadow-[0_0_30px_rgba(239,68,68,0.4)] transition-all active:scale-95 group/close"
+                >
+                    <X size={18} className="group-hover/close:rotate-90 transition-transform duration-300" />
+                    <span className="text-[11px] font-black uppercase tracking-[0.2em]">Exit Session</span>
+                </button>
+            </div>
+
             {/* Animated Background Mesh */}
             <div className="absolute inset-0 z-0 opacity-30 pointer-events-none">
                 <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-linear-to-br from-purple-600/20 to-transparent blur-[120px] rounded-full animate-pulse" />
@@ -154,21 +171,6 @@ export const UserProfileCard: React.FC<UserProfileCardProps> = ({ userId, onClos
                 <div className="relative h-56 md:h-72 overflow-hidden rounded-b-[40px] group">
                     <div className="absolute inset-0 bg-linear-to-br from-purple-900 via-zinc-950 to-blue-900 opacity-60" />
                     <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?q=80&w=2070&auto=format&fit=crop')] bg-cover bg-center mix-blend-overlay opacity-30 group-hover:scale-105 transition-transform duration-[20s] linear" />
-                    
-                    {/* TOP BAR OVERLAY */}
-                    <div className="absolute top-0 left-0 right-0 p-6 pt-12 md:pt-16 flex items-center justify-between z-20">
-                        <div className="flex items-center gap-2">
-                             <div className="px-3 py-1 bg-black/40 backdrop-blur-md border border-white/10 rounded-full text-[9px] font-black uppercase tracking-widest text-white/60">
-                                 Node ID: {userId.slice(0, 8)}
-                             </div>
-                        </div>
-                        <button 
-                            onClick={onClose}
-                            className="w-10 h-10 flex items-center justify-center bg-black/40 backdrop-blur-md border border-white/10 rounded-full text-white/40 hover:text-white hover:border-purple-500/50 hover:bg-purple-500/20 transition-all active:scale-95 group/close"
-                        >
-                            <X size={18} className="group-hover/close:rotate-90 transition-transform duration-300" />
-                        </button>
-                    </div>
                 </div>
 
                 <div className="px-6 md:px-12 -mt-16 md:-mt-24 relative z-20">
@@ -247,6 +249,33 @@ export const UserProfileCard: React.FC<UserProfileCardProps> = ({ userId, onClos
                                             Upgrade to AX Premium
                                         </button>
                                     )
+                                )}
+
+                                {/* Admin Management Controls for Viewers */}
+                                {!isCurrentUser && viewerProfile && (viewerProfile.is_admin || viewerProfile.role === 'owner') && (
+                                    <div className="flex gap-2">
+                                        <button 
+                                            onClick={async () => {
+                                                const newRole = profile.role === 'bouncer' ? 'listener' : 'bouncer';
+                                                const { error } = await supabase
+                                                    .from('profiles')
+                                                    .update({ role: newRole })
+                                                    .eq('user_id', userId);
+                                                if (!error) {
+                                                    setProfile({ ...profile, role: newRole });
+                                                    alert(`PROTOCOL: USER ${profile.name} UPDATED TO ${newRole.toUpperCase()}`);
+                                                }
+                                            }}
+                                            className={`px-4 py-2 rounded-full text-[9px] font-black uppercase tracking-widest transition-all flex items-center gap-2 ${
+                                                profile.role === 'bouncer'
+                                                ? 'bg-orange-500 text-white shadow-[0_0_15px_rgba(249,115,22,0.4)]'
+                                                : 'bg-zinc-900 border border-white/10 text-zinc-500 hover:text-orange-400 hover:border-orange-500/30'
+                                            }`}
+                                        >
+                                            <Shield size={12} className={profile.role === 'bouncer' ? 'fill-white/20' : ''} />
+                                            {profile.role === 'bouncer' ? 'Demote Staff' : 'Promote to Staff'}
+                                        </button>
+                                    </div>
                                 )}
                             </div>
 
@@ -378,7 +407,7 @@ export const UserProfileCard: React.FC<UserProfileCardProps> = ({ userId, onClos
                             </div>
 
                             {/* TAB CONTENT */}
-                            <div className="grow pr-2 pb-12">
+                            <div className="grow pr-2 pb-ticker pb-12">
                                 <div className="mb-4">
                                     <span className="text-[10px] font-black text-purple-500 uppercase tracking-[0.3em]">
                                         {activeTab === 'uploads' ? 'Active Storage Nodes' : activeTab === 'favorites' ? 'Stored Signals' : 'Global Analytics'}

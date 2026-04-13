@@ -16,6 +16,7 @@ create table public.profiles (
   is_premium boolean default false,
   roast_consent boolean default false,
   is_admin boolean default false, -- For DJ Booth access
+  role text default 'listener', -- 'owner', 'admin', 'bouncer', 'vip', 'listener', 'banned'
   avatar_url text,
   last_debut_at timestamptz, -- Tracks 24h rule for debuts
   stats jsonb default '{"plays": 0, "uploads": 0, "votes_cast": 0, "graveyard_count": 0}'::jsonb,
@@ -94,27 +95,44 @@ alter table public.user_favorites enable row level security;
 alter table public.gallery_items enable row level security;
 
 -- PROFILES POLICIES
+DROP POLICY IF EXISTS "Public profiles are viewable by everyone." on public.profiles;
 create policy "Public profiles are viewable by everyone."
   on public.profiles for select
   using ( true );
 
+DROP POLICY IF EXISTS "Users can insert their own profile." on public.profiles;
 create policy "Users can insert their own profile."
   on public.profiles for insert
   with check ( (select auth.uid()) = user_id );
 
+DROP POLICY IF EXISTS "Users can update own profile." on public.profiles;
 create policy "Users can update own profile."
   on public.profiles for update
   using ( (select auth.uid()) = user_id );
 
+DROP POLICY IF EXISTS "Admins can update any profile" on public.profiles;
+create policy "Admins can update any profile"
+  on public.profiles for update
+  using ( 
+    exists (
+      select 1 from public.profiles 
+      where user_id = (select auth.uid()) 
+      and (is_admin = true or role in ('owner', 'admin'))
+    )
+  );
+
 -- SONGS POLICIES
+DROP POLICY IF EXISTS "Songs are viewable by everyone." on public.songs;
 create policy "Songs are viewable by everyone."
   on public.songs for select
   using ( true );
 
+DROP POLICY IF EXISTS "Authenticated users can upload songs." on public.songs;
 create policy "Authenticated users can upload songs."
   on public.songs for insert
   with check ( (select auth.role()) = 'authenticated' );
 
+DROP POLICY IF EXISTS "Allow authenticated update (owner or admin)" on public.songs;
 create policy "Allow authenticated update (owner or admin)"
   on public.songs for update
   using (
@@ -123,6 +141,7 @@ create policy "Allow authenticated update (owner or admin)"
     exists (select 1 from public.profiles where user_id = (select auth.uid()) and is_admin = true)
   );
 
+DROP POLICY IF EXISTS "Allow authenticated delete (owner or admin)" on public.songs;
 create policy "Allow authenticated delete (owner or admin)"
   on public.songs for delete
   using (
@@ -132,19 +151,23 @@ create policy "Allow authenticated delete (owner or admin)"
   );
 
 -- VOTES POLICIES
+DROP POLICY IF EXISTS "Votes are viewable by everyone." on public.votes;
 create policy "Votes are viewable by everyone."
   on public.votes for select
   using ( true );
 
+DROP POLICY IF EXISTS "Authenticated users can vote." on public.votes;
 create policy "Authenticated users can vote."
   on public.votes for insert
   with check ( (select auth.role()) = 'authenticated' );
 
 -- GALLERY POLICIES
+DROP POLICY IF EXISTS "Gallery items are viewable by everyone." on public.gallery_items;
 create policy "Gallery items are viewable by everyone."
   on public.gallery_items for select
   using ( true );
 
+DROP POLICY IF EXISTS "Users can add to gallery." on public.gallery_items;
 create policy "Users can add to gallery."
   on public.gallery_items for insert
   with check ( (select auth.uid()) = user_id );
@@ -189,7 +212,7 @@ begin
   values (new.id, new.email, new.raw_user_meta_data->>'name');
   return new;
 end;
-$$ language plpgsql security definer;
+$$ language plpgsql security definer SET search_path = public;
 
 -- Trigger to call the function on signup
 create or replace trigger on_auth_user_created

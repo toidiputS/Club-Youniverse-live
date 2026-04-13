@@ -50,48 +50,9 @@ export const TheChat: React.FC<TheChatProps> = ({ profile, transparent, noAtmosp
             .on('broadcast', { event: 'new_message' }, ({ payload }) => {
                 addChatMessage(payload);
             })
-            .on('presence', { event: 'join' }, ({ newPresences }) => {
-                if (isInitialSync) return; // Ignore initial sync to prevent spamming current users as "entered"
-                
-                newPresences.forEach((p: any) => {
-                    const key = `join-${p.user_id}`;
-                    const now = Date.now();
-                    if (lastStatusUpdate.current[key] && now - lastStatusUpdate.current[key] < 30000) return;
-                    lastStatusUpdate.current[key] = now;
-
-                    const name = p.name || "A LISTENER";
-
-                    addChatMessage({
-                        id: `status-join-${now}-${Math.random()}`,
-                        user: { name: "SYSTEM PROTOCOL", isDj: true },
-                        text: `${name.toUpperCase()} ENTERED THE CLUB`,
-                        timestamp: now,
-                        isStatus: true 
-                    } as any);
-                });
-            })
-            .on('presence', { event: 'leave' }, ({ leftPresences }) => {
-                leftPresences.forEach((p: any) => {
-                    const key = `leave-${p.user_id}`;
-                    const now = Date.now();
-                    if (lastStatusUpdate.current[key] && now - lastStatusUpdate.current[key] < 30000) return;
-                    lastStatusUpdate.current[key] = now;
-
-                    const name = p.name || "A LISTENER";
-
-                    addChatMessage({
-                        id: `status-leave-${now}-${Math.random()}`,
-                        user: { name: "SYSTEM PROTOCOL", isDj: true },
-                        text: `${name.toUpperCase()} LEFT THE CLUB`,
-                        timestamp: now,
-                        isStatus: true 
-                    } as any);
-                });
-            })
             .subscribe(async (status) => {
                 if (status === 'SUBSCRIBED') {
-                    // Short delay before enabling join alerts to clear initial sync
-                    setTimeout(() => { isInitialSync = false; }, 2000);
+                    // Channel ready
                 }
             });
 
@@ -175,11 +136,15 @@ export const TheChat: React.FC<TheChatProps> = ({ profile, transparent, noAtmosp
         };
 
         // Broadcast to all listeners
-        await (supabase.channel('club-chat') as any).httpSend({
-            type: 'broadcast',
-            event: 'new_message',
-            payload: message
-        });
+        try {
+            await (supabase.channel('club-chat') as any).httpSend({
+                type: 'broadcast',
+                event: 'new_message',
+                payload: message
+            });
+        } catch (err) {
+            console.warn("📡 Chat broadcast failed (Network Error), but message stored locally.");
+        }
 
         // Also add locally
         addChatMessage(message);

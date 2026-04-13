@@ -14,9 +14,11 @@ CREATE TABLE IF NOT EXISTS public.youniversal_leaderboard (
 ALTER TABLE public.youniversal_leaderboard ENABLE ROW LEVEL SECURITY;
 
 -- Policies
+DROP POLICY IF EXISTS "Leaderboard is viewable by everyone" ON public.youniversal_leaderboard;
 CREATE POLICY "Leaderboard is viewable by everyone" ON public.youniversal_leaderboard
     FOR SELECT USING (true);
 
+DROP POLICY IF EXISTS "System can update leaderboard" ON public.youniversal_leaderboard;
 CREATE POLICY "System can update leaderboard" ON public.youniversal_leaderboard
     FOR ALL USING (auth.role() = 'service_role');
 
@@ -27,7 +29,7 @@ BEGIN
     NEW.updated_at = NOW();
     RETURN NEW;
 END;
-$$ language 'plpgsql';
+$$ language 'plpgsql' SET search_path = public;
 
 CREATE TRIGGER update_leaderboard_modtime
     BEFORE UPDATE ON public.youniversal_leaderboard
