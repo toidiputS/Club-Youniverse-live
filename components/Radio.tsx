@@ -215,7 +215,7 @@ export const Radio: React.FC<RadioProps> = ({ onNavigate, profile, minimal = fal
 
                         {/* The Box (Bottom of Sidebar) */}
                         <div className="flex-none px-1.5 pb-ticker pt-1.5 pointer-events-auto">
-                            <div className="bg-black/20 backdrop-blur-xl border border-white/5 rounded-xl overflow-hidden shadow-2xl">
+                            <div className="bg-black/20 backdrop-blur-xl border border-white/5 rounded-xl shadow-2xl">
                                 <TheBox />
                             </div>
                         </div>

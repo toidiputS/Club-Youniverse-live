@@ -140,6 +140,7 @@ const App: React.FC = () => {
     await supabase.auth.signOut();
     setSession(null);
     setProfile(null);
+    setPassedGate(false);
     // Return to sidewalk
     window.history.pushState({ view: 'home' }, "", "/");
     window.dispatchEvent(new PopStateEvent('popstate'));
@@ -228,6 +229,11 @@ const App: React.FC = () => {
                   <TheDoor 
                     profile={profile!} 
                     onAccessGranted={() => setPassedGate(true)} 
+                    onReturn={() => {
+                      setCurrentView("sidewalk");
+                      window.history.pushState({ view: 'home' }, "", "/");
+                      window.dispatchEvent(new PopStateEvent('popstate'));
+                    }}
                   />
                 ) : (
                   <>
@@ -268,7 +274,17 @@ const App: React.FC = () => {
                         </div>
                       ) : (
                         <div className="h-full w-full overflow-hidden absolute inset-0">
-                          <Club onNavigate={setCurrentView} onSignOut={handleSignOut} profile={profile!} />
+                          <Club 
+                            onNavigate={(view) => {
+                              setCurrentView(view);
+                              if (view === "sidewalk") {
+                                window.history.pushState({ view: 'home' }, "", "/");
+                                window.dispatchEvent(new PopStateEvent('popstate'));
+                              }
+                            }} 
+                            onSignOut={handleSignOut} 
+                            profile={profile!} 
+                          />
                         </div>
                       )}
                     </main>

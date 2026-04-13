@@ -9,6 +9,8 @@ import { LyricService } from "./LyricService";
 
 export class PersistentRadioService {
     private static lastCheck: number = 0;
+    private static lastNewsTime: number = Date.now();
+    private static isGeneratingNews: boolean = false;
 
     /**
      * Watchdog: Ensures the radio is healthy.
@@ -17,6 +19,13 @@ export class PersistentRadioService {
         const now = Date.now();
         if (now - this.lastCheck < 10000) return null; // Throttle to 10s
         this.lastCheck = now;
+
+        // Trigger hourly news generation
+        if (!this.isGeneratingNews && now - this.lastNewsTime > 60 * 60 * 1000) {
+            this.isGeneratingNews = true;
+            this.generateAndQueueNews();
+        }
+
         // 1. Ensure Box is populated
         await this.populateTheBox();
 
@@ -50,6 +59,57 @@ export class PersistentRadioService {
         }
 
         return null;
+    }
+
+    private static async generateAndQueueNews() {
+        console.log("📰 Initiating hourly Newscast generation...");
+        try {
+            // Tell the UI that news is generating
+            await supabase.channel('site_commands').send({
+                type: 'broadcast',
+                event: 'siteCommandReceived',
+                payload: {
+                    type: 'dj_banter',
+                    timestamp: Date.now(),
+                    payload: { text: "PREPARING HOURLY NEWSCAST. STAND BY." }
+                }
+            });
+
+            const response = await fetch("http://localhost:5050/generate-break", {
+                method: "POST"
+            });
+            const data = await response.json();
+
+            if (data.status === "ok" && data.audio) {
+                console.log("📰 Newscast completed! Queuing for next_play...");
+                const timestamp = Date.now(); // cache buster
+                // 1. Unset current next_play
+                await supabase.from("songs").update({ status: "pool" }).eq("status", "next_play");
+                
+                // 2. Insert into the songs table (auto-graveyards later)
+                const { data: newSong } = await supabase.from("songs").insert({
+                    title: "HOURLY NEWS BRIEF",
+                    artist_name: "Youniverse AI",
+                    audio_url: `http://localhost:5050${data.audio}?t=${timestamp}`,
+                    cover_art_url: "https://picsum.photos/seed/news/200",
+                    status: "next_play",
+                    duration_sec: 120, // rough estimate, HTML5 audio element will auto-sync it anyway
+                    lyrics: "[(NEWSCAST)]",
+                    stars: 5,
+                    is_dsw: false
+                }).select().single();
+
+                if (newSong) {
+                    this.lastNewsTime = Date.now();
+                }
+            } else {
+                console.warn("📰 News generation response invalid:", data);
+            }
+        } catch (e) {
+            console.error("📰 News generation failed:", e);
+        } finally {
+            this.isGeneratingNews = false;
+        }
     }
 
     /**

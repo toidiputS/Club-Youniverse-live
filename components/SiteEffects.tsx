@@ -37,6 +37,13 @@ export const SiteEffects: React.FC = () => {
                     playTts(text, voice);
                 }
             }
+
+            if (cmd.type === "dj_banter") {
+                const { text } = cmd.payload || {};
+                if (text) {
+                    playTts(text, 'DJ Python');
+                }
+            }
         };
 
         broadcastManager.on("siteCommandReceived", handleCommand);

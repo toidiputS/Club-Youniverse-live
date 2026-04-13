@@ -7,21 +7,20 @@ import React, { useContext, useState, useEffect } from "react";
 import { RadioContext } from "../contexts/AudioPlayerContext";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
+    Terminal, 
+    ChevronRight, 
+    Wifi, 
+    ShieldAlert, 
     X, 
+    Activity, 
     SkipForward, 
-    Mic2, 
-    Globe, 
-    Music, 
-    Zap, 
-    Monitor,
-    Video,
-    ShieldAlert,
-    Activity,
+    Monitor, 
     Cpu,
-    Radio as RadioIcon,
-    Terminal,
-    ChevronRight,
-    Wifi
+    Video,
+    Globe,
+    Mic2,
+    Zap,
+    Music
 } from "lucide-react";
 import { getBroadcastManager } from "../services/globalBroadcastManager";
 import { VolumeControl } from "./VolumeControl";
@@ -41,8 +40,7 @@ export const DjHud: React.FC<DjHudProps> = ({ isOpen, setIsOpen }) => {
         danceFloorEnabled, 
         setDanceFloorEnabled,
         twitchChannel,
-        setTwitchChannel,
-        nowPlaying
+        setTwitchChannel
     } = context;
 
     const [activeTab, setActiveTab] = useState<'controls' | 'library' | 'nodes'>('controls');
@@ -157,7 +155,7 @@ export const DjHud: React.FC<DjHudProps> = ({ isOpen, setIsOpen }) => {
                                              <div className="bg-zinc-900/50 border border-white/5 rounded-xl p-2 flex flex-col gap-0.5 shadow-sm">
                                                  <span className="text-[6px] font-black text-zinc-500 uppercase">TX State</span>
                                                  <div className="flex items-center gap-1">
-                                                     <RadioIcon size={8} className="text-purple-400" />
+                                                     <img src="/icons/icon.svg" className="w-2.5 h-2.5 opacity-80" alt="" />
                                                      <span className="text-[9px] font-mono text-purple-300 font-black uppercase truncate">{radioState || 'IDLE'}</span>
                                                  </div>
                                              </div>

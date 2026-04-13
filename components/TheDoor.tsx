@@ -1,18 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { supabase } from '../services/supabaseClient';
-import { Lock, Sparkles, CheckCircle2, Flame, Loader2, ArrowRight } from 'lucide-react';
+import { Lock, Sparkles, CheckCircle2, Loader2, ArrowRight } from 'lucide-react';
 import { StripeService } from '../services/StripeService';
 import type { Profile } from '../types';
 
 interface TheDoorProps {
     profile: Profile;
     onAccessGranted: () => void;
+    onReturn: () => void;
 }
 
-export const TheDoor: React.FC<TheDoorProps> = ({ profile, onAccessGranted }) => {
+export const TheDoor: React.FC<TheDoorProps> = ({ profile, onAccessGranted, onReturn }) => {
     const [loading, setLoading] = useState(true);
-    const [status, setStatus] = useState<'checking' | 'unpaid' | 'paid' | 'founder'>('checking');
+    const [status, setStatus] = useState<'checking' | 'unpaid' | 'paid' | 'founder' | 'legend'>('checking');
     const [processing, setProcessing] = useState(false);
 
     useEffect(() => {
@@ -60,7 +61,10 @@ export const TheDoor: React.FC<TheDoorProps> = ({ profile, onAccessGranted }) =>
                 window.location.hash = '#/club'; // Clean up
             }
 
-            if (profile.is_admin || profile.is_first_100) {
+            const { count } = await supabase.from('profiles').select('*', { count: 'exact', head: true });
+            const isEarlyAdopter = count !== null && count <= 100;
+
+            if (profile.is_admin || profile.is_first_100 || isEarlyAdopter) {
                 setStatus('founder');
                 setLoading(false);
                 return;
@@ -170,23 +174,9 @@ export const TheDoor: React.FC<TheDoorProps> = ({ profile, onAccessGranted }) =>
                                     Step inside and lead the floor.
                                 </p>
                             ) : status === 'unpaid' ? (
-                                <div className="bg-black/40 rounded-2xl p-6 border border-white/5">
-                                    <div className="flex items-center justify-between mb-4">
-                                        <div className="flex items-center gap-2">
-                                            <Flame className="w-4 h-4 text-orange-500" />
-                                            <span className="text-xs font-bold text-white uppercase tracking-wider">Two-Weeker Streak</span>
-                                        </div>
-                                        <span className="text-lg font-black text-white">{profile.current_streak || 0}d</span>
-                                    </div>
-                                    <div className="h-1 bg-white/5 rounded-full overflow-hidden mb-2">
-                                        <div className="h-full bg-linear-to-r from-orange-600 to-amber-400" style={{ width: `${Math.min(((profile.current_streak || 0) / 14) * 100, 100)}%` }} />
-                                    </div>
-                                    <p className="text-[10px] text-zinc-500 uppercase tracking-widest text-left font-black">
-                                        {profile.current_streak >= 14 
-                                            ? "PROTOCOL ACTIVE: ENJOY YOUR FREE WEEK" 
-                                            : `${14 - (profile.current_streak || 0)} days until One Week FREE`}
-                                    </p>
-                                </div>
+                                <p className="text-zinc-400 text-sm leading-relaxed">
+                                    The VIP list is completely full. You'll need to pay the $1.00 daily cover charge for club entry and voting access.
+                                </p>
                             ) : (
                                 <p className="text-zinc-400 text-sm">Opening the airlocks...</p>
                             )}
@@ -221,10 +211,10 @@ export const TheDoor: React.FC<TheDoorProps> = ({ profile, onAccessGranted }) =>
                             </button>
                         )}
 
-                        {status === 'founder' && (
+                        {(status === 'founder' || status === 'legend') && (
                             <button
                                 onClick={onAccessGranted}
-                                className="w-full bg-emerald-500 text-black font-black py-5 rounded-2xl flex items-center justify-center gap-3 hover:bg-emerald-400 transition-all active:scale-95 uppercase tracking-widest text-xs shadow-xl shadow-emerald-500/20"
+                                className={`w-full ${status === 'founder' ? 'bg-emerald-500 shadow-emerald-500/20' : 'bg-orange-500 shadow-orange-500/20'} text-black font-black py-5 rounded-2xl flex items-center justify-center gap-3 hover:opacity-90 transition-all active:scale-95 uppercase tracking-widest text-xs shadow-xl`}
                             >
                                 Enter Club
                                 <ArrowRight className="w-4 h-4" />
@@ -232,7 +222,7 @@ export const TheDoor: React.FC<TheDoorProps> = ({ profile, onAccessGranted }) =>
                         )}
                         
                         <button 
-                            onClick={() => window.location.hash = ""}
+                            onClick={onReturn}
                             className="mt-6 text-xs font-bold text-zinc-600 hover:text-white uppercase tracking-widest transition-colors"
                         >
                             Return to Sidewalk

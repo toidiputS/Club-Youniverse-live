@@ -68,14 +68,14 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
 
       <div className="w-full max-w-md z-10 animate-in fade-in slide-in-from-bottom-8 duration-1000">
         <div className="text-center mb-10">
-          <div className="w-20 h-20 bg-linear-to-br from-purple-500 to-blue-600 rounded-[2rem] flex items-center justify-center shadow-2xl shadow-purple-500/30 mx-auto mb-6 hover:rotate-12 transition-transform duration-500 relative overflow-hidden">
-            <img src="/icons/favicon.svg" alt="Youniverse" className="relative z-10 w-12 h-12 object-contain" />
+          <div className="w-20 h-20 bg-linear-to-br from-purple-500 to-blue-600 rounded-4xl flex items-center justify-center shadow-2xl shadow-purple-500/30 mx-auto mb-6 hover:rotate-12 transition-transform duration-500 relative overflow-hidden">
+            <img src="/icons/icon.svg" alt="Youniverse" className="relative z-10 w-12 h-12 object-contain" />
           </div>
           <h1 className="text-4xl font-black text-white tracking-tighter mb-2">CLUB YOUNIVERSE</h1>
           <p className="text-zinc-500 font-medium tracking-wide uppercase text-[10px]">The 24/7 AI Radio Experience</p>
         </div>
 
-        <div className="bg-zinc-900/50 backdrop-blur-2xl rounded-[3rem] border border-white/10 p-10 shadow-3xl">
+        <div className="bg-zinc-900/50 backdrop-blur-2xl rounded-5xl border border-white/10 p-10 shadow-3xl">
           <h2 className="text-2xl font-black text-white mb-8 text-center">
             {isSignUp ? "Join the Void" : "Welcome Back"}
           </h2>

@@ -12,7 +12,6 @@ import {
     Upload, 
     Download, 
     RefreshCw, 
-    Plus,
     Search,
     Database,
     Skull,
@@ -31,6 +30,7 @@ export const ThePool: React.FC = () => {
 
     const isAdmin = context?.profile?.is_admin || context?.profile?.role === 'admin' || context?.profile?.role === 'owner' || context?.profile?.role === 'bouncer';
     const isVIP = context?.profile?.role === 'vip' || context?.profile?.is_premium || isAdmin;
+    const isPremium = isVIP; // Synonym for permission checks
 
     const fetchPool = async () => {
         setLoading(true);

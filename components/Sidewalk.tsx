@@ -7,7 +7,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { RadioContext } from "../contexts/AudioPlayerContext";
 import { motion } from "framer-motion";
-import { Play, Pause, Volume2, Users, Music, Lock, ChevronRight, Sparkles, Clock, Shield } from "lucide-react";
+import { Play, Pause, Volume2, Users, Lock, ChevronRight, Sparkles, Shield, Music } from "lucide-react";
 import { BillboardCounter } from "./BillboardCounter";
 
 interface ChatMessage {
@@ -602,63 +602,25 @@ export const Sidewalk: React.FC<SidewalkProps> = ({ onEnterClub, onSignIn }) => 
                   ))}
                 </div>
                 
-                {/* Price & Monetization */}
+                {/* Founding Member Status */}
                 <div className="mb-6 space-y-4">
-                  <div className="flex flex-col items-center">
-                    <div className="flex items-baseline gap-1">
-                        <span className="text-4xl font-black text-white">$1.00</span>
-                        <span className="text-xs font-bold text-zinc-500 uppercase tracking-widest">/ Day Pass</span>
-                    </div>
-                    <div className="text-[9px] font-black text-purple-400 mt-1 uppercase tracking-[0.2em] animate-pulse">
-                        First 100 Lifetime Free Counter Active
-                    </div>
-                  </div>
-
-                  {/* Two Weeker Streak Incentive */}
-                  <div className="bg-black/40 border border-white/5 rounded-2xl p-4 text-left group/streak relative overflow-hidden">
-                    <div className="absolute inset-0 bg-linear-to-r from-orange-500/5 to-transparent opacity-0 group-hover/streak:opacity-100 transition-opacity" />
-                    <div className="flex justify-between items-start mb-3">
-                        <div className="flex flex-col">
-                            <h4 className="text-[10px] font-black text-orange-500 uppercase tracking-widest flex items-center gap-2">
-                                <Clock size={12} /> Become a "Two Weeker"
-                            </h4>
-                            <p className="text-[8px] text-zinc-500 font-bold uppercase mt-1 leading-relaxed">
-                                14 Consecutive Days = 1 Week Entry FREE
-                            </p>
-                        </div>
-                        <div className="text-[10px] font-mono text-white/40">
-                            {context?.profile?.current_streak || 0}/14
-                        </div>
+                  <div className="bg-purple-900/20 border border-purple-500/40 rounded-2xl p-6 text-center relative overflow-hidden group/founder">
+                    <div className="absolute inset-0 bg-linear-to-r from-purple-500/10 to-transparent opacity-0 group-hover/founder:opacity-100 transition-opacity" />
+                    
+                    <div className="flex justify-center mb-3">
+                        <Shield size={32} className="text-purple-400 animate-pulse" />
                     </div>
                     
-                    {/* Streak Progress Bar */}
-                    <div className="h-1 bg-white/5 rounded-full overflow-hidden mb-2">
-                        <motion.div 
-                            initial={{ width: 0 }}
-                            animate={{ width: `${Math.min(((context?.profile?.current_streak || 0) / 14) * 100, 100)}%` }}
-                            className="h-full bg-linear-to-r from-orange-600 to-amber-400 shadow-[0_0_10px_rgba(245,158,11,0.3)]"
-                        />
+                    <h3 className="text-2xl font-black text-white uppercase tracking-widest mb-1">
+                        Free VIP Access
+                    </h3>
+                    <div className="text-[10px] font-black text-purple-400 uppercase tracking-[0.2em] mb-4">
+                        First 100 Members Only
                     </div>
-                  </div>
-
-                  {/* VIP DJ Booth Tier */}
-                  <div className="bg-purple-900/10 border border-purple-500/20 rounded-2xl p-4 text-left group/vip relative overflow-hidden">
-                    <div className="absolute -right-4 -bottom-4 opacity-5 group-hover/vip:scale-110 transition-transform">
-                        <Music size={80} className="text-purple-500" />
-                    </div>
-                    <div className="flex justify-between items-center mb-2">
-                        <h4 className="text-[10px] font-black text-purple-400 uppercase tracking-widest flex items-center gap-2">
-                            <Shield size={12} className="text-purple-500" /> VIP DJ Booth Tier
-                        </h4>
-                        <span className="text-[10px] font-black text-white">$4.99/mo</span>
-                    </div>
-                    <p className="text-[8px] text-zinc-500 font-bold uppercase leading-relaxed mb-3">
-                        Unlimited Uploads & Downloads.<br/>
-                        <span className="text-purple-400/60">Restricted to Suno Pro accounts only.</span>
+                    
+                    <p className="text-xs text-zinc-400 font-bold uppercase leading-relaxed">
+                        Create a profile and verify your email to unlock Lifetime VIP Status ("Founding Member"). No Credit Card Required.
                     </p>
-                    <button className="w-full py-2 bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/30 rounded-lg text-[8px] font-black text-purple-400 uppercase tracking-widest transition-all">
-                        Upgrade To VIP
-                    </button>
                   </div>
                 </div>
                 
@@ -672,7 +634,7 @@ export const Sidewalk: React.FC<SidewalkProps> = ({ onEnterClub, onSignIn }) => 
                     boxShadow: "0 10px 40px rgba(255, 230, 0, 0.3)"
                   }}
                 >
-                  <div className="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover/enter:translate-x-[100%] transition-transform duration-1000 skew-x-12" />
+                  <div className="absolute inset-0 bg-white/20 -translate-x-full group-hover/enter:translate-x-full transition-transform duration-1000 skew-x-12" />
                   <Sparkles className="w-6 h-6 animate-pulse" />
                   ENTER THE CLUB
                   <ChevronRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />

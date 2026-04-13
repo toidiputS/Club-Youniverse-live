@@ -1091,6 +1091,7 @@ export class GlobalBroadcastManager {
     if (!this.eventListeners.has(event))
       this.eventListeners.set(event, new Set());
     this.eventListeners.get(event)!.add(callback);
+    return () => this.off(event, callback);
   }
 
   public off(event: string, callback: EventCallback) {
