@@ -84,13 +84,13 @@ export const NowPlay: React.FC = () => {
                 </div>
 
                 {/* 2. Rating & Telemetry Sector (Center) */}
-                <div className="hidden sm:flex items-center gap-8">
+                <div className="flex items-center gap-4 sm:gap-8">
                     {/* Voting Grid - Direct interaction */}
-                    <div className="flex flex-col items-center gap-0.5">
-                        <div className="flex items-center gap-0.5">
+                    <div className="flex flex-col items-center gap-0.5 shrink-0">
+                        <div className="flex items-center gap-0">
                             {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((star) => {
                                 const isVoted = (nowPlaying.userRating || 0) >= star;
-                                const icon = isVoted ? <Zap size={9} fill="currentColor" /> : <Star size={9} />;
+                                const icon = isVoted ? <Zap size={8} fill="currentColor" /> : <Star size={8} />;
                                 const colorClass = isVoted 
                                     ? 'text-yellow-400 drop-shadow-[0_0_8px_rgba(250,204,21,0.6)]' 
                                     : 'text-zinc-700 hover:text-zinc-500';
@@ -99,7 +99,7 @@ export const NowPlay: React.FC = () => {
                                     <button
                                         key={star}
                                         onClick={(e) => { e.stopPropagation(); handleVote(star); }}
-                                        className="transition-all hover:scale-125 hover:rotate-6 active:scale-95"
+                                        className="p-0.5 transition-all hover:scale-125 hover:rotate-6 active:scale-95 shrink-0"
                                     >
                                         <span className={colorClass}>{icon}</span>
                                     </button>
@@ -107,12 +107,12 @@ export const NowPlay: React.FC = () => {
                             })}
                         </div>
                         <div className="flex items-center gap-2">
-                            <div className="flex items-center gap-1 text-[7px] font-black text-zinc-500 uppercase">
-                                <Activity size={7} />
-                                <span>{nowPlaying.stars || 0} GALAXY RATING</span>
+                            <div className="flex items-center gap-1 text-[6px] font-black text-zinc-500 uppercase whitespace-nowrap">
+                                <Activity size={6} />
+                                <span>{nowPlaying.stars || 0} GALAXY</span>
                             </div>
                             {liveRating.count > 0 && (
-                                <span className="text-[7px] font-black text-emerald-500 bg-emerald-500/10 px-1 rounded">
+                                <span className="text-[6px] font-black text-emerald-500 bg-emerald-500/10 px-0.5 rounded">
                                     AVG: {(liveRating.sum / liveRating.count).toFixed(1)}
                                 </span>
                             )}
@@ -121,18 +121,18 @@ export const NowPlay: React.FC = () => {
                 </div>
 
                 {/* 3. Utility Segment (Right) */}
-                <div className="flex items-center gap-2">
-                    <div className="scale-75 origin-right flex items-center gap-2">
-                        <div className="bg-white/5 px-1.5 py-1 rounded-lg border border-white/10 flex items-center shadow-inner group/vol transition-all hover:bg-white/10">
+                <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+                    <div className="scale-75 origin-right flex items-center gap-1 sm:gap-2">
+                        <div className="bg-white/5 px-1 py-0.5 sm:px-1.5 sm:py-1 rounded-lg border border-white/10 flex items-center shadow-inner group/vol transition-all hover:bg-white/10">
                             <VolumeControl />
                         </div>
                     </div>
                     
                     <button
                         onClick={(e) => { e.stopPropagation(); toggleFavorite(); }}
-                        className={`w-7 h-7 flex items-center justify-center rounded-lg border transition-all active:scale-95 ${isFavorited ? 'bg-pink-500 border-pink-400 text-white shadow-[0_0_15px_rgba(236,72,153,0.3)]' : 'bg-white/5 border-white/10 text-zinc-600 hover:text-white'}`}
+                        className={`w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center rounded-lg border transition-all active:scale-95 shrink-0 ${isFavorited ? 'bg-pink-500 border-pink-400 text-white shadow-[0_0_15px_rgba(236,72,153,0.3)]' : 'bg-white/5 border-white/10 text-zinc-600 hover:text-white'}`}
                     >
-                        <Heart size={12} fill={isFavorited ? "currentColor" : "none"} />
+                        <Heart size={10} fill={isFavorited ? "currentColor" : "none"} />
                     </button>
                 </div>
             </div>

@@ -16,7 +16,8 @@ import {
     Search,
     Database,
     Skull,
-    Wind
+    Wind,
+    Lock
 } from "lucide-react";
 import type { Song } from "../types";
 
@@ -28,8 +29,8 @@ export const ThePool: React.FC = () => {
     const [searchQuery, setSearchQuery] = useState("");
     const [editingSong, setEditingSong] = useState<Song | null>(null);
 
-    const isAdmin = context?.profile?.is_admin;
-    const isPremium = context?.profile?.is_premium || isAdmin;
+    const isAdmin = context?.profile?.is_admin || context?.profile?.role === 'admin' || context?.profile?.role === 'owner' || context?.profile?.role === 'bouncer';
+    const isVIP = context?.profile?.role === 'vip' || context?.profile?.is_premium || isAdmin;
 
     const fetchPool = async () => {
         setLoading(true);
@@ -108,25 +109,43 @@ export const ThePool: React.FC = () => {
                         </div>
                     </div>
 
-                    {isPremium && (
-                        <button 
-                            onClick={() => setEditingSong({ 
-                                id: 'new-' + Date.now(), 
-                                title: '', 
-                                artistName: '', 
-                                status: 'pool', 
-                                stars: 5, 
-                                lyrics: '',
-                                audioUrl: '',
-                                uploaderId: context?.profile?.user_id || 'system'
-                            } as any)}
-                            className="flex items-center gap-2 px-3 py-1.5 bg-purple-600 hover:bg-purple-500 text-white rounded-lg transition-all"
-                        >
-                            <Plus size={14} />
-                            <span className="text-[8px] font-black uppercase tracking-widest whitespace-nowrap">DEPLOY</span>
-                        </button>
-                    )}
+                    <div className="flex items-center gap-2">
+                        {isVIP ? (
+                            <button 
+                                onClick={() => setEditingSong({ 
+                                    id: 'new-' + Date.now(), 
+                                    title: '', 
+                                    artistName: '', 
+                                    status: 'pool', 
+                                    stars: 5, 
+                                    lyrics: '',
+                                    audioUrl: '',
+                                    uploaderId: context?.profile?.user_id || 'system'
+                                } as any)}
+                                className="flex items-center gap-2 px-3 py-1.5 bg-purple-600 hover:bg-purple-500 text-white rounded-lg transition-all shadow-[0_0_15px_rgba(168,85,247,0.3)]"
+                            >
+                                <Upload size={14} />
+                                <span className="text-[8px] font-black uppercase tracking-widest whitespace-nowrap">DEPLOY NODE</span>
+                            </button>
+                        ) : (
+                            <div className="flex flex-col items-end">
+                                <span className="text-[6px] font-black text-purple-500 uppercase tracking-widest mb-1">VIP DJ BOOTH REQUIRED</span>
+                                <button className="flex items-center gap-2 px-3 py-1.5 bg-white/5 border border-purple-500/30 text-purple-400 rounded-lg opacity-50 cursor-not-allowed">
+                                    <Lock size={12} />
+                                    <span className="text-[8px] font-black uppercase tracking-widest">DEPLOY LOCKED</span>
+                                </button>
+                            </div>
+                        )}
+                    </div>
                 </div>
+
+                {isVIP && view === 'pool' && (
+                    <div className="px-2 py-1 bg-purple-500/5 rounded border border-purple-500/10 mb-1">
+                        <p className="text-[6px] font-bold text-purple-400 uppercase tracking-widest text-center">
+                            ⚠️ NOTICE: Only music created on SUNO PRO accounts is authorized for pool deployment.
+                        </p>
+                    </div>
+                )}
 
                 {/* Search & Tabs Segment */}
                 <div className="flex gap-2">

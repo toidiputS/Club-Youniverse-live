@@ -8,10 +8,13 @@ import type { Session } from "@supabase/supabase-js";
 // --- Auth ---
 export type { Session };
 
+export type UserRole = 'owner' | 'admin' | 'bouncer' | 'vip' | 'user' | 'guest';
+
 export interface Profile {
   user_id: string;
   name: string;
   email?: string;
+  role?: UserRole;
   tagline?: string;
   bio?: string;
   website_url?: string;

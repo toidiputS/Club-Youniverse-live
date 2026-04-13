@@ -757,6 +757,8 @@ export class GlobalBroadcastManager {
 
       // Try to autoplay with robust fallback
       this.play().catch((e) => {
+        if (e.name === 'AbortError') return; // Safe to ignore
+        
         // BROADEN: Catch more than just NotAllowedError, especially on iOS
         if (e.name === 'NotAllowedError' || e.name === 'SecurityError' || this.audioElement.paused) {
           console.warn("🚫 Autoplay blocked or failed. User interaction required.");
@@ -765,6 +767,7 @@ export class GlobalBroadcastManager {
           console.warn("Initial playback failed, forcing reload:", e);
           this.audioElement.load();
           this.play().catch(e3 => {
+            if (e3.name === 'AbortError') return;
             console.error("Force play (new song) failed:", e3);
             // Final fallback: show the overlay
             this.emit("autoplayBlocked", true);
@@ -990,6 +993,8 @@ export class GlobalBroadcastManager {
         this.emit("playbackStateChanged", true);
         this.updateMediaSession(); // Refresh handlers on state change
       } catch (e: any) {
+        if (e.name === 'AbortError') return; // New request is already in progress
+        
         console.error("❌ play() failed:", e.name, e.message);
         
         // BROADEN: Detect any block

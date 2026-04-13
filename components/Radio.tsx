@@ -2,7 +2,7 @@
  * @file Radio Component - Rebuilt for Club Youniverse SPA architecture.
  */
 
-import React, { useContext, useState } from "react";
+import React, { useContext, useState, useEffect, useRef } from "react";
 import { RadioContext } from "../contexts/AudioPlayerContext";
 import { TheBox } from "./TheBox";
 import { ThePool } from "./ThePool";
@@ -16,7 +16,9 @@ import { ChatAtmosphere } from "./ChatAtmosphere";
 import CosmicCanvas from "./DanceFloor/CosmicCanvas";
 import { useGameStore } from "./DanceFloor/useGameStore";
 import type { Profile, View } from "../types";
-import { X } from "lucide-react";
+import { X, Shield } from "lucide-react";
+import { GuestManager } from "./GuestManager";
+import { getBroadcastManager } from "../services/globalBroadcastManager";
 
 interface RadioProps {
   onNavigate: (view: View) => void;
@@ -31,14 +33,22 @@ export const Radio: React.FC<RadioProps> = ({ onNavigate, profile, minimal = fal
   const [showProfile, setShowProfile] = useState(false);
   const [showPool, setShowPool] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showGuestManager, setShowGuestManager] = useState(false);
 
   const connect = useGameStore(s => s.connect);
   const disconnect = useGameStore(s => s.disconnect);
 
-  const isSmoking = React.useRef(false);
+  const isSmoking = useRef(false);
+
+  // Authorization check for guest management
+  const canManageGuests = profile?.is_admin || 
+                          profile?.role === 'owner' || 
+                          profile?.role === 'admin' || 
+                          profile?.role === 'bouncer' || 
+                          profile?.email === 'itstraderbaby@gmail.com';
 
   // Presence Broadcast
-  React.useEffect(() => {
+  useEffect(() => {
     if (!profile?.name) return;
     
     const announce = async (type: 'entered' | 'left' | 'smoke') => {
@@ -58,6 +68,33 @@ export const Radio: React.FC<RadioProps> = ({ onNavigate, profile, minimal = fal
     };
   }, [profile?.name]);
 
+  // Handle Administrative Actions (Timeouts, Kicks, DMs)
+  useEffect(() => {
+    const bm = getBroadcastManager();
+    const cleanup = bm.on("siteCommandReceived", (cmd: any) => {
+        if (cmd?.type === "user_action" && cmd.payload?.userId === profile.user_id) {
+            const { action, duration, from, text } = cmd.payload;
+            
+            if (action === 'timeout') {
+                alert(`STATION PROTOCOL: YOU HAVE BEEN TIMED OUT BY ADMIN FOR ${duration / 60} MINUTES.`);
+                onNavigate("sidewalk");
+            } else if (action === 'kick') {
+                alert("STATION PROTOCOL: YOU HAVE BEEN KICKED FROM THE CLUB.");
+                onNavigate("sidewalk");
+            } else if (action === 'dm') {
+                // Flash a DM notification or show in chat
+                console.log(`DM from ${from}: ${text}`);
+                // For simplicity, using alert or we could inject into local chat
+                alert(`PRIVATE TRANSMISSION FROM ${from.toUpperCase()}: \n\n"${text}"`);
+            }
+        }
+    });
+
+    return () => {
+        if (typeof cleanup === 'function') cleanup();
+    };
+  }, [profile.user_id, onNavigate]);
+
   const handleSmokeNavigate = async () => {
     const { supabase } = await import("../services/supabaseClient");
     await supabase.channel('club-chat').send({
@@ -69,7 +106,7 @@ export const Radio: React.FC<RadioProps> = ({ onNavigate, profile, minimal = fal
     onNavigate("sidewalk");
   };
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (context?.danceFloorEnabled && !noGame) {
       connect();
     } else {
@@ -82,7 +119,7 @@ export const Radio: React.FC<RadioProps> = ({ onNavigate, profile, minimal = fal
     return (
         <ChatAtmosphere 
             messages={context.chatMessages.map(m => ({ text: m.text }))}
-            showMoodBadge={true}
+            showMoodBadge={false}
             showParticles={true}
         >
             <div className="h-full w-full relative flex flex-col lg:flex-row bg-transparent overflow-hidden select-none">
@@ -198,6 +235,19 @@ export const Radio: React.FC<RadioProps> = ({ onNavigate, profile, minimal = fal
                             </button>
                         </div>
 
+                        {/* ADMIN GUEST LIST TAB (Right side, under Identity) - Restricted */}
+                        {canManageGuests && (
+                            <div className="fixed right-0 top-64 z-100 pointer-events-auto">
+                                <button 
+                                    onClick={() => setShowGuestManager(true)}
+                                    className="flex flex-col items-center gap-2 py-6 px-1 bg-red-950 border border-r-0 border-red-500/30 rounded-l-xl hover:bg-red-800 text-red-400 hover:text-white transition-all group shadow-[0_0_20px_rgba(239,68,68,0.2)]"
+                                >
+                                    <Shield size={12} className="text-red-500 group-hover:animate-pulse" />
+                                    <span className="[writing-mode:vertical-lr] text-[7px] font-black uppercase tracking-[0.4em]">Guests</span>
+                                </button>
+                            </div>
+                        )}
+
                         {/* SETTINGS TAB (Right side, under Identity) */}
                         <div className="fixed right-0 top-32 z-100 pointer-events-auto lg:hidden">
                             <button 
@@ -208,7 +258,7 @@ export const Radio: React.FC<RadioProps> = ({ onNavigate, profile, minimal = fal
                             </button>
                         </div>
                         
-                        {/* Desktop Settings Tab is always reachable if needed, but since we have a sidebar now, maybe just keep it floating for mobile only or for easy access */}
+                        {/* Desktop Settings Tab */}
                         <div className="hidden lg:block fixed right-0 top-32 z-100 pointer-events-auto">
                             <button 
                                 onClick={() => setShowSettings(true)}
@@ -246,6 +296,13 @@ export const Radio: React.FC<RadioProps> = ({ onNavigate, profile, minimal = fal
                         </div>
                     )}
                 </AnimatePresence>
+
+                {/* Guest Management Slider */}
+                <GuestManager 
+                    isOpen={showGuestManager} 
+                    onClose={() => setShowGuestManager(false)} 
+                    adminProfile={profile} 
+                />
 
                 {/* Setings Panel (Station Control) */}
                 <DjHud isOpen={showSettings} setIsOpen={setShowSettings} />

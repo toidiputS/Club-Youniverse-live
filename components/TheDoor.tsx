@@ -16,6 +16,41 @@ export const TheDoor: React.FC<TheDoorProps> = ({ profile, onAccessGranted }) =>
     const [processing, setProcessing] = useState(false);
 
     useEffect(() => {
+        const updateStreak = async () => {
+            if (status !== 'paid' || !profile.user_id) return;
+            
+            const today = new Date().toISOString().split('T')[0];
+            const lastUpdate = profile.last_streak_update?.split('T')[0];
+            
+            if (lastUpdate === today) return; // Already updated today
+
+            let newStreak = 1;
+            if (lastUpdate) {
+                const yesterday = new Date();
+                yesterday.setDate(yesterday.getDate() - 1);
+                const yesterdayStr = yesterday.toISOString().split('T')[0];
+                
+                if (lastUpdate === yesterdayStr) {
+                    newStreak = (profile.current_streak || 0) + 1;
+                }
+            }
+
+            // Update profile
+            await supabase
+                .from('profiles')
+                .update({ 
+                    current_streak: newStreak,
+                    last_streak_update: new Date().toISOString()
+                })
+                .eq('user_id', profile.user_id);
+        };
+
+        if (status === 'paid') {
+            updateStreak();
+        }
+    }, [status, profile]);
+
+    useEffect(() => {
         const checkAccess = async () => {
             // Check for Stripe return flags
             if (window.location.hash.includes('entry=success')) {
@@ -139,15 +174,17 @@ export const TheDoor: React.FC<TheDoorProps> = ({ profile, onAccessGranted }) =>
                                     <div className="flex items-center justify-between mb-4">
                                         <div className="flex items-center gap-2">
                                             <Flame className="w-4 h-4 text-orange-500" />
-                                            <span className="text-xs font-bold text-white uppercase tracking-wider">Current Streak</span>
+                                            <span className="text-xs font-bold text-white uppercase tracking-wider">Two-Weeker Streak</span>
                                         </div>
                                         <span className="text-lg font-black text-white">{profile.current_streak || 0}d</span>
                                     </div>
                                     <div className="h-1 bg-white/5 rounded-full overflow-hidden mb-2">
-                                        <div className="h-full bg-orange-500" style={{ width: `${((profile.current_streak || 0) % 21) / 21 * 100}%` }} />
+                                        <div className="h-full bg-linear-to-r from-orange-600 to-amber-400" style={{ width: `${Math.min(((profile.current_streak || 0) / 14) * 100, 100)}%` }} />
                                     </div>
-                                    <p className="text-[10px] text-zinc-500 uppercase tracking-widest text-left">
-                                        {21 - ((profile.current_streak || 0) % 21)} days until 4th week free incentive
+                                    <p className="text-[10px] text-zinc-500 uppercase tracking-widest text-left font-black">
+                                        {profile.current_streak >= 14 
+                                            ? "PROTOCOL ACTIVE: ENJOY YOUR FREE WEEK" 
+                                            : `${14 - (profile.current_streak || 0)} days until One Week FREE`}
                                     </p>
                                 </div>
                             ) : (
