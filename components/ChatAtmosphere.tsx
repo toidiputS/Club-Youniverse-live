@@ -232,7 +232,7 @@ export const ChatAtmosphere: React.FC<ChatAtmosphereProps> = ({
       />
       
       {/* Content Layer */}
-      <div className="relative z-10 w-full h-full">
+      <div className="relative z-30 w-full h-full">
         {children}
       </div>
       
@@ -308,7 +308,7 @@ const MoodBadge: React.FC<{ mood: MoodType; intensity: number }> = ({ mood, inte
 
   return (
     <div 
-      className="absolute top-2 right-2 z-20 flex items-center gap-1.5 px-2 py-1 rounded-full backdrop-blur-md bg-black/30 border border-white/10 transition-all duration-500"
+      className="absolute top-2 right-2 z-20 flex items-center gap-1.5 px-2 py-1 rounded-full backdrop-blur-md bg-black/30 border border-white/10 transition-all duration-500 pointer-events-none"
       style={{ opacity: Math.min(1, intensity * 2) }}
     >
       <span className="text-[10px]">{moodEmoji[mood]}</span>

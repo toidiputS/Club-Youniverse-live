@@ -125,11 +125,11 @@ export const Header: React.FC<HeaderProps> = ({ profile, onProfileClick, onSmoke
            }}
            className="cursor-pointer active:scale-95 transition-transform z-10"
         >
-          <div className="w-13 h-13 rounded-2xl bg-black/40 border border-white/10 overflow-hidden shadow-xl hover:border-cyan-500/30 transition-colors">
+          <div className="w-13 h-13 rounded-2xl bg-black/40 border border-white/10 overflow-hidden shadow-xl hover:border-cyan-500/30 transition-all drop-shadow-[0_0_12px_rgba(34,211,238,0.8)] hover:drop-shadow-[0_0_18px_rgba(6,182,212,1)]">
             <img 
               src={profile.avatar_url || `https://api.dicebear.com/7.x/pixel-art/svg?seed=${profile.user_id}`} 
               alt="Profile" 
-              className="w-full h-full object-cover grayscale opacity-40 hover:grayscale-0 hover:opacity-100 transition-all"
+              className="w-full h-full object-cover transition-all"
             />
           </div>
         </div>

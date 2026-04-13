@@ -15,6 +15,7 @@ interface AlertMessage {
 
 export const PresenceAlerts: React.FC<{ profile: Profile }> = ({ profile }) => {
     const [alerts, setAlerts] = useState<AlertMessage[]>([]);
+    const lastAlertTime = React.useRef<Record<string, number>>({});
     const context = useContext(RadioContext);
 
     useEffect(() => {
@@ -55,25 +56,31 @@ export const PresenceAlerts: React.FC<{ profile: Profile }> = ({ profile }) => {
             })
             .subscribe();
 
+        let isInitialSync = true;
         // 2. Listen for Presence changes (Join / Leave)
         channel
             .on('presence', { event: 'join' }, ({ newPresences }) => {
+                if (isInitialSync) return;
                 newPresences.forEach((presence: any) => {
                     // Don't alert for ourselves
                     if (presence.user_id === profile.user_id) return;
 
                     const name = presence.name || "A Listener";
+                    const key = `join-${presence.user_id}`;
+                    const now = Date.now();
+                    if (lastAlertTime.current[key] && now - lastAlertTime.current[key] < 30000) return;
+                    lastAlertTime.current[key] = now;
                     
                     // Add to popup alerts
                     setAlerts((prev) => [
                         ...prev,
                         {
-                            id: `${presence.presence_ref}-join-${Date.now()}`,
+                            id: `${presence.presence_ref}-join-${now}`,
                             userId: presence.user_id,
                             name: name,
                             avatarUrl: presence.avatar_url,
                             action: 'JOIN',
-                            timestamp: Date.now(),
+                            timestamp: now,
                         },
                     ]);
                 });
@@ -91,22 +98,30 @@ export const PresenceAlerts: React.FC<{ profile: Profile }> = ({ profile }) => {
                         return;
                     }
 
+                    const key = `leave-${presence.user_id}`;
+                    const now = Date.now();
+                    if (lastAlertTime.current[key] && now - lastAlertTime.current[key] < 30000) return;
+                    lastAlertTime.current[key] = now;
+
                     // Add to popup alerts
                     setAlerts((prev) => [
                         ...prev,
                         {
-                            id: `${presence.presence_ref}-leave-${Date.now()}`,
+                            id: `${presence.presence_ref}-leave-${now}`,
                             userId: presence.user_id,
                             name: name,
                             avatarUrl: presence.avatar_url,
                             action: 'LEAVE',
-                            timestamp: Date.now(),
+                            timestamp: now,
                         },
                     ]);
                 });
             })
             .subscribe(async (status) => {
                 if (status === 'SUBSCRIBED') {
+                    // Small delay to allow initial state sync to finish before enabling alerts
+                    setTimeout(() => { isInitialSync = false; }, 2000);
+                    
                     // 3. Announce ourselves to the channel
                     const presenceData: any = {
                         user_id: profile.user_id,

@@ -84,23 +84,23 @@ export const ChatMoodBubble: React.FC<ChatMoodBubbleProps> = ({
         <div
           className={`
             relative px-2 py-1 w-fit min-w-[24px] transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)]
-            bg-black/20 backdrop-blur-md shadow-[0_8px_32px_rgba(0,0,0,0.5)] border border-white/5
+            bg-black/5 backdrop-blur-md shadow-[0_4px_16px_rgba(0,0,0,0.2)] border border-white/10
             ${isCurrentUser 
-              ? 'border-l-purple-500/30' 
+              ? 'border-l-purple-500/20' 
               : isMention
-                ? 'border-r-purple-500/50 shadow-[0_0_50px_rgba(168,85,247,0.3)]'
-                : `border-r-white/10`
+                ? 'border-r-purple-500/40 shadow-[0_0_50px_rgba(168,85,247,0.2)]'
+                : `border-r-white/5`
             }
             group overflow-hidden
           `}
           style={{
             boxShadow: currentMood !== 'neutral' 
-              ? `0 0 40px ${getMoodColorHex(currentMood)}30` 
-              : '0 4px 20px rgba(0,0,0,0.4)',
+              ? `0 0 40px ${getMoodColorHex(currentMood)}20` 
+              : '0 2px 10px rgba(0,0,0,0.2)',
             borderRadius: isDjOrAdmin ? '16px 4px 16px 16px' : '4px 16px 16px 16px',
             background: currentMood !== 'neutral' 
-              ? `linear-gradient(135deg, rgba(0,0,0,0.2) 0%, ${getMoodColorHex(currentMood)}15 100%)`
-              : 'rgba(0,0,0,0.2)',
+              ? `linear-gradient(135deg, rgba(0,0,0,0.1) 0%, ${getMoodColorHex(currentMood)}10 100%)`
+              : 'rgba(0,0,0,0.1)',
           }}
         >
           {/* 1. GENERATIVE NOISE LAYER */}

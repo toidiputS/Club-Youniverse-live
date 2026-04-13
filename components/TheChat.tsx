@@ -8,6 +8,7 @@ import { RadioContext } from "../contexts/AudioPlayerContext";
 import { supabase } from "../services/supabaseClient";
 import { ChatMoodBubble, SystemMessage } from "./ChatMoodBubble";
 import { ChatAtmosphere } from "./ChatAtmosphere";
+import { Zap } from "lucide-react";
 import type { ChatMessage, Profile } from "../types";
 
 interface TheChatProps {
@@ -33,6 +34,7 @@ export const TheChat: React.FC<TheChatProps> = ({ profile, transparent, noAtmosp
     const { chatMessages, addChatMessage } = context;
     const [input, setInput] = useState("");
     const scrollRef = useRef<HTMLDivElement>(null);
+    const lastStatusUpdate = useRef<Record<string, number>>({});
 
     // Auto-scroll to bottom when new messages arrive
     useEffect(() => {
@@ -41,28 +43,57 @@ export const TheChat: React.FC<TheChatProps> = ({ profile, transparent, noAtmosp
         }
     }, [chatMessages]);
 
-    // Subscribe to live chat messages
+    // Subscribe to live chat messages and Presence status
     useEffect(() => {
-        const channel = supabase.channel('club-chat')
+        let isInitialSync = true;
+        const channel = supabase.channel('club-presence')
             .on('broadcast', { event: 'new_message' }, ({ payload }) => {
                 addChatMessage(payload);
             })
-            .on('broadcast', { event: 'status' }, ({ payload }) => {
-                const { type, user } = payload;
-                let statusText = '';
-                if (type === 'entered') statusText = `${user.toUpperCase()} ENTERED THE CLUB`;
-                else if (type === 'smoke') statusText = `${user.toUpperCase()} STEPPED OUT FOR A SMOKE`;
-                else statusText = `${user.toUpperCase()} LEFT THE CLUB`;
+            .on('presence', { event: 'join' }, ({ newPresences }) => {
+                if (isInitialSync) return; // Ignore initial sync to prevent spamming current users as "entered"
+                
+                newPresences.forEach((p: any) => {
+                    const key = `join-${p.user_id}`;
+                    const now = Date.now();
+                    if (lastStatusUpdate.current[key] && now - lastStatusUpdate.current[key] < 30000) return;
+                    lastStatusUpdate.current[key] = now;
 
-                addChatMessage({
-                    id: `status-${Date.now()}-${Math.random()}`,
-                    user: { name: "SYSTEM PROTOCOL", isDj: true },
-                    text: statusText,
-                    timestamp: Date.now(),
-                    isStatus: true 
-                } as any);
+                    const name = p.name || "A LISTENER";
+
+                    addChatMessage({
+                        id: `status-join-${now}-${Math.random()}`,
+                        user: { name: "SYSTEM PROTOCOL", isDj: true },
+                        text: `${name.toUpperCase()} ENTERED THE CLUB`,
+                        timestamp: now,
+                        isStatus: true 
+                    } as any);
+                });
             })
-            .subscribe();
+            .on('presence', { event: 'leave' }, ({ leftPresences }) => {
+                leftPresences.forEach((p: any) => {
+                    const key = `leave-${p.user_id}`;
+                    const now = Date.now();
+                    if (lastStatusUpdate.current[key] && now - lastStatusUpdate.current[key] < 30000) return;
+                    lastStatusUpdate.current[key] = now;
+
+                    const name = p.name || "A LISTENER";
+
+                    addChatMessage({
+                        id: `status-leave-${now}-${Math.random()}`,
+                        user: { name: "SYSTEM PROTOCOL", isDj: true },
+                        text: `${name.toUpperCase()} LEFT THE CLUB`,
+                        timestamp: now,
+                        isStatus: true 
+                    } as any);
+                });
+            })
+            .subscribe(async (status) => {
+                if (status === 'SUBSCRIBED') {
+                    // Short delay before enabling join alerts to clear initial sync
+                    setTimeout(() => { isInitialSync = false; }, 2000);
+                }
+            });
 
         return () => { supabase.removeChannel(channel); };
     }, [addChatMessage]);
@@ -181,7 +212,7 @@ export const TheChat: React.FC<TheChatProps> = ({ profile, transparent, noAtmosp
     };
 
     const content = (
-        <div className={`flex flex-col h-full overflow-hidden transition-all select-none ${noAtmosphere ? 'bg-transparent' : 'bg-[#0a0a0a]'}`}>
+        <div className={`flex flex-col h-full overflow-hidden transition-all select-none ${noAtmosphere ? 'bg-transparent' : 'bg-black/10'}`}>
             {/* Chat Messages */}
             <div
                 ref={scrollRef}
@@ -205,7 +236,7 @@ export const TheChat: React.FC<TheChatProps> = ({ profile, transparent, noAtmosp
                         if (msg.isStatus) {
                             return (
                                 <div key={msg.id} className="flex justify-center py-1 opacity-40">
-                                    <span className="text-[7px] font-bold uppercase tracking-widest text-white/60 bg-white/5 px-2 py-0.5 rounded-full">
+                                    <span className="text-[6px] font-black uppercase tracking-[0.2em] text-white/30 px-2 py-0.5 rounded-full">
                                         {msg.text}
                                     </span>
                                 </div>
@@ -241,7 +272,33 @@ export const TheChat: React.FC<TheChatProps> = ({ profile, transparent, noAtmosp
                 onSubmit={handleSend} 
                 className="pt-1 pb-2 px-3 bg-transparent pointer-events-none"
             >
-                <div className="relative flex items-center gap-2 max-w-md mx-auto pointer-events-auto">
+                <div className="relative flex flex-col gap-2 max-w-md mx-auto pointer-events-auto">
+                    {/* Live Rating HUD - Anchored above input */}
+                    <div className="flex flex-col items-center gap-1 mb-1">
+                        <div className="flex items-center gap-0.5 bg-black/40 backdrop-blur-md px-2 py-1 rounded-full border border-white/5 shadow-inner">
+                            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((star) => {
+                                const isVoted = (context.nowPlaying?.userRating || 0) >= star;
+                                const icon = isVoted 
+                                    ? <Zap size={10} fill="currentColor" /> 
+                                    : <Zap size={10} className="opacity-20 hover:opacity-100 transition-opacity" />;
+                                const colorClass = isVoted 
+                                    ? 'text-yellow-400 drop-shadow-[0_0_8px_rgba(250,204,21,0.6)]' 
+                                    : 'text-zinc-600 hover:text-white/40';
+
+                                return (
+                                    <button
+                                        key={star}
+                                        type="button"
+                                        onClick={(e) => { e.stopPropagation(); context.castVote(star); }}
+                                        className="p-0.5 transition-all hover:scale-125 hover:rotate-6 active:scale-95 shrink-0"
+                                    >
+                                        <span className={colorClass}>{icon}</span>
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+
                     <div className="grow relative flex items-center">
                         <input
                             type="text"

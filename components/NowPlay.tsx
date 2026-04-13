@@ -47,9 +47,10 @@ export const NowPlay: React.FC = () => {
                 />
             </div>
 
-            <div className="flex-1 flex items-center justify-between gap-6 relative z-10">
-                <div className="flex items-center gap-3 group/card cursor-pointer" onClick={() => setShowPopOut(true)}>
-                    <div className="relative group">
+            <div className="flex-1 flex items-center justify-between min-w-0 relative z-10 gap-4">
+                {/* 1. Song Info & Voting Row (Left/Center) */}
+                <div className="flex items-center gap-3 min-w-0 group/card cursor-pointer" onClick={() => setShowPopOut(true)}>
+                    <div className="relative group shrink-0">
                         <img 
                             src={nowPlaying.coverArtUrl || `https://picsum.photos/seed/${nowPlaying.id}/100`}
                             alt={nowPlaying.title}
@@ -61,8 +62,8 @@ export const NowPlay: React.FC = () => {
                     </div>
                     
                     <div className="flex flex-col min-w-0">
-                        <div className="flex items-center gap-1.5">
-                            <span className="text-[9px] font-black text-white uppercase tracking-wider truncate max-w-[180px]">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                            <span className="text-[9px] font-black text-white uppercase tracking-wider truncate">
                                 {nowPlaying.title}
                             </span>
                             {nowPlaying.sunoUrl && (
@@ -70,58 +71,58 @@ export const NowPlay: React.FC = () => {
                                     href={nowPlaying.sunoUrl} 
                                     target="_blank" 
                                     rel="noopener noreferrer" 
-                                    className="text-[9px] font-black text-[#fe6d00] border border-[#fe6d00]/30 px-1 rounded hover:bg-[#fe6d00] hover:text-white transition-all uppercase"
+                                    className="text-[9px] font-black text-[#fe6d00] border border-[#fe6d00]/30 px-1 rounded hover:bg-[#fe6d00] hover:text-white transition-all uppercase shrink-0"
                                     onClick={(e) => e.stopPropagation()}
                                 >
                                     SUNO
                                 </a>
                             )}
                         </div>
-                        <span className="text-[8px] font-bold text-zinc-500 uppercase tracking-tighter truncate">
-                            {nowPlaying.artistName}
-                        </span>
-                    </div>
-                </div>
+                        
+                        <div className="flex items-center gap-1 sm:gap-3 min-w-0">
+                            <span className="text-[8px] font-bold text-zinc-500 uppercase tracking-tighter truncate max-w-[60px] sm:max-w-[100px]">
+                                {nowPlaying.artistName}
+                            </span>
+                            
+                            {/* Compact Voting Inline */}
+                            <div className="flex items-center bg-white/5 rounded-full px-1 py-0.5 border border-white/5 shrink-0">
+                                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((star) => {
+                                    const isVoted = (nowPlaying.userRating || 0) >= star;
+                                    const icon = isVoted ? <Zap size={7} fill="currentColor" /> : <Star size={7} />;
+                                    const colorClass = isVoted 
+                                        ? 'text-yellow-400 drop-shadow-[0_0_8px_rgba(250,204,21,0.6)]' 
+                                        : 'text-white/10 hover:text-white/30';
 
-                {/* 2. Rating & Telemetry Sector (Center) */}
-                <div className="flex items-center gap-4 sm:gap-8">
-                    {/* Voting Grid - Direct interaction */}
-                    <div className="flex flex-col items-center gap-0.5 shrink-0">
-                        <div className="flex items-center gap-0">
-                            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((star) => {
-                                const isVoted = (nowPlaying.userRating || 0) >= star;
-                                const icon = isVoted ? <Zap size={8} fill="currentColor" /> : <Star size={8} />;
-                                const colorClass = isVoted 
-                                    ? 'text-yellow-400 drop-shadow-[0_0_8px_rgba(250,204,21,0.6)]' 
-                                    : 'text-zinc-700 hover:text-zinc-500';
-
-                                return (
-                                    <button
-                                        key={star}
-                                        onClick={(e) => { e.stopPropagation(); handleVote(star); }}
-                                        className="p-0.5 transition-all hover:scale-125 hover:rotate-6 active:scale-95 shrink-0"
-                                    >
-                                        <span className={colorClass}>{icon}</span>
-                                    </button>
-                                );
-                            })}
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <div className="flex items-center gap-1 text-[6px] font-black text-zinc-500 uppercase whitespace-nowrap">
-                                <Activity size={6} />
-                                <span>{nowPlaying.stars || 0} GALAXY</span>
+                                    return (
+                                        <button
+                                            key={star}
+                                            onClick={(e) => { e.stopPropagation(); handleVote(star); }}
+                                            className="p-px sm:p-0.5 transition-all hover:scale-125 shrink-0"
+                                        >
+                                            <span className={colorClass}>{icon}</span>
+                                        </button>
+                                    );
+                                })}
                             </div>
-                            {liveRating.count > 0 && (
-                                <span className="text-[6px] font-black text-emerald-500 bg-emerald-500/10 px-0.5 rounded">
-                                    AVG: {(liveRating.sum / liveRating.count).toFixed(1)}
-                                </span>
-                            )}
+
+                            {/* Stats */}
+                            <div className="hidden sm:flex items-center gap-2 shrink-0">
+                                <div className="flex items-center gap-1 text-[6px] font-black text-zinc-500 uppercase">
+                                    <Activity size={6} />
+                                    <span>{nowPlaying.stars || 0} GALAXY</span>
+                                </div>
+                                {liveRating.count > 0 && (
+                                    <span className="text-[6px] font-black text-emerald-500 bg-emerald-500/10 px-0.5 rounded leading-none py-0.5">
+                                        AVG: {(liveRating.sum / liveRating.count).toFixed(1)}
+                                    </span>
+                                )}
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                {/* 3. Utility Segment (Right) */}
-                <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+                {/* 2. Utility Segment (Right) - Locked to edge, no shrink */}
+                <div className="flex items-center gap-1 sm:gap-2 shrink-0 pr-1">
                     <div className="scale-75 origin-right flex items-center gap-1 sm:gap-2">
                         <div className="bg-white/5 px-1 py-0.5 sm:px-1.5 sm:py-1 rounded-lg border border-white/10 flex items-center shadow-inner group/vol transition-all hover:bg-white/10">
                             <VolumeControl />

@@ -19,6 +19,7 @@ import type { Profile, View } from "../types";
 import { X, Shield } from "lucide-react";
 import { GuestManager } from "./GuestManager";
 import { getBroadcastManager } from "../services/globalBroadcastManager";
+import { supabase } from "../services/supabaseClient";
 
 interface RadioProps {
   onNavigate: (view: View) => void;
@@ -48,26 +49,43 @@ export const Radio: React.FC<RadioProps> = ({ onNavigate, profile, minimal = fal
                           profile?.role === 'bouncer' || 
                           profile?.email === 'itstraderbaby@gmail.com';
 
-  // Presence Broadcast
+  // Presence Tracking (Supabase)
   useEffect(() => {
     if (!profile?.name) return;
     
-    const announce = async (type: 'entered' | 'left' | 'smoke') => {
-        const { supabase } = await import("../services/supabaseClient");
-        await supabase.channel('club-chat').send({
-            type: 'broadcast',
-            event: 'status',
-            payload: { type, user: profile.name }
+    let channel: any;
+    const initPresence = async () => {
+        channel = supabase.channel('club-presence', {
+            config: {
+                presence: {
+                    key: profile.user_id || profile.name,
+                },
+            },
         });
+
+        channel
+            .on('presence', { event: 'sync' }, () => {
+                // Presence synced
+            })
+            .subscribe(async (status: string) => {
+                if (status === 'SUBSCRIBED') {
+                    await channel.track({
+                        user: profile.name,
+                        status: isSmoking.current ? 'smoke' : 'entered',
+                        online_at: new Date().toISOString(),
+                    });
+                }
+            });
     };
 
-    announce('entered');
+    initPresence();
+
     return () => { 
-        if (!isSmoking.current) {
-            announce('left');
+        if (channel) {
+            supabase.removeChannel(channel);
         }
     };
-  }, [profile?.name]);
+  }, [profile?.name, profile?.user_id]);
 
   // Handle Administrative Actions (Timeouts, Kicks, DMs)
   useEffect(() => {
@@ -97,13 +115,10 @@ export const Radio: React.FC<RadioProps> = ({ onNavigate, profile, minimal = fal
   }, [profile.user_id, onNavigate]);
 
   const handleSmokeNavigate = async () => {
-    const { supabase } = await import("../services/supabaseClient");
-    await supabase.channel('club-chat').send({
-        type: 'broadcast',
-        event: 'status',
-        payload: { type: 'smoke', user: profile.name }
-    });
     isSmoking.current = true;
+    // The presence will naturally update or we could force a track here, 
+    // but navigating to sidewalk will unmount this Radio component anyway, 
+    // triggering a 'leave' in Presence.
     onNavigate("sidewalk");
   };
 
@@ -261,7 +276,7 @@ export const Radio: React.FC<RadioProps> = ({ onNavigate, profile, minimal = fal
 
                 {/* FLOATING HEADER (Outside main stacking context) */}
                 {!minimal && (
-                    <div className="pointer-events-auto z-[200]">
+                    <div className="pointer-events-auto z-200">
                         <Header 
                             onNavigate={onNavigate} 
                             profile={profile} 

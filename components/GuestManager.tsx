@@ -1,8 +1,7 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
     X, 
-    User, 
     AlertTriangle, 
     Clock, 
     UserX, 
@@ -14,7 +13,6 @@ import {
 } from 'lucide-react';
 import { Profile } from '../types';
 import { supabase } from '../services/supabaseClient';
-import { RadioContext } from '../contexts/AudioPlayerContext';
 import { getBroadcastManager } from '../services/globalBroadcastManager';
 
 interface GuestManagerProps {
@@ -24,7 +22,6 @@ interface GuestManagerProps {
 }
 
 export const GuestManager: React.FC<GuestManagerProps> = ({ isOpen, onClose, adminProfile }) => {
-    const context = useContext(RadioContext);
     const isAdmin = adminProfile?.is_admin || adminProfile?.role === 'owner' || adminProfile?.role === 'admin' || adminProfile?.role === 'bouncer' || adminProfile?.email === 'itstraderbaby@gmail.com';
     const [guests, setGuests] = useState<Profile[]>([]);
     const [searchQuery, setSearchQuery] = useState("");
