@@ -41,7 +41,8 @@ export const Radio: React.FC<RadioProps> = ({ onNavigate, profile, minimal = fal
   const isSmoking = useRef(false);
 
   // Authorization check for guest management
-  const canManageGuests = profile?.is_admin || 
+  const canManageGuests = profile?.is_premium ||
+                          profile?.is_admin || 
                           profile?.role === 'owner' || 
                           profile?.role === 'admin' || 
                           profile?.role === 'bouncer' || 
@@ -189,18 +190,6 @@ export const Radio: React.FC<RadioProps> = ({ onNavigate, profile, minimal = fal
 
                 {/* 2. MAIN CONTENT AREA (Left on Desktop, Full on Mobile) */}
                 <div className="relative z-10 flex flex-col grow h-full overflow-hidden pointer-events-none">
-                    {/* Header */}
-                    {!minimal && (
-                        <div className="flex-none pointer-events-auto">
-                            <Header 
-                                onNavigate={onNavigate} 
-                                profile={profile} 
-                                onProfileClick={() => setShowProfile(true)}
-                                onSmokeClick={handleSmokeNavigate}
-                            />
-                        </div>
-                    )}
-
                     {/* Spacer / Center Area */}
                     <div className="grow" />
                 </div>
@@ -268,6 +257,18 @@ export const Radio: React.FC<RadioProps> = ({ onNavigate, profile, minimal = fal
                             </button>
                         </div>
                     </>
+                )}
+
+                {/* FLOATING HEADER (Outside main stacking context) */}
+                {!minimal && (
+                    <div className="pointer-events-auto z-[200]">
+                        <Header 
+                            onNavigate={onNavigate} 
+                            profile={profile} 
+                            onProfileClick={() => setShowProfile(true)}
+                            onSmokeClick={handleSmokeNavigate}
+                        />
+                    </div>
                 )}
 
                 {/* EXTERNAL SLIDERS / MODALS */}

@@ -65,15 +65,14 @@ export class PersistentRadioService {
         console.log("📰 Initiating hourly Newscast generation...");
         try {
             // Tell the UI that news is generating
-            await supabase.channel('site_commands').send({
-                type: 'broadcast',
-                event: 'siteCommandReceived',
-                payload: {
+            await supabase.from("broadcasts").update({
+                site_command: {
                     type: 'dj_banter',
                     timestamp: Date.now(),
-                    payload: { text: "PREPARING HOURLY NEWSCAST. STAND BY." }
+                    payload: { text: "PREPARING HOURLY NEWSCAST. STAND BY." },
+                    id: Math.random().toString(36).substring(2, 15)
                 }
-            });
+            }).eq("id", "00000000-0000-0000-0000-000000000000");
 
             const response = await fetch("http://localhost:5050/generate-break", {
                 method: "POST"
@@ -156,15 +155,14 @@ export class PersistentRadioService {
                         `A new song has won the vote: "${winner.title}" by ${winner.artist_name}. Welcome it to the airwaves!`
                     );
                     // We need a BroadcastManager reference. Since this is static, we'll use a site command via the broadcast channel directly.
-                    await supabase.channel('site_commands').send({
-                        type: 'broadcast',
-                        event: 'siteCommandReceived',
-                        payload: {
+                    await supabase.from("broadcasts").update({
+                        site_command: {
                             type: 'dj_banter',
                             timestamp: Date.now(),
-                            payload: { text: banter }
+                            payload: { text: banter },
+                            id: Math.random().toString(36).substring(2, 15)
                         }
-                    });
+                    }).eq("id", "00000000-0000-0000-0000-000000000000");
                 } catch (e) { console.warn("Winner announcement failed", e); }
             }
 
@@ -445,20 +443,19 @@ export class PersistentRadioService {
         console.log(`🔴 FAREWELL SPECTACLE TRIGGERED for ${song.title}`);
         
         // 1. Broadcast site command for visual effects
-        await supabase.channel('club-chat').send({
-            type: 'broadcast',
-            event: 'siteCommandReceived',
-            payload: {
+        await supabase.from("broadcasts").update({
+            site_command: {
                 type: 'trigger_fx',
                 timestamp: Date.now(),
-                payload: { fx: 'Farewell' }
+                payload: { fx: 'Farewell' },
+                id: Math.random().toString(36).substring(2, 15)
             }
-        });
+        }).eq("id", "00000000-0000-0000-0000-000000000000");
 
         // 2. Special AI Banter
         const banter = `Attention Club Youniverse. Node ${song.title.toUpperCase()} is officially over-indexed. The influence is zero. Go home song, you're drunk. This is your final transmission.`;
         
-        await supabase.channel('club-chat').send({
+        await (supabase.channel('club-chat') as any).httpSend({
             type: 'broadcast',
             event: 'new_message',
             payload: {

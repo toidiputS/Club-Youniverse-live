@@ -33,7 +33,9 @@ interface DjHudProps {
 
 export const DjHud: React.FC<DjHudProps> = ({ isOpen, setIsOpen }) => {
     const context = useContext(RadioContext);
-    if (!context || !context.profile?.is_admin) return null;
+    const profile = context?.profile;
+    const isOwnerOrAdmin = profile?.is_admin || profile?.role === 'owner' || profile?.role === 'admin' || profile?.email === 'itstraderbaby@gmail.com';
+    if (!context || !isOwnerOrAdmin) return null;
 
     const { 
         radioState, 

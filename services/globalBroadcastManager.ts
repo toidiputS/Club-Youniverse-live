@@ -471,7 +471,7 @@ export class GlobalBroadcastManager {
       // But for drift:
       const drift = Math.abs(this.audioElement.currentTime - expectedTime);
 
-      if (drift > 2 && this.state.isPlaying) {
+      if (drift > 2 && this.state.isPlaying && !this.isLeaderLocal) {
         this.audioElement.currentTime = expectedTime;
       }
     }

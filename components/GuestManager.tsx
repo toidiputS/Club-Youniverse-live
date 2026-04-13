@@ -25,6 +25,7 @@ interface GuestManagerProps {
 
 export const GuestManager: React.FC<GuestManagerProps> = ({ isOpen, onClose, adminProfile }) => {
     const context = useContext(RadioContext);
+    const isAdmin = adminProfile?.is_admin || adminProfile?.role === 'owner' || adminProfile?.role === 'admin' || adminProfile?.role === 'bouncer' || adminProfile?.email === 'itstraderbaby@gmail.com';
     const [guests, setGuests] = useState<Profile[]>([]);
     const [searchQuery, setSearchQuery] = useState("");
     const [loading, setLoading] = useState(true);
@@ -222,36 +223,38 @@ export const GuestManager: React.FC<GuestManagerProps> = ({ isOpen, onClose, adm
                                                     className="overflow-hidden mt-4 pt-4 border-t border-white/5 space-y-4"
                                                 >
                                                     {/* Action Buttons */}
-                                                    <div className="grid grid-cols-4 gap-2">
-                                                        <button 
-                                                            onClick={(e) => { e.stopPropagation(); handleAction('warning', guest); }}
-                                                            className="flex flex-col items-center gap-2 p-3 bg-zinc-950 rounded-xl border border-white/5 hover:border-amber-500/40 text-amber-500/60 hover:text-amber-400 transition-all group/btn"
-                                                        >
-                                                            <AlertTriangle size={14} />
-                                                            <span className="text-[6px] font-black uppercase">Warn</span>
-                                                        </button>
-                                                        <button 
-                                                            onClick={(e) => { e.stopPropagation(); handleAction('timeout', guest); }}
-                                                            className="flex flex-col items-center gap-2 p-3 bg-zinc-950 rounded-xl border border-white/5 hover:border-orange-500/40 text-orange-500/60 hover:text-orange-400 transition-all group/btn"
-                                                        >
-                                                            <Clock size={14} />
-                                                            <span className="text-[6px] font-black uppercase">10m</span>
-                                                        </button>
-                                                        <button 
-                                                            onClick={(e) => { e.stopPropagation(); handleAction('kick', guest); }}
-                                                            className="flex flex-col items-center gap-2 p-3 bg-zinc-950 rounded-xl border border-white/5 hover:border-red-500/40 text-red-500/60 hover:text-red-400 transition-all group/btn"
-                                                        >
-                                                            <UserX size={14} />
-                                                            <span className="text-[6px] font-black uppercase">Kick</span>
-                                                        </button>
-                                                        <button 
-                                                            onClick={(e) => { e.stopPropagation(); handleAction('ban', guest); }}
-                                                            className="flex flex-col items-center gap-2 p-3 bg-zinc-950 rounded-xl border border-red-950/40 text-red-800 hover:bg-red-950/20 hover:text-red-600 transition-all group/btn"
-                                                        >
-                                                            <Shield size={14} />
-                                                            <span className="text-[6px] font-black uppercase">Ban</span>
-                                                        </button>
-                                                    </div>
+                                                    {isAdmin && (
+                                                        <div className="grid grid-cols-4 gap-2">
+                                                            <button 
+                                                                onClick={(e) => { e.stopPropagation(); handleAction('warning', guest); }}
+                                                                className="flex flex-col items-center gap-2 p-3 bg-zinc-950 rounded-xl border border-white/5 hover:border-amber-500/40 text-amber-500/60 hover:text-amber-400 transition-all group/btn"
+                                                            >
+                                                                <AlertTriangle size={14} />
+                                                                <span className="text-[6px] font-black uppercase">Warn</span>
+                                                            </button>
+                                                            <button 
+                                                                onClick={(e) => { e.stopPropagation(); handleAction('timeout', guest); }}
+                                                                className="flex flex-col items-center gap-2 p-3 bg-zinc-950 rounded-xl border border-white/5 hover:border-orange-500/40 text-orange-500/60 hover:text-orange-400 transition-all group/btn"
+                                                            >
+                                                                <Clock size={14} />
+                                                                <span className="text-[6px] font-black uppercase">10m</span>
+                                                            </button>
+                                                            <button 
+                                                                onClick={(e) => { e.stopPropagation(); handleAction('kick', guest); }}
+                                                                className="flex flex-col items-center gap-2 p-3 bg-zinc-950 rounded-xl border border-white/5 hover:border-red-500/40 text-red-500/60 hover:text-red-400 transition-all group/btn"
+                                                            >
+                                                                <UserX size={14} />
+                                                                <span className="text-[6px] font-black uppercase">Kick</span>
+                                                            </button>
+                                                            <button 
+                                                                onClick={(e) => { e.stopPropagation(); handleAction('ban', guest); }}
+                                                                className="flex flex-col items-center gap-2 p-3 bg-zinc-950 rounded-xl border border-red-950/40 text-red-800 hover:bg-red-950/20 hover:text-red-600 transition-all group/btn"
+                                                            >
+                                                                <Shield size={14} />
+                                                                <span className="text-[6px] font-black uppercase">Ban</span>
+                                                            </button>
+                                                        </div>
+                                                    )}
 
                                                     {/* DM Input */}
                                                     <div className="space-y-2">

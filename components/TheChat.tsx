@@ -84,21 +84,21 @@ export const TheChat: React.FC<TheChatProps> = ({ profile, transparent, noAtmosp
                 timestamp: Date.now()
             };
 
-            await supabase.channel('club-chat').send({
+            await (supabase.channel('club-chat') as any).httpSend({
                 type: 'broadcast',
                 event: 'new_message',
                 payload: message
             });
 
             // TRIGGER VOICE BROADCAST
-            await supabase.channel('club-site-commands').send({
-                type: 'broadcast',
-                event: 'siteCommand',
-                payload: {
+            await supabase.from("broadcasts").update({
+                site_command: {
                     type: "tts",
-                    payload: { text: banter, voice: "DJ Python" }
+                    timestamp: Date.now(),
+                    payload: { text: banter, voice: "DJ Python" },
+                    id: Math.random().toString(36).substring(2, 15)
                 }
-            });
+            }).eq("id", "00000000-0000-0000-0000-000000000000");
 
             addChatMessage(message);
         };
@@ -144,7 +144,7 @@ export const TheChat: React.FC<TheChatProps> = ({ profile, transparent, noAtmosp
         };
 
         // Broadcast to all listeners
-        await supabase.channel('club-chat').send({
+        await (supabase.channel('club-chat') as any).httpSend({
             type: 'broadcast',
             event: 'new_message',
             payload: message
