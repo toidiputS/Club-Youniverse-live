@@ -16,7 +16,7 @@ export const Ticker: React.FC = () => {
     const universalFeed = `${tickerText} • ${leaderboardText} • ${djBanter} • [STATION STATUS: OPTIMAL] • [SEASON OF SOUND: ACTIVE]`;
 
     return (
-        <div className="fixed bottom-0 left-0 right-0 z-50 flex flex-col pointer-events-none">
+        <div className="w-full flex flex-col">
             {/* 2. UNIVERSAL MARQUEE - Single row for everything */}
             <div className="h-5 bg-black/95 backdrop-blur-md border-t border-purple-500/30 flex items-center pointer-events-auto relative overflow-hidden">
                 {/* Visual Accent: Left Side Data Label */}

@@ -14,7 +14,7 @@ interface HeaderProps {
     onFeedbackClick?: () => void;
 }
 
-import { Shield } from "lucide-react";
+
 
 const EmotionMeter: React.FC = () => {
     const context = useContext(RadioContext);
@@ -42,11 +42,7 @@ export const Header: React.FC<HeaderProps> = ({ profile, onProfileClick, onSmoke
   const context = useContext(RadioContext);
   const broadcastManager = getBroadcastManager();
 
-  const isStaff = profile?.is_admin || 
-                  profile?.role === 'owner' || 
-                  profile?.role === 'admin' || 
-                  profile?.role === 'bouncer' || 
-                  profile?.email === 'itstraderbaby@gmail.com';
+
 
   useEffect(() => {
     let handle: number;
@@ -128,18 +124,7 @@ export const Header: React.FC<HeaderProps> = ({ profile, onProfileClick, onSmoke
 
         {/* Right: User Avatar & Admin Tools (Profile Action) */}
         <div className="flex items-center gap-3 z-10">
-            {isStaff && (
-                <button 
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        onGuestRegistryClick?.();
-                    }}
-                    className="p-3 bg-red-950/40 border border-red-500/20 rounded-2xl text-red-500 hover:bg-red-500/20 hover:text-white transition-all shadow-[0_0_15px_rgba(239,68,68,0.2)] active:scale-95 group"
-                    title="Guest Registry"
-                >
-                    <Shield size={20} className="group-hover:animate-pulse" />
-                </button>
-            )}
+        
             
             <div 
                onClick={(e) => {

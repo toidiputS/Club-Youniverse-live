@@ -291,7 +291,7 @@ const App: React.FC = () => {
                     </main>
 
                     {/* FULL WIDTH BOTTOM TICKERS */}
-                    <div className="fixed bottom-0 left-0 w-full z-40">
+                    <div className="fixed bottom-0 left-0 w-full z-50">
                       <NowPlay />
                       <Ticker />
                     </div>
