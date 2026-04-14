@@ -9,7 +9,6 @@ interface HeaderProps {
     profile: Profile;
     onProfileClick: () => void;
     onSmokeClick: () => void;
-    onGuestRegistryClick?: () => void;
     onNavigate: (view: View) => void;
     onFeedbackClick?: () => void;
 }
@@ -38,7 +37,7 @@ const EmotionMeter: React.FC = () => {
     );
 };
 
-export const Header: React.FC<HeaderProps> = ({ profile, onProfileClick, onSmokeClick, onGuestRegistryClick }) => {
+export const Header: React.FC<HeaderProps> = ({ profile, onProfileClick, onSmokeClick }) => {
   const context = useContext(RadioContext);
   const broadcastManager = getBroadcastManager();
 
