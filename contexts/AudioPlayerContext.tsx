@@ -196,18 +196,25 @@ export const RadioProvider: React.FC<{
       const currentNowPlaying = broadcastManager.getNowPlaying();
       
       // Rotate through information types
-      const cycle = tickerIndex % 4;
+      const cycle = tickerIndex % 3;
       if (cycle === 0) {
         nextText = await PersistentRadioService.getBoxStatusSummary();
       } else if (cycle === 1 && currentNowPlaying) {
         nextText = PersistentRadioService.getNowPlayingFact(currentNowPlaying);
-      } else if (cycle === 2) {
-        nextText = await PersistentRadioService.getLeaderboardSummary();
       } else {
         nextText = `SYSTEM HINT: ${hints[Math.floor(Math.random() * hints.length)]}`;
       }
       
       setTickerText(nextText);
+
+      // Update leaderboard feed independently (Season of Sound)
+      try {
+        const lbText = await PersistentRadioService.getLeaderboardSummary();
+        setLeaderboardText(`🏆 ${lbText}`);
+      } catch {
+        // Keep existing leaderboard text on error
+      }
+
       tickerIndex++;
     };
 
